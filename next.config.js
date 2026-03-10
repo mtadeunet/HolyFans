@@ -4,7 +4,12 @@ const withNextIntl = createNextIntlPlugin('./lib/i18n.ts');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Enable static export for GitHub Pages
+  output: 'export',
+  
+  // Disable image optimization for static export
   images: {
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'http',
@@ -12,27 +17,17 @@ const nextConfig = {
       },
     ],
   },
-  async headers() {
-    return [
-      {
-        source: '/',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
-          },
-          {
-            key: 'Pragma',
-            value: 'no-cache',
-          },
-          {
-            key: 'Expires',
-            value: '0',
-          },
-        ],
-      },
-    ];
-  },
+  
+  // Set asset prefix for GitHub Pages
+  assetPrefix: process.env.NODE_ENV === 'production' 
+    ? 'https://holyfans.pt' 
+    : undefined,
+  
+  // Disable trailing slash for GitHub Pages
+  trailingSlash: false,
+  
+  // Ensure static export works
+  distDir: 'out',
 };
 
 module.exports = withNextIntl(nextConfig);

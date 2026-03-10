@@ -11,6 +11,9 @@ import SocialProof from '@/components/sections/social-proof';
 import Purchase from '@/components/sections/purchase';
 import FinalCTA from '@/components/sections/final-cta';
 
+// Force static generation for GitHub Pages
+export const dynamic = 'force-static';
+
 export default function HomePage() {
   const t = useTranslations('hero');
 

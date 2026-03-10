@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:static": "next build",
     "start": "next start",
+    "serve:static": "npx serve out -p 3000",
     "lint": "next lint"
   },
   "keywords": [],
