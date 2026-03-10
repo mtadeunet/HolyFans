@@ -1,7 +1,6 @@
 'use client';
 
 import {useTranslations} from 'next-intl';
-import {useCart} from '@/context/cart-context';
 import Hero from '@/components/sections/hero';
 import ProductGallery from '@/components/sections/product-gallery';
 import Craftsmanship from '@/components/sections/craftsmanship';
@@ -34,14 +33,14 @@ export default function HomePage() {
       <section id="faq">
         <FAQ />
       </section>
-      <section id="social">
+      <section id="social-proof">
         <SocialProof />
-      </section>
-      <section id="final-cta">
-        <FinalCTA />
       </section>
       <section id="purchase">
         <Purchase />
+      </section>
+      <section id="final-cta">
+        <FinalCTA />
       </section>
     </main>
   );
