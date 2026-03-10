@@ -2,11 +2,14 @@
 
 import {useState, useEffect} from 'react';
 import {useTranslations} from 'next-intl';
+import {useCart} from '@/context/cart-context';
 import {PRODUCT} from '@/lib/constants';
+import PremiumFeaturesModal from '@/components/ui/premium-features-modal';
 
 export default function Hero() {
   const t = useTranslations('hero');
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -46,7 +49,10 @@ export default function Hero() {
               <button className="btn-primary text-lg px-8 py-4 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-200">
                 {t('cta')}
               </button>
-              <button className="btn-secondary text-lg px-8 py-4">
+              <button 
+                onClick={() => setIsModalOpen(true)}
+                className="btn-secondary text-lg px-8 py-4"
+              >
                 {t('learn_more')}
               </button>
             </div>
@@ -131,6 +137,12 @@ export default function Hero() {
           </div>
         </div>
       )}
+
+      {/* Premium Features Modal */}
+      <PremiumFeaturesModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+      />
     </section>
   );
 }

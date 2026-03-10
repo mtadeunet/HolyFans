@@ -41,10 +41,27 @@
       "white": "Branco"
     },
     "features": {
-      "premium_materials": "Materiais Premium",
-      "handcrafted": "Produção Manual",
-      "limited_edition": "Edição Limitada",
-      "ethical_production": "Produção Ética"
+      "title": "Recursos Premium",
+      "premium_materials": {
+        "title": "Materiais Premium",
+        "description": "Apenas os melhores tecidos e tintas, selecionados para durabilidade, conforto e impacto visual."
+      },
+      "handcrafted": {
+        "title": "Produção Manual",
+        "description": "Cada peça é cuidadosamente criada por artesãos qualificados, garantindo qualidade e atenção aos detalhes."
+      },
+      "limited_edition": {
+        "title": "Edição Limitada",
+        "description": "Produção em quantidade limitada para garantir exclusividade e valor."
+      },
+      "ethical_production": {
+        "title": "Produção Ética",
+        "description": "Compromisso com práticas sustentáveis e condições de trabalho justas em toda a cadeia de produção."
+      },
+      "description": {
+        "title": "A Nossa Promessa de Qualidade",
+        "content": "Estamos por trás de cada peça que criamos. A sua satisfação é garantida, e o nosso compromisso com a excelência é inabalável."
+      }
     }
   },
   "craftsmanship": {
