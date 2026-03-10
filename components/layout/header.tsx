@@ -59,7 +59,7 @@ export default function Header() {
               {t('contact')}
             </button>
             <button 
-              onClick={() => handleNavClick('#cart')}
+              onClick={() => handleNavClick('#purchase')}
               className="text-text-secondary hover:text-primary transition-colors"
             >
               {t('cart')}
