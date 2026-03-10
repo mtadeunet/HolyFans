@@ -1,7 +1,8 @@
 import createMiddleware from 'next-intl/middleware';
 import {routing} from './lib/routing';
 
-export default createMiddleware({
+// Disable middleware for static export
+export default process.env.NODE_ENV === 'production' ? undefined : createMiddleware({
   ...routing,
   // Explicitly set the default locale
   defaultLocale: 'pt',
