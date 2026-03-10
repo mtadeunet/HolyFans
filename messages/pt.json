@@ -7,8 +7,8 @@
     "contact": "Contacto",
     "about": "Sobre",
     "faq": "FAQ",
-    "cart": "Carrinho",
-    "checkout": "Finalizar",
+    "cart": "Compra",
+    "checkout": "Compra",
     "preorder": "Pré-encomenda",
     "learn_more": "Saiba mais",
     "close": "Fechar"
@@ -18,7 +18,7 @@
     "about": "Sobre Nós",
     "contact": "Contacto",
     "faq": "Perguntas Frequentes",
-    "cart": "Carrinho"
+    "cart": "Compra"
   },
   "hero": {
     "title": "Fé com Estilo",
@@ -338,13 +338,29 @@
       "quality": "Qualidade Premium Garantida"
     }
   },
-  "cart": {
-    "title": "Carrinho de Compras",
-    "subtitle": "Revise a sua encomenda e prossiga para o checkout",
-    "empty": {
-      "title": "O seu carrinho está vazio",
-      "description": "Parece que ainda não adicionou nada ao seu carrinho.",
-      "continue_shopping": "Continuar a Comprar"
+  "purchase": {
+    "title": "Complete a sua Compra",
+    "subtitle": "Revise a sua encomenda e forneça os seus detalhes",
+    "items": {
+      "title": "A sua Encomenda"
+    },
+    "customer": {
+      "title": "Informação do Cliente",
+      "email": "Endereço de Email",
+      "email_placeholder": "seu@email.com",
+      "phone": "Número de Telefone",
+      "phone_placeholder": "+351 123 456 789",
+      "first_name": "Nome Próprio",
+      "first_name_placeholder": "João",
+      "last_name": "Apelido",
+      "last_name_placeholder": "Silva",
+      "address": "Morada",
+      "address_placeholder": "123 Rua Principal",
+      "city": "Cidade",
+      "city_placeholder": "Lisboa",
+      "postal_code": "Código Postal",
+      "postal_code_placeholder": "1000-001",
+      "country": "País"
     },
     "summary": {
       "title": "Resumo do Pedido",
@@ -354,18 +370,39 @@
       "tax": "Imposto",
       "total": "Total"
     },
-    "promo": {
-      "title": "Código Promocional",
-      "placeholder": "Digite o código promocional",
-      "apply": "Aplicar"
+    "payment": {
+      "title": "Método de Pagamento",
+      "credit_card": "Cartão de Crédito",
+      "credit_card_desc": "Pague de forma segura com Visa, Mastercard ou American Express",
+      "paypal": "PayPal",
+      "paypal_desc": "Pague com a sua conta PayPal"
     },
-    "checkout": {
-      "button": "Prosseguir para Checkout",
-      "processing": "A processar..."
+    "validation": {
+      "email_required": "Email é obrigatório",
+      "email_invalid": "Por favor, introduza um email válido",
+      "phone_required": "Número de telefone é obrigatório",
+      "phone_invalid": "Por favor, introduza um número de telefone válido",
+      "first_name_required": "Nome próprio é obrigatório",
+      "last_name_required": "Apelido é obrigatório",
+      "address_required": "Morada é obrigatória",
+      "city_required": "Cidade é obrigatória",
+      "postal_code_required": "Código postal é obrigatório"
     },
-    "continue_shopping": "Continuar a Comprar",
+    "empty": {
+      "title": "O seu carrinho está vazio",
+      "description": "Parece que ainda não adicionou nada ao seu carrinho.",
+      "continue_shopping": "Continuar a Comprar"
+    },
+    "success": {
+      "title": "Encomenda Concluída com Sucesso!",
+      "order_number": "Número da Encomenda:",
+      "description": "Obrigado pela sua encomenda! Enviaremos um email de confirmação com os detalhes da sua encomenda e informação de rastreamento.",
+      "continue_shopping": "Continuar a Comprar"
+    },
+    "processing": "A processar...",
+    "submit_button": "Concluir Compra",
     "trust": {
-      "title": "Compra Segura e Garantida",
+      "title": "Compra Segura",
       "description": "A sua informação está protegida com encriptação SSL e garantia de devolução de 30 dias."
     }
   },

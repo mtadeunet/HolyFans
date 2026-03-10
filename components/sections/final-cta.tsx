@@ -4,6 +4,7 @@ import {useState} from 'react';
 import {useTranslations} from 'next-intl';
 import {useCart} from '@/context/cart-context';
 import {PRODUCT} from '@/lib/constants';
+import PremiumFeaturesModal from '@/components/ui/premium-features-modal';
 
 export default function FinalCTA() {
   const t = useTranslations('final_cta');
@@ -11,6 +12,7 @@ export default function FinalCTA() {
   const [selectedVariation, setSelectedVariation] = useState<'male' | 'female'>('male');
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleAddToCart = async () => {
     setIsAdding(true);
@@ -192,36 +194,42 @@ export default function FinalCTA() {
             </button>
             
             <button
-              onClick={() => window.location.href = '#products'}
+              onClick={() => setIsModalOpen(true)}
               className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-lg font-semibold hover:bg-white hover:text-primary transition-all duration-500"
             >
               {t('cta.learn_more')}
             </button>
           </div>
-
-          {/* Trust Indicators */}
-          <div className="flex flex-wrap justify-center gap-8 text-sm text-white/80">
-            <div className="flex items-center space-x-2">
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
-              </svg>
-              <span>{t('trust.free_shipping')}</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
-              </svg>
-              <span>{t('trust.money_back')}</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
-              </svg>
-              <span>{t('trust.quality')}</span>
-            </div>
-          </div>
         </div>
       </div>
+
+      {/* Trust Indicators */}
+      <div className="flex flex-wrap justify-center gap-8 text-sm text-white/80">
+        <div className="flex items-center space-x-2">
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+          </svg>
+          <span>{t('trust.free_shipping')}</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+          </svg>
+          <span>{t('trust.money_back')}</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+          </svg>
+          <span>{t('trust.quality')}</span>
+        </div>
+      </div>
+
+      {/* Premium Features Modal */}
+      <PremiumFeaturesModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+      />
     </section>
   );
 }

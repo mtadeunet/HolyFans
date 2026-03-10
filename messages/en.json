@@ -7,8 +7,8 @@
     "contact": "Contact",
     "about": "About",
     "faq": "FAQ",
-    "cart": "Cart",
-    "checkout": "Checkout",
+    "cart": "Purchase",
+    "checkout": "Purchase",
     "preorder": "Pre-order",
     "learn_more": "Learn More",
     "close": "Close"
@@ -18,7 +18,7 @@
     "about": "About Us",
     "contact": "Contact",
     "faq": "Frequently Asked Questions",
-    "cart": "Cart"
+    "cart": "Purchase"
   },
   "hero": {
     "title": "Faith with Style",
@@ -338,13 +338,29 @@
       "quality": "Premium Quality Guaranteed"
     }
   },
-  "cart": {
-    "title": "Shopping Cart",
-    "subtitle": "Review your order and proceed to checkout",
-    "empty": {
-      "title": "Your cart is empty",
-      "description": "Looks like you haven't added anything to your cart yet.",
-      "continue_shopping": "Continue Shopping"
+  "purchase": {
+    "title": "Complete Your Purchase",
+    "subtitle": "Review your order and provide your details",
+    "items": {
+      "title": "Your Order"
+    },
+    "customer": {
+      "title": "Customer Information",
+      "email": "Email Address",
+      "email_placeholder": "your@email.com",
+      "phone": "Phone Number",
+      "phone_placeholder": "+351 123 456 789",
+      "first_name": "First Name",
+      "first_name_placeholder": "John",
+      "last_name": "Last Name",
+      "last_name_placeholder": "Doe",
+      "address": "Address",
+      "address_placeholder": "123 Main Street",
+      "city": "City",
+      "city_placeholder": "Lisbon",
+      "postal_code": "Postal Code",
+      "postal_code_placeholder": "1000-001",
+      "country": "Country"
     },
     "summary": {
       "title": "Order Summary",
@@ -354,16 +370,41 @@
       "tax": "Tax",
       "total": "Total"
     },
-    "promo": {
-      "title": "Promo Code",
-      "placeholder": "Enter promo code",
-      "apply": "Apply"
+    "payment": {
+      "title": "Payment Method",
+      "credit_card": "Credit Card",
+      "credit_card_desc": "Pay securely with Visa, Mastercard, or American Express",
+      "paypal": "PayPal",
+      "paypal_desc": "Pay with your PayPal account"
     },
-    "checkout": {
-      "button": "Proceed to Checkout",
-      "processing": "Processing..."
+    "validation": {
+      "email_required": "Email is required",
+      "email_invalid": "Please enter a valid email",
+      "phone_required": "Phone number is required",
+      "phone_invalid": "Please enter a valid phone number",
+      "first_name_required": "First name is required",
+      "last_name_required": "Last name is required",
+      "address_required": "Address is required",
+      "city_required": "City is required",
+      "postal_code_required": "Postal code is required"
     },
-    "continue_shopping": "Continue Shopping"
+    "empty": {
+      "title": "Your cart is empty",
+      "description": "Looks like you haven't added anything to your cart yet.",
+      "continue_shopping": "Continue Shopping"
+    },
+    "success": {
+      "title": "Order Completed Successfully!",
+      "order_number": "Order Number:",
+      "description": "Thank you for your order! We'll send you a confirmation email with your order details and tracking information.",
+      "continue_shopping": "Continue Shopping"
+    },
+    "processing": "Processing...",
+    "submit_button": "Complete Purchase",
+    "trust": {
+      "title": "Secure Purchase",
+      "description": "Your information is protected with SSL encryption and 30-day return guarantee."
+    }
   },
   "footer": {
     "brand_story": "Faith you'll want to share",
@@ -372,7 +413,7 @@
     "newsletter_description": "Subscribe to receive 10% off your first purchase.",
     "newsletter_placeholder": "Your email",
     "newsletter_button": "Subscribe",
-    "copyright": "© 2024 HolyFans. All rights reserved.",
+    "copyright": " 2024 HolyFans. All rights reserved.",
     "privacy": "Privacy",
     "terms": "Terms and Conditions"
   },
