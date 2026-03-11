@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:static": "next build",
+    "build:static": "STATIC_EXPORT=true NODE_ENV=production next build",
     "start": "next start",
     "serve:static": "npx serve out -p 3000",
     "lint": "next lint"
