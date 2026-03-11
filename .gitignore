@@ -3,6 +3,11 @@ node_modules/
 .pnp
 .pnp.js
 
+# Package manager files (keep package-lock.json for CI/CD)
+# package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
 # Testing
 coverage/
 
