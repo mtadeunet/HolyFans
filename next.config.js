@@ -21,7 +21,7 @@ const nextConfig = {
       ],
     },
     // Set asset prefix for GitHub Pages
-    assetPrefix: 'https://holyfans.pt',
+    assetPrefix: 'https://www.holyfans.pt',
     // Disable trailing slash for GitHub Pages
     trailingSlash: false,
     // Ensure static export works
