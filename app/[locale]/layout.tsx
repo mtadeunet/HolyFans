@@ -33,9 +33,9 @@ export default async function LocaleLayout({
   return (
     <html lang={locale}>
       <head>
-        <title>{SITE_CONFIG.name}</title>
-        <meta name="description" content={SITE_CONFIG.description} />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title key="title">{SITE_CONFIG.name}</title>
+        <meta name="description" content={SITE_CONFIG.description} key="description" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" key="viewport" />
       </head>
       <body>
         <NextIntlClientProvider messages={messages}>
