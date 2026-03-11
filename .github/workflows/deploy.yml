@@ -45,10 +45,32 @@ jobs:
     - name: Setup Pages
       uses: actions/configure-pages@v4
       
+    - name: Build static files
+      run: |
+        mkdir -p out
+        # Copy static assets
+        cp -r .next/static out/
+        cp -r public out/
+        # Copy built pages
+        cp -r .next/server/app out/
+        # Create index.html for GitHub Pages root (only needed for GitHub Pages)
+        echo '<!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>HolyFans</title>
+            <meta http-equiv="refresh" content="0;url=/en">
+          </head>
+          <body>
+            <p>Redirecting to <a href="/en">HolyFans</a>...</p>
+          </body>
+        </html>' > out/index.html
+        
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v3
       with:
-        path: .next
+        path: out
         
     - name: Deploy to GitHub Pages
       id: deployment
