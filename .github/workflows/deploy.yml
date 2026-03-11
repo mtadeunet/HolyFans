@@ -33,6 +33,8 @@ jobs:
 
       - name: Build Next.js
         run: npm run build
+        env:
+          STATIC_EXPORT: true
 
       - name: Upload static site
         uses: actions/upload-pages-artifact@v3
