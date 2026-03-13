@@ -1,16 +1,18 @@
-import {defineRouting} from 'next-intl/routing';
-import {createNavigation} from 'next-intl/navigation';
+// Static routing configuration for GitHub Pages
+export const locales = ['pt', 'en'] as const;
+export const defaultLocale = 'pt' as const;
 
-export const routing = defineRouting({
-  // A list of all locales that are supported
-  locales: ['pt', 'en'],
+// Simple navigation functions for static export
+export function getLocaleFromPath(pathname: string): string {
+  const segments = pathname.split('/').filter(Boolean);
+  const firstSegment = segments[0];
+  return locales.includes(firstSegment as any) ? firstSegment : defaultLocale;
+}
 
-  // Used when no locale matches
-  defaultLocale: 'pt',
-  
-  // Explicitly set the locale detection strategy
-  localePrefix: 'always'
-});
-
-// Persistent layouts
-export const {Link, redirect, usePathname, useRouter} = createNavigation(routing);
+export function getPathWithoutLocale(pathname: string): string {
+  const locale = getLocaleFromPath(pathname);
+  if (locale === defaultLocale && !pathname.startsWith(`/${locale}`)) {
+    return pathname;
+  }
+  return pathname.replace(`/${locale}`, '') || '/';
+}

@@ -1,6 +1,5 @@
-'use client';
+export const dynamic = 'force-static';
 
-import {useTranslations} from 'next-intl';
 import Hero from '@/components/sections/hero';
 import ProductGallery from '@/components/sections/product-gallery';
 import Craftsmanship from '@/components/sections/craftsmanship';
@@ -10,12 +9,7 @@ import SocialProof from '@/components/sections/social-proof';
 import Purchase from '@/components/sections/purchase';
 import FinalCTA from '@/components/sections/final-cta';
 
-// Force static generation for GitHub Pages
-export const dynamic = 'force-static';
-
 export default function HomePage() {
-  const t = useTranslations('hero');
-
   return (
     <main className="min-h-screen">
       <section id="hero">

@@ -1,12 +1,11 @@
 'use client';
 
 import {useState} from 'react';
-import {useTranslations} from 'next-intl';
 import {useCart} from '@/context/cart-context';
 import {formatPrice, generateOrderNumber, validateEmail, validatePhone} from '@/lib/utils';
 
 export default function Checkout() {
-  const t = useTranslations('checkout');
+  const t = (key: string) => key;
   const {items, getTotal, clearCart} = useCart();
   const [currentStep, setCurrentStep] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);

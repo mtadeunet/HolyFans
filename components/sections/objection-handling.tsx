@@ -1,10 +1,9 @@
 'use client';
 
 import {useState} from 'react';
-import {useTranslations} from 'next-intl';
 
 export default function ObjectionHandling() {
-  const t = useTranslations('objections');
+  const t = (key: string) => key;
   const [expandedObjection, setExpandedObjection] = useState<number | null>(null);
 
   const objections = [

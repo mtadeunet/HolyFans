@@ -1,13 +1,12 @@
 'use client';
 
 import {useState, useEffect} from 'react';
-import {useTranslations} from 'next-intl';
 import {useCart} from '@/context/cart-context';
 import {PRODUCT} from '@/lib/constants';
 import PremiumFeaturesModal from '@/components/ui/premium-features-modal';
 
 export default function Hero() {
-  const t = useTranslations('hero');
+  const t = (key: string) => key;
   const [isScrolled, setIsScrolled] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 

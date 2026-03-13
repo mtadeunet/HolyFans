@@ -1,12 +1,11 @@
 'use client';
 
 import {useState} from 'react';
-import {useTranslations} from 'next-intl';
 import {useCart} from '@/context/cart-context';
 import {PRODUCT} from '@/lib/constants';
 
 export default function ProductGallery() {
-  const t = useTranslations('product');
+  const t = (key: string) => key;
   const {addItem} = useCart();
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedVariation, setSelectedVariation] = useState<'male' | 'female'>('male');

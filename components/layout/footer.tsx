@@ -1,9 +1,8 @@
 'use client';
 
-import {useTranslations} from 'next-intl';
 
 export default function Footer() {
-  const t = useTranslations('footer');
+  const t = (key: string) => key;
 
   return (
     <footer className="bg-primary text-white">

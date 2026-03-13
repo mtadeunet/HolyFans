@@ -1,13 +1,12 @@
 'use client';
 
 import {useState} from 'react';
-import {useTranslations} from 'next-intl';
 import {useCart} from '@/context/cart-context';
 import {PRODUCT} from '@/lib/constants';
 import PremiumFeaturesModal from '@/components/ui/premium-features-modal';
 
 export default function FinalCTA() {
-  const t = useTranslations('final_cta');
+  const t = (key: string) => key;
   const {addItem} = useCart();
   const [selectedVariation, setSelectedVariation] = useState<'male' | 'female'>('male');
   const [quantity, setQuantity] = useState(1);

@@ -1,10 +1,9 @@
 'use client';
 
 import {useState} from 'react';
-import {useTranslations} from 'next-intl';
 
 export default function Craftsmanship() {
-  const t = useTranslations('craftsmanship');
+  const t = (key: string) => key;
   const [activeFeature, setActiveFeature] = useState(0);
 
   const features = [

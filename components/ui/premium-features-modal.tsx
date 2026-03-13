@@ -1,6 +1,5 @@
 'use client';
 
-import {useTranslations} from 'next-intl';
 import {useEffect, useState} from 'react';
 
 interface PremiumFeaturesModalProps {
@@ -9,7 +8,7 @@ interface PremiumFeaturesModalProps {
 }
 
 export default function PremiumFeaturesModal({isOpen, onClose}: PremiumFeaturesModalProps) {
-  const t = useTranslations('craftsmanship.features');
+  const t = (key: string) => key;
   const [selectedFeature, setSelectedFeature] = useState<number>(0);
 
   // Close modal on ESC key

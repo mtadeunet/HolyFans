@@ -1,14 +1,13 @@
 'use client';
 
 import {useState} from 'react';
-import {useTranslations} from 'next-intl';
 import {useCart} from '@/context/cart-context';
 import {PRODUCT} from '@/lib/constants';
 import {formatPrice, validateEmail, validatePhone} from '@/lib/utils';
 import {CartItem} from '@/types/product';
 
 export default function ProductPurchase() {
-  const t = useTranslations('product_purchase');
+  const t = (key: string) => key;
   const {items, getTotal, removeItem, updateQuantity, clearCart, addItem} = useCart();
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);

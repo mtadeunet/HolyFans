@@ -1,12 +1,11 @@
 'use client';
 
 import {useState} from 'react';
-import {useTranslations} from 'next-intl';
 import {useCart} from '@/context/cart-context';
 import {formatPrice} from '@/lib/utils';
 
 export default function Cart() {
-  const t = useTranslations('cart');
+  const t = (key: string) => key;
   const {items, getTotal, removeItem, updateQuantity, clearCart} = useCart();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
 

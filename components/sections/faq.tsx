@@ -1,10 +1,9 @@
 'use client';
 
 import {useState} from 'react';
-import {useTranslations} from 'next-intl';
 
 export default function FAQ() {
-  const t = useTranslations('faq');
+  const t = (key: string) => key;
   const [expandedCategory, setExpandedCategory] = useState<string>('general');
   const [expandedQuestion, setExpandedQuestion] = useState<number | null>(null);
 

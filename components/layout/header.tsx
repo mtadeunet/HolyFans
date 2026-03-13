@@ -1,12 +1,11 @@
 'use client';
 
 import {useState} from 'react';
-import {useTranslations} from 'next-intl';
 import {useRouter} from 'next/navigation';
 import LanguageToggle from './language-toggle';
 
 export default function Header() {
-  const t = useTranslations('navigation');
+  const t = (key: string) => key;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const router = useRouter();
 

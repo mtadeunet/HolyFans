@@ -1,7 +1,6 @@
 'use client';
 
 import {useState} from 'react';
-import {useTranslations} from 'next-intl';
 import {PRODUCT} from '@/lib/constants';
 import {CartItem, CartContextType} from '@/types/product';
 
@@ -10,7 +9,7 @@ interface VariationSelectorProps {
 }
 
 export default function VariationSelector({onAddToCart}: VariationSelectorProps) {
-  const t = useTranslations('product');
+  const t = (key: string) => key;
   const [selectedVariation, setSelectedVariation] = useState<'male' | 'female'>('male');
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
