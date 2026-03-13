@@ -1,12 +1,13 @@
 'use client';
 
-import {useState} from 'react';
-import {useCart} from '@/context/cart-context';
-import {PRODUCT} from '@/lib/constants';
+import { useCart } from '@/context/cart-context';
+import { PRODUCT } from '@/lib/constants';
+import { useTranslations } from '@/lib/use-translations';
+import { useState } from 'react';
 
 export default function ProductGallery() {
-  const t = (key: string) => key;
-  const {addItem} = useCart();
+  const t = useTranslations();
+  const { addItem } = useCart();
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedVariation, setSelectedVariation] = useState<'male' | 'female'>('male');
   const [quantity, setQuantity] = useState(1);
@@ -16,13 +17,13 @@ export default function ProductGallery() {
 
   const handleAddToCart = async () => {
     setIsAdding(true);
-    
+
     // Simulate processing time
     await new Promise(resolve => setTimeout(resolve, 1000));
-    
+
     addItem(PRODUCT, selectedVariation === 'male' ? PRODUCT.variants.male : PRODUCT.variants.female);
     setIsAdding(false);
-    
+
     // You could add a toast notification here
     console.log('Added to cart:', { product: PRODUCT, variant: selectedVariation, quantity });
   };
@@ -48,8 +49,8 @@ export default function ProductGallery() {
                 <div className="text-center space-y-4">
                   <div className="w-48 h-48 bg-accent/20 rounded-full flex items-center justify-center mx-auto">
                     <svg className="w-24 h-24 text-accent" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
-                      <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd"/>
+                      <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                      <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
                     </svg>
                   </div>
                   <p className="text-text-secondary">Main Product Image</p>
@@ -58,7 +59,7 @@ export default function ProductGallery() {
                   </p>
                 </div>
               </div>
-              
+
               {/* Zoom indicator */}
               <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg">
                 <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -73,15 +74,14 @@ export default function ProductGallery() {
                 <button
                   key={index}
                   onClick={() => setSelectedImage(index)}
-                  className={`relative aspect-square bg-background rounded-lg overflow-hidden border-2 transition-all duration-500 ${
-                    selectedImage === index ? 'border-accent shadow-lg' : 'border-transparent hover:border-accent/30'
-                  }`}
+                  className={`relative aspect-square bg-background rounded-lg overflow-hidden border-2 transition-all duration-500 ${selectedImage === index ? 'border-accent shadow-lg' : 'border-transparent hover:border-accent/30'
+                    }`}
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-surface to-border flex items-center justify-center">
                     <div className="w-8 h-8 bg-accent/20 rounded-full flex items-center justify-center">
                       <svg className="w-4 h-4 text-accent" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
-                        <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd"/>
+                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                        <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
                       </svg>
                     </div>
                   </div>
@@ -101,16 +101,15 @@ export default function ProductGallery() {
               <div className="grid grid-cols-2 gap-4">
                 <button
                   onClick={() => setSelectedVariation('male')}
-                  className={`p-6 rounded-xl border-2 transition-all duration-500 ${
-                    selectedVariation === 'male' 
-                      ? 'border-accent bg-accent/5 shadow-lg' 
+                  className={`p-6 rounded-xl border-2 transition-all duration-500 ${selectedVariation === 'male'
+                      ? 'border-accent bg-accent/5 shadow-lg'
                       : 'border-transparent hover:border-accent/30 bg-background'
-                  }`}
+                    }`}
                 >
                   <div className="text-center">
                     <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
                       <svg className="w-6 h-6 text-primary" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd"/>
+                        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                       </svg>
                     </div>
                     <h4 className="font-semibold text-primary">{t('fit.male')}</h4>
@@ -121,7 +120,7 @@ export default function ProductGallery() {
                   {selectedVariation === 'male' && (
                     <div className="absolute top-2 right-2">
                       <svg className="w-5 h-5 text-accent" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                       </svg>
                     </div>
                   )}
@@ -129,16 +128,15 @@ export default function ProductGallery() {
 
                 <button
                   onClick={() => setSelectedVariation('female')}
-                  className={`p-6 rounded-xl border-2 transition-all duration-500 ${
-                    selectedVariation === 'female' 
-                      ? 'border-accent bg-accent/5 shadow-lg' 
+                  className={`p-6 rounded-xl border-2 transition-all duration-500 ${selectedVariation === 'female'
+                      ? 'border-accent bg-accent/5 shadow-lg'
                       : 'border-transparent hover:border-accent/30 bg-background'
-                  }`}
+                    }`}
                 >
                   <div className="text-center">
                     <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
                       <svg className="w-6 h-6 text-primary" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd"/>
+                        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                       </svg>
                     </div>
                     <h4 className="font-semibold text-primary">{t('fit.female')}</h4>
@@ -149,7 +147,7 @@ export default function ProductGallery() {
                   {selectedVariation === 'female' && (
                     <div className="absolute top-2 right-2">
                       <svg className="w-5 h-5 text-accent" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                       </svg>
                     </div>
                   )}
@@ -168,7 +166,7 @@ export default function ProductGallery() {
                   <div key={index} className="flex items-center space-x-3">
                     <div className="w-6 h-6 bg-accent/20 rounded-full flex items-center justify-center flex-shrink-0">
                       <svg className="w-3 h-3 text-accent" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
                     </div>
                     <span className="text-text-secondary">{feature}</span>
@@ -256,7 +254,7 @@ export default function ProductGallery() {
                 <div className="text-center">
                   <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
                     <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
                   </div>
                   <p className="text-xs text-text-secondary font-medium">Secure Payment</p>
@@ -264,8 +262,8 @@ export default function ProductGallery() {
                 <div className="text-center">
                   <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
                     <svg className="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"/>
-                      <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0015 7h-1z"/>
+                      <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+                      <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0015 7h-1z" />
                     </svg>
                   </div>
                   <p className="text-xs text-text-secondary font-medium">Fast Shipping</p>
@@ -273,7 +271,7 @@ export default function ProductGallery() {
                 <div className="text-center">
                   <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
                     <svg className="w-6 h-6 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 002.812 2.812 3.066 3.066 0 00.723 1.745 3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 00-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 00-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 00-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 002.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                      <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 002.812 2.812 3.066 3.066 0 00.723 1.745 3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 00-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 00-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 00-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 002.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
                   </div>
                   <p className="text-xs text-text-secondary font-medium">Quality Guarantee</p>

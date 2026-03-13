@@ -28,36 +28,7 @@
         }
       },
       "isBackground": true,
-      "detail": "Start Next.js development server with hot reload on port 4000"
-    },
-    {
-      "label": "Start Development Server (Port 4000)",
-      "type": "shell",
-      "command": "npm",
-      "args": ["run", "dev:4000"],
-      "group": "build",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "new",
-        "showReuseMessage": true,
-        "clear": false
-      },
-      "problemMatcher": {
-        "owner": "typescript",
-        "fileLocation": "relative",
-        "pattern": {
-          "regexp": "^(.*):(\\d+):(\\d+):\\s+(error|warning|info)\\s+(.*)$",
-          "file": 1,
-          "line": 2,
-          "column": 3,
-          "severity": 4,
-          "message": 5
-        }
-      },
-      "isBackground": true,
-      "detail": "Start Next.js development server on port 4000"
+      "detail": "Start Next.js development server with hot reload"
     },
     {
       "label": "Build for Production",
@@ -141,7 +112,7 @@
       "label": "Serve Static Build",
       "type": "shell",
       "command": "npx",
-      "args": ["serve", "-s", "out", "-l", "4000"],
+      "args": ["serve", "-s", "out", "-l", "3000"],
       "group": "build",
       "presentation": {
         "echo": true,
@@ -150,7 +121,7 @@
         "panel": "new"
       },
       "dependsOn": "Build for Production",
-      "detail": "Serve the static build from /out directory on port 4000"
+      "detail": "Serve the static build from /out directory on port 3000"
     },
     {
       "label": "Clean Build",

@@ -1,12 +1,12 @@
 'use client';
 
-import {useState, useEffect} from 'react';
-import {useCart} from '@/context/cart-context';
-import {PRODUCT} from '@/lib/constants';
 import PremiumFeaturesModal from '@/components/ui/premium-features-modal';
+import { PRODUCT } from '@/lib/constants';
+import { useTranslations } from '@/lib/use-translations';
+import { useEffect, useState } from 'react';
 
 export default function Hero() {
-  const t = (key: string) => key;
+  const t = useTranslations('hero');
   const [isScrolled, setIsScrolled] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -48,7 +48,7 @@ export default function Hero() {
               <button className="btn-primary text-lg px-8 py-4 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-200">
                 {t('cta')}
               </button>
-              <button 
+              <button
                 onClick={() => setIsModalOpen(true)}
                 className="btn-secondary text-lg px-8 py-4"
               >
@@ -60,19 +60,19 @@ export default function Hero() {
             <div className="flex flex-wrap justify-center lg:justify-start gap-6 text-sm text-text-secondary">
               <div className="flex items-center space-x-2">
                 <svg className="w-4 h-4 text-accent" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
                 <span>Premium Materials</span>
               </div>
               <div className="flex items-center space-x-2">
                 <svg className="w-4 h-4 text-accent" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
                 <span>Limited Edition</span>
               </div>
               <div className="flex items-center space-x-2">
                 <svg className="w-4 h-4 text-accent" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
                 <span>30-Day Guarantee</span>
               </div>
@@ -87,8 +87,8 @@ export default function Hero() {
                 <div className="text-center space-y-4">
                   <div className="w-32 h-32 bg-accent/20 rounded-full flex items-center justify-center mx-auto">
                     <svg className="w-16 h-16 text-accent" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
-                      <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd"/>
+                      <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                      <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
                     </svg>
                   </div>
                   <p className="text-text-secondary">Product Image</p>
@@ -97,7 +97,7 @@ export default function Hero() {
                   </p>
                 </div>
               </div>
-              
+
               {/* Floating Elements */}
               <div className="absolute -top-4 -right-4 w-20 h-20 bg-accent/10 rounded-full flex items-center justify-center animate-pulse">
                 <span className="text-accent font-bold text-sm">NEW</span>
@@ -138,9 +138,9 @@ export default function Hero() {
       )}
 
       {/* Premium Features Modal */}
-      <PremiumFeaturesModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+      <PremiumFeaturesModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
       />
     </section>
   );

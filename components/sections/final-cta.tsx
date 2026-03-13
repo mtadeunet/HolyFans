@@ -1,13 +1,14 @@
 'use client';
 
-import {useState} from 'react';
-import {useCart} from '@/context/cart-context';
-import {PRODUCT} from '@/lib/constants';
 import PremiumFeaturesModal from '@/components/ui/premium-features-modal';
+import { useCart } from '@/context/cart-context';
+import { PRODUCT } from '@/lib/constants';
+import { useTranslations } from '@/lib/use-translations';
+import { useState } from 'react';
 
 export default function FinalCTA() {
-  const t = (key: string) => key;
-  const {addItem} = useCart();
+  const t = useTranslations('final_cta');
+  const { addItem } = useCart();
   const [selectedVariation, setSelectedVariation] = useState<'male' | 'female'>('male');
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
@@ -15,18 +16,18 @@ export default function FinalCTA() {
 
   const handleAddToCart = async () => {
     setIsAdding(true);
-    
+
     // Simulate processing time
     await new Promise(resolve => setTimeout(resolve, 1000));
-    
+
     const cartItem = {
       product: PRODUCT,
-      variant: selectedVariation === 'male' 
+      variant: selectedVariation === 'male'
         ? PRODUCT.variants.male
         : PRODUCT.variants.female,
       quantity
     };
-    
+
     addItem(cartItem.product, cartItem.variant);
     setIsAdding(false);
   };
@@ -38,7 +39,7 @@ export default function FinalCTA() {
           {/* Urgency Badge */}
           <div className="inline-flex items-center space-x-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-2">
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
             </svg>
             <span className="text-sm font-semibold">{t('urgency.badge')}</span>
           </div>
@@ -74,7 +75,7 @@ export default function FinalCTA() {
                 <h3 className="text-2xl font-serif text-white">HolyFans</h3>
                 <p className="text-white/90">{t('product.name')}</p>
                 <p className="text-white/80 text-sm">{t('product.description')}</p>
-                
+
                 <div className="flex items-center space-x-4">
                   <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
                     <span className="text-white font-bold">M</span>
@@ -84,7 +85,7 @@ export default function FinalCTA() {
                     <span className="text-sm">{t('product.fit')}</span>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center space-x-4">
                   <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
                     <span className="text-white font-bold">€</span>
@@ -94,21 +95,21 @@ export default function FinalCTA() {
                   </div>
                 </div>
               </div>
-              
+
               <div className="relative">
                 <div className="aspect-square bg-gradient-to-br from-white/20 to-white/10 rounded-xl flex items-center justify-center">
                   <div className="text-center space-y-4">
                     <div className="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center mx-auto">
                       <svg className="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
-                        <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd"/>
+                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                        <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
                       </svg>
                     </div>
                     <p className="text-white">{t('product.preview')}</p>
                     <p className="text-white/80 text-sm">{selectedVariation === 'male' ? 'Masculino' : 'Feminino'}</p>
                   </div>
                 </div>
-                
+
                 {/* Floating badges */}
                 <div className="absolute -top-2 -right-2 w-16 h-16 bg-accent rounded-full flex items-center justify-center animate-pulse">
                   <span className="text-white font-bold text-sm">{t('urgency.limited')}</span>
@@ -124,21 +125,19 @@ export default function FinalCTA() {
           <div className="flex justify-center space-x-4 mb-8">
             <button
               onClick={() => setSelectedVariation('male')}
-              className={`px-6 py-3 rounded-xl border-2 transition-all duration-500 ${
-                selectedVariation === 'male'
+              className={`px-6 py-3 rounded-xl border-2 transition-all duration-500 ${selectedVariation === 'male'
                   ? 'border-white bg-white/20 shadow-lg'
                   : 'border-white/40 hover:border-white/60 bg-white/10'
-              }`}
+                }`}
             >
               <span className="font-medium">{t('fit.male')}</span>
             </button>
             <button
               onClick={() => setSelectedVariation('female')}
-              className={`px-6 py-3 rounded-xl border-2 transition-all duration-500 ${
-                selectedVariation === 'female'
+              className={`px-6 py-3 rounded-xl border-2 transition-all duration-500 ${selectedVariation === 'female'
                   ? 'border-white bg-white/20 shadow-lg'
                   : 'border-white/40 hover:border-white/60 bg-white/10'
-              }`}
+                }`}
             >
               <span className="font-medium">{t('fit.female')}</span>
             </button>
@@ -191,7 +190,7 @@ export default function FinalCTA() {
                 <span>{t('cta.button')} - €{89 * quantity}</span>
               )}
             </button>
-            
+
             <button
               onClick={() => setIsModalOpen(true)}
               className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-lg font-semibold hover:bg-white hover:text-primary transition-all duration-500"
@@ -206,28 +205,28 @@ export default function FinalCTA() {
       <div className="flex flex-wrap justify-center gap-8 text-sm text-white/80">
         <div className="flex items-center space-x-2">
           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
           </svg>
           <span>{t('trust.free_shipping')}</span>
         </div>
         <div className="flex items-center space-x-2">
           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
           </svg>
           <span>{t('trust.money_back')}</span>
         </div>
         <div className="flex items-center space-x-2">
           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
           </svg>
           <span>{t('trust.quality')}</span>
         </div>
       </div>
 
       {/* Premium Features Modal */}
-      <PremiumFeaturesModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+      <PremiumFeaturesModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
       />
     </section>
   );

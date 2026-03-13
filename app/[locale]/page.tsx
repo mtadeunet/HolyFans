@@ -1,13 +1,13 @@
 export const dynamic = 'force-static';
 
-import Hero from '@/components/sections/hero';
-import ProductGallery from '@/components/sections/product-gallery';
 import Craftsmanship from '@/components/sections/craftsmanship';
-import ObjectionHandling from '@/components/sections/objection-handling';
 import FAQ from '@/components/sections/faq';
-import SocialProof from '@/components/sections/social-proof';
-import Purchase from '@/components/sections/purchase';
 import FinalCTA from '@/components/sections/final-cta';
+import Hero from '@/components/sections/hero';
+import ObjectionHandling from '@/components/sections/objection-handling';
+import ProductGallery from '@/components/sections/product-gallery';
+import Purchase from '@/components/sections/purchase';
+import SocialProof from '@/components/sections/social-proof';
 
 export default function HomePage() {
   return (
