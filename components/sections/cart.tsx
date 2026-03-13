@@ -1,12 +1,13 @@
 'use client';
 
-import {useState} from 'react';
-import {useCart} from '@/context/cart-context';
-import {formatPrice} from '@/lib/utils';
+import { useCart } from '@/context/cart-context';
+import { useTranslations } from '@/lib/use-translations';
+import { formatPrice } from '@/lib/utils';
+import { useState } from 'react';
 
 export default function Cart() {
-  const t = (key: string) => key;
-  const {items, getTotal, removeItem, updateQuantity, clearCart} = useCart();
+  const t = useTranslations('cart');
+  const { items, getTotal, removeItem, updateQuantity, clearCart } = useCart();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
 
   const handleCheckout = () => {
@@ -22,7 +23,7 @@ export default function Cart() {
           <div className="text-center space-y-6">
             <div className="w-20 h-20 bg-accent/20 rounded-full flex items-center justify-center mx-auto">
               <svg className="w-10 h-10 text-accent" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M3 1a1 1 0 000 2h1a1 1 0 000-2H3zM16 1a1 1 0 000 2h1a1 1 0 000-2h-1zM6 1a1 1 0 000 2h1a1 1 0 000-2H6zM11 1a1 1 0 000 2h1a1 1 0 000-2h-1z"/>
+                <path d="M3 1a1 1 0 000 2h1a1 1 0 000-2H3zM16 1a1 1 0 000 2h1a1 1 0 000-2h-1zM6 1a1 1 0 000 2h1a1 1 0 000-2H6zM11 1a1 1 0 000 2h1a1 1 0 000-2h-1z" />
               </svg>
             </div>
             <h2 className="text-2xl md:text-3xl font-serif text-primary">
@@ -31,7 +32,7 @@ export default function Cart() {
             <p className="text-text-secondary max-w-md mx-auto">
               {t('empty.description')}
             </p>
-            <button 
+            <button
               onClick={() => window.location.href = '#products'}
               className="btn-primary"
             >
@@ -66,14 +67,14 @@ export default function Cart() {
                     <div className="text-center">
                       <div className="w-12 h-12 bg-accent/20 rounded-full flex items-center justify-center mx-auto">
                         <svg className="w-6 h-6 text-accent" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
-                          <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd"/>
+                          <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                          <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
                         </svg>
                       </div>
                       <p className="text-xs text-text-secondary">Product</p>
                     </div>
                   </div>
-                  
+
                   {/* Product Details */}
                   <div className="flex-1">
                     <div className="flex items-start justify-between mb-4">
@@ -93,7 +94,7 @@ export default function Cart() {
                         </svg>
                       </button>
                     </div>
-                    
+
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         <button
@@ -135,7 +136,7 @@ export default function Cart() {
               <h3 className="text-xl font-semibold text-primary mb-6">
                 {t('summary.title')}
               </h3>
-              
+
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between">
                   <span className="text-text-secondary">{t('summary.subtotal')}</span>
@@ -150,7 +151,7 @@ export default function Cart() {
                   <span className="font-medium">{items[0]?.product.currency || 'EUR'} {formatPrice(0)}</span>
                 </div>
               </div>
-              
+
               <div className="border-t border-border pt-4">
                 <div className="flex justify-between items-center">
                   <span className="text-xl font-semibold text-primary">{t('summary.total')}</span>
@@ -197,7 +198,7 @@ export default function Cart() {
                   <span>{t('checkout.button')}</span>
                 )}
               </button>
-              
+
               <button
                 onClick={() => window.location.href = '#products'}
                 className="w-full btn-secondary"
@@ -210,7 +211,7 @@ export default function Cart() {
             <div className="bg-gradient-to-r from-primary to-accent rounded-xl p-6 text-white text-center">
               <div className="flex items-center justify-center space-x-2 mb-2">
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
                 <span className="font-semibold">{t('trust.title')}</span>
               </div>

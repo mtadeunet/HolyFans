@@ -1,31 +1,32 @@
 'use client';
 
-import {useState} from 'react';
-import {PRODUCT} from '@/lib/constants';
-import {CartItem, CartContextType} from '@/types/product';
+import { PRODUCT } from '@/lib/constants';
+import { useTranslations } from '@/lib/use-translations';
+import { CartItem } from '@/types/product';
+import { useState } from 'react';
 
 interface VariationSelectorProps {
   onAddToCart: (item: CartItem) => void;
 }
 
-export default function VariationSelector({onAddToCart}: VariationSelectorProps) {
-  const t = (key: string) => key;
+export default function VariationSelector({ onAddToCart }: VariationSelectorProps) {
+  const t = useTranslations('product');
   const [selectedVariation, setSelectedVariation] = useState<'male' | 'female'>('male');
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
 
   const handleAddToCart = async () => {
     setIsAdding(true);
-    
+
     // Simulate processing time
     await new Promise(resolve => setTimeout(resolve, 1000));
-    
+
     const cartItem: CartItem = {
       product: PRODUCT,
       variant: selectedVariation === 'male' ? PRODUCT.variants.male : PRODUCT.variants.female,
       quantity
     };
-    
+
     onAddToCart(cartItem);
     setIsAdding(false);
   };
@@ -54,8 +55,8 @@ export default function VariationSelector({onAddToCart}: VariationSelectorProps)
                   <div className="text-center space-y-4">
                     <div className="w-32 h-32 bg-accent/20 rounded-full flex items-center justify-center mx-auto">
                       <svg className="w-16 h-16 text-accent" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
-                        <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd"/>
+                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                        <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
                       </svg>
                     </div>
                     <p className="text-text-secondary">Product Preview</p>
@@ -64,7 +65,7 @@ export default function VariationSelector({onAddToCart}: VariationSelectorProps)
                     </p>
                   </div>
                 </div>
-                
+
                 {/* Selected variation badge */}
                 <div className="absolute top-4 left-4 bg-accent text-white px-3 py-1 rounded-full text-sm font-medium">
                   {currentVariant.name}
@@ -104,16 +105,15 @@ export default function VariationSelector({onAddToCart}: VariationSelectorProps)
                 <div className="grid grid-cols-2 gap-4">
                   <button
                     onClick={() => setSelectedVariation('male')}
-                    className={`p-4 rounded-xl border-2 transition-all duration-500 ${
-                      selectedVariation === 'male' 
-                        ? 'border-accent bg-accent/5 shadow-lg' 
+                    className={`p-4 rounded-xl border-2 transition-all duration-500 ${selectedVariation === 'male'
+                        ? 'border-accent bg-accent/5 shadow-lg'
                         : 'border-transparent hover:border-accent/30 bg-background'
-                    }`}
+                      }`}
                   >
                     <div className="text-center">
                       <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
                         <svg className="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd"/>
+                          <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                         </svg>
                       </div>
                       <h4 className="font-semibold text-primary">{t('fit.male')}</h4>
@@ -123,16 +123,15 @@ export default function VariationSelector({onAddToCart}: VariationSelectorProps)
 
                   <button
                     onClick={() => setSelectedVariation('female')}
-                    className={`p-4 rounded-xl border-2 transition-all duration-500 ${
-                      selectedVariation === 'female' 
-                        ? 'border-accent bg-accent/5 shadow-lg' 
+                    className={`p-4 rounded-xl border-2 transition-all duration-500 ${selectedVariation === 'female'
+                        ? 'border-accent bg-accent/5 shadow-lg'
                         : 'border-transparent hover:border-accent/30 bg-background'
-                    }`}
+                      }`}
                   >
                     <div className="text-center">
                       <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
                         <svg className="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd"/>
+                          <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                         </svg>
                       </div>
                       <h4 className="font-semibold text-primary">{t('fit.female')}</h4>
@@ -229,7 +228,7 @@ export default function VariationSelector({onAddToCart}: VariationSelectorProps)
                 <div className="space-y-2">
                   <div className="w-8 h-8 bg-accent/20 rounded-full flex items-center justify-center mx-auto">
                     <svg className="w-4 h-4 text-accent" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
                   </div>
                   <p className="text-xs text-text-secondary">Secure Payment</p>
@@ -237,7 +236,7 @@ export default function VariationSelector({onAddToCart}: VariationSelectorProps)
                 <div className="space-y-2">
                   <div className="w-8 h-8 bg-accent/20 rounded-full flex items-center justify-center mx-auto">
                     <svg className="w-4 h-4 text-accent" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
                   </div>
                   <p className="text-xs text-text-secondary">30-Day Guarantee</p>
@@ -245,7 +244,7 @@ export default function VariationSelector({onAddToCart}: VariationSelectorProps)
                 <div className="space-y-2">
                   <div className="w-8 h-8 bg-accent/20 rounded-full flex items-center justify-center mx-auto">
                     <svg className="w-4 h-4 text-accent" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
                   </div>
                   <p className="text-xs text-text-secondary">Fast Shipping</p>
