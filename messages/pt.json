@@ -526,5 +526,24 @@
       "description": "Parece que ainda não adicionou nada ao seu carrinho.",
       "return_to_cart": "Voltar ao Carrinho"
     }
+  },
+  "modal": {
+    "title": "Características Premium",
+    "premium_materials": {
+      "title": "Materiais Premium",
+      "description": "Usamos apenas as melhores misturas de algodão e tecidos premium que garantem conforto, durabilidade e uma sensação luxuosa contra a sua pele."
+    },
+    "artistic_design": {
+      "title": "Design Artístico",
+      "description": "O nosso design 'Nossa Senhora da Rosa' é criado por artistas talentosos que combinam simbolismo tradicional com estética contemporânea."
+    },
+    "embroidery": {
+      "title": "Bordado à Mão",
+      "description": "Elementos selecionados são bordados à mão com precisão e cuidado, adicionando textura e profundidade ao design artístico."
+    },
+    "metal_details": {
+      "title": "Detalhes em Metal",
+      "description": "Acentos e emblemas em metal premium são cuidadosamente integrados para realçar a elegância e durabilidade da peça."
+    }
   }
 }

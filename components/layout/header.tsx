@@ -1,11 +1,12 @@
 'use client';
 
-import {useState} from 'react';
-import {useRouter} from 'next/navigation';
+import { useTranslations } from '@/lib/use-translations';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import LanguageToggle from './language-toggle';
 
 export default function Header() {
-  const t = (key: string) => key;
+  const t = useTranslations('navigation');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const router = useRouter();
 
@@ -39,25 +40,25 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <button 
+            <button
               onClick={() => handleNavClick('#products')}
               className="text-text-secondary hover:text-primary transition-colors"
             >
               {t('about')}
             </button>
-            <button 
+            <button
               onClick={() => handleNavClick('#faq')}
               className="text-text-secondary hover:text-primary transition-colors"
             >
               {t('faq')}
             </button>
-            <button 
+            <button
               onClick={() => handleNavClick('#social')}
               className="text-text-secondary hover:text-primary transition-colors"
             >
               {t('contact')}
             </button>
-            <button 
+            <button
               onClick={() => handleNavClick('#purchase')}
               className="text-text-secondary hover:text-primary transition-colors"
             >
@@ -87,25 +88,25 @@ export default function Header() {
         {isMenuOpen && (
           <div className="md:hidden absolute top-full left-0 right-0 bg-background border-b border-border">
             <div className="container py-4 space-y-4">
-              <button 
+              <button
                 onClick={() => handleNavClick('#products')}
                 className="block w-full text-left text-text-secondary hover:text-primary transition-colors"
               >
                 {t('about')}
               </button>
-              <button 
+              <button
                 onClick={() => handleNavClick('#faq')}
                 className="block w-full text-left text-text-secondary hover:text-primary transition-colors"
               >
                 {t('faq')}
               </button>
-              <button 
+              <button
                 onClick={() => handleNavClick('#social')}
                 className="block w-full text-left text-text-secondary hover:text-primary transition-colors"
               >
                 {t('contact')}
               </button>
-              <button 
+              <button
                 onClick={() => handleNavClick('#cart')}
                 className="block w-full text-left text-text-secondary hover:text-primary transition-colors"
               >

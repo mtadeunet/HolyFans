@@ -438,5 +438,24 @@
       "description": "Looks like you haven't added anything to your cart yet.",
       "return_to_cart": "Return to Cart"
     }
+  },
+  "modal": {
+    "title": "Premium Features",
+    "premium_materials": {
+      "title": "Premium Materials",
+      "description": "We use only the finest cotton blends and premium fabrics that ensure comfort, durability, and a luxurious feel against your skin."
+    },
+    "artistic_design": {
+      "title": "Artistic Design",
+      "description": "Our 'Nossa Senhora da Rosa' design is created by talented artists who blend traditional symbolism with contemporary aesthetics."
+    },
+    "embroidery": {
+      "title": "Hand Embroidery",
+      "description": "Selected elements are hand-embroidered with precision and care, adding texture and depth to the artistic design."
+    },
+    "metal_details": {
+      "title": "Metal Details",
+      "description": "Premium metal accents and embellishments are carefully integrated to enhance the piece's elegance and durability."
+    }
   }
 }
