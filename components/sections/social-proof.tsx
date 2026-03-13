@@ -1,51 +1,49 @@
 'use client';
 
 import {useState, useEffect} from 'react';
-import {useTranslations} from 'next-intl';
 
 export default function SocialProof() {
-  const t = useTranslations('social_proof');
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
 
   const testimonials = [
     {
       id: 1,
-      name: t('testimonials.t1.name'),
-      location: t('testimonials.t1.location'),
+      name: 'João Silva',
+      location: 'Lisbon, Portugal',
       rating: 5,
-      text: t('testimonials.t1.text'),
+      text: 'The quality is exceptional! Worth every penny.',
       avatar: 'JD'
     },
     {
       id: 2,
-      name: t('testimonials.t2.name'),
-      location: t('testimonials.t2.location'),
+      name: 'Maria Costa',
+      location: 'Porto, Portugal',
       rating: 5,
-      text: t('testimonials.t2.text'),
+      text: 'Beautiful craftsmanship and fast shipping.',
       avatar: 'MC'
     },
     {
       id: 3,
-      name: t('testimonials.t3.name'),
-      location: t('testimonials.t3.location'),
+      name: 'Ana Santos',
+      location: 'Faro, Portugal',
       rating: 5,
-      text: t('testimonials.t3.text'),
+      text: 'Exceeded my expectations. Highly recommend!',
       avatar: 'AS'
     },
     {
       id: 4,
-      name: t('testimonials.t4.name'),
-      location: t('testimonials.t4.location'),
+      name: 'Rui Fernandes',
+      location: 'Coimbra, Portugal',
       rating: 5,
-      text: t('testimonials.t4.text'),
+      text: 'Perfect gift for my husband. He loves it!',
       avatar: 'RF'
     },
     {
       id: 5,
-      name: t('testimonials.t5.name'),
-      location: t('testimonials.t5.location'),
+      name: 'Lucia Torres',
+      location: 'Madeira, Portugal',
       rating: 5,
-      text: t('testimonials.t5.text'),
+      text: 'Outstanding quality and customer service.',
       avatar: 'LT'
     }
   ];
@@ -53,7 +51,7 @@ export default function SocialProof() {
   const socialStats = [
     {
       number: '10K+',
-      label: t('stats.customers'),
+      label: 'Happy Customers',
       icon: (
         <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
           <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
@@ -62,7 +60,7 @@ export default function SocialProof() {
     },
     {
       number: '4.9/5',
-      label: t('stats.rating'),
+      label: 'Average Rating',
       icon: (
         <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
           <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
@@ -71,7 +69,7 @@ export default function SocialProof() {
     },
     {
       number: '50+',
-      label: t('stats.countries'),
+      label: 'Countries',
       icon: (
         <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
           <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd"/>
@@ -80,7 +78,7 @@ export default function SocialProof() {
     },
     {
       number: '98%',
-      label: t('stats.satisfaction'),
+      label: 'Satisfaction',
       icon: (
         <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
@@ -114,10 +112,10 @@ export default function SocialProof() {
       <div className="container">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif text-primary mb-6">
-            {t('title')}
+            What Our Customers Say
           </h2>
           <p className="text-lg md:text-xl text-text-secondary max-w-3xl mx-auto leading-relaxed">
-            {t('subtitle')}
+            Join thousands of satisfied customers who have discovered the perfect blend of tradition and innovation
           </p>
         </div>
 
@@ -186,7 +184,7 @@ export default function SocialProof() {
         {/* Instagram Gallery */}
         <div className="mb-20">
           <h3 className="text-2xl md:text-3xl font-serif text-primary text-center mb-12">
-            {t('instagram.title')}
+            Follow Us on Instagram
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {Array.from({length: 8}, (_, i) => (
@@ -197,14 +195,14 @@ export default function SocialProof() {
                   </svg>
                 </div>
                 <div className="absolute bottom-2 left-2 text-white text-xs">
-                  @{t('instagram.handle')}
+                  @holyfans
                 </div>
               </div>
             ))}
           </div>
           <div className="text-center mt-8">
             <button className="btn-secondary">
-              {t('instagram.follow_button')}
+              Follow Us
             </button>
           </div>
         </div>
@@ -212,24 +210,24 @@ export default function SocialProof() {
         {/* Press Mentions */}
         <div className="mb-20">
           <h3 className="text-2xl md:text-3xl font-serif text-primary text-center mb-12">
-            {t('press.title')}
+            As Seen In
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               {
-                name: t('press.mention1.name'),
+                name: 'Fashion Weekly',
                 logo: 'P1',
-                quote: t('press.mention1.quote')
+                quote: 'Exceptional quality and design'
               },
               {
-                name: t('press.mention2.name'),
+                name: 'Luxury Magazine',
                 logo: 'P2',
-                quote: t('press.mention2.quote')
+                quote: 'The perfect blend of tradition and modernity'
               },
               {
-                name: t('press.mention3.name'),
+                name: 'Style Journal',
                 logo: 'P3',
-                quote: t('press.mention3.quote')
+                quote: 'Outstanding craftsmanship that stands out'
               }
             ].map((mention, index) => (
               <div key={index} className="bg-surface rounded-xl p-6 text-center border-2 border-transparent hover:border-accent/30 transition-all duration-500">
@@ -247,18 +245,18 @@ export default function SocialProof() {
         <div className="bg-gradient-to-r from-primary to-accent rounded-2xl p-8 md:p-12 text-white">
           <div className="text-center space-y-6">
             <h3 className="text-2xl md:text-3xl font-serif">
-              {t('community.title')}
+              Join Our Community
             </h3>
             <p className="text-lg max-w-3xl mx-auto text-white/90">
-              {t('community.description')}
+              Be part of a growing community of enthusiasts who appreciate quality craftsmanship and timeless design
             </p>
             
             <div className="flex flex-wrap justify-center gap-4">
               <button className="bg-white text-primary px-6 py-3 rounded-lg font-semibold hover:bg-white/90 transition-colors">
-                {t('community.join_button')}
+                Join Now
               </button>
               <button className="bg-transparent border-2 border-white text-white px-6 py-3 rounded-lg font-semibold hover:bg-white hover:text-primary transition-all duration-500">
-                {t('community.hashtag')}
+                #HolyFans
               </button>
             </div>
           </div>
