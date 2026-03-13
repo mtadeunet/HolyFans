@@ -5,11 +5,19 @@
   "main": "index.js",
   "scripts": {
     "dev": "next dev",
+    "dev:4000": "next dev -p 4000",
+    "dev:debug": "NODE_OPTIONS='--inspect' next dev -p 4000",
     "build": "next build",
+    "build:debug": "NODE_OPTIONS='--inspect' next build",
     "build:static": "STATIC_EXPORT=true NODE_ENV=production next build",
     "start": "next start",
     "serve:static": "npx serve out -p 3000",
-    "lint": "next lint"
+    "serve:static:4000": "npx serve out -p 4000",
+    "type-check": "tsc --noEmit",
+    "lint": "next lint",
+    "lint:fix": "next lint --fix",
+    "clean": "rm -rf .next out",
+    "clean:build": "npm run clean && npm run build"
   },
   "keywords": [],
   "author": "",

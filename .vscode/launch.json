@@ -1,0 +1,134 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Development Server",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/.bin/next",
+      "args": ["dev", "--port", "4000"],
+      "cwd": "${workspaceFolder}",
+      "runtimeArgs": ["--inspect"],
+      "env": {
+        "NODE_OPTIONS": "--inspect",
+        "PORT": "4000"
+      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": [
+        "<node_internals>/**",
+        "**/node_modules/**"
+      ],
+      "presentation": {
+        "hidden": false,
+        "group": "Debug",
+        "order": 1
+      },
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**"
+      ]
+    },
+    {
+      "name": "Debug Build Process",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/.bin/next",
+      "args": ["build"],
+      "cwd": "${workspaceFolder}",
+      "runtimeArgs": ["--inspect"],
+      "env": {
+        "NODE_OPTIONS": "--inspect",
+        "NODE_ENV": "production"
+      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": [
+        "<node_internals>/**",
+        "**/node_modules/**"
+      ],
+      "presentation": {
+        "hidden": false,
+        "group": "Debug",
+        "order": 2
+      }
+    },
+    {
+      "name": "Debug TypeScript",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/.bin/tsc",
+      "args": ["--noEmit", "--sourceMap"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "presentation": {
+        "hidden": false,
+        "group": "Debug",
+        "order": 3
+      }
+    },
+    {
+      "name": "Attach to Running Next.js",
+      "type": "node",
+      "request": "attach",
+      "port": 9229,
+      "localRoot": "${workspaceFolder}",
+      "remoteRoot": "${workspaceFolder}",
+      "skipFiles": [
+        "<node_internals>/**",
+        "**/node_modules/**"
+      ],
+      "presentation": {
+        "hidden": false,
+        "group": "Debug",
+        "order": 4
+      }
+    },
+    {
+      "name": "Debug Client-Side (Chrome)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:4000",
+      "webRoot": "${workspaceFolder}",
+      "sourceMaps": true,
+      "sourceMapPathOverrides": {
+        "webpack://_N_E/*": "${webRoot}/*",
+        "webpack:///./*": "${webRoot}/*"
+      },
+      "userDataDir": "${workspaceFolder}/.vscode/chrome-debug",
+      "runtimeExecutable": "google-chrome",
+      "runtimeArgs": [
+        "--remote-debugging-port=9222",
+        "--no-sandbox",
+        "--disable-dev-shm-usage"
+      ],
+      "presentation": {
+        "hidden": false,
+        "group": "Debug",
+        "order": 5
+      }
+    },
+    {
+      "name": "Debug Static Build",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}",
+      "sourceMaps": false,
+      "userDataDir": "${workspaceFolder}/.vscode/chrome-debug-static",
+      "runtimeExecutable": "google-chrome",
+      "runtimeArgs": [
+        "--remote-debugging-port=9223",
+        "--no-sandbox",
+        "--disable-dev-shm-usage"
+      ],
+      "preLaunchTask": "Serve Static Build",
+      "presentation": {
+        "hidden": false,
+        "group": "Debug",
+        "order": 6
+      }
+    }
+  ]
+}
