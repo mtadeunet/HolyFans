@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -30,12 +31,25 @@ export default function Header() {
           {/* Logo */}
           <button
             onClick={() => handleNavClick('/')}
-            className="flex items-center space-x-2"
+            className="flex items-center"
+            aria-label="HolyFans home"
           >
-            <div className="w-8 h-8 bg-accent rounded-full flex items-center justify-center">
-              <span className="text-white font-serif text-sm font-bold">HF</span>
-            </div>
-            <span className="font-serif text-primary text-lg md:text-xl">HolyFans</span>
+            <Image
+              src="/logo/logo-mark.png"
+              alt="HolyFans"
+              width={52}
+              height={40}
+              priority
+              className="md:hidden h-10 w-auto"
+            />
+            <Image
+              src="/logo/logo-full.png"
+              alt="HolyFans"
+              width={200}
+              height={56}
+              priority
+              className="hidden md:block h-10 w-auto"
+            />
           </button>
 
           {/* Desktop Navigation */}
