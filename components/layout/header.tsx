@@ -1,6 +1,6 @@
 'use client';
 
-import { useTranslations } from '@/lib/use-translations';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import LanguageToggle from './language-toggle';

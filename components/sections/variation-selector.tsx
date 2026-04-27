@@ -1,7 +1,7 @@
 'use client';
 
 import { PRODUCT } from '@/lib/constants';
-import { useTranslations } from '@/lib/use-translations';
+import { useTranslations } from 'next-intl';
 import { CartItem } from '@/types/product';
 import { useState } from 'react';
 

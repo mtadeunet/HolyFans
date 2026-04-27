@@ -1,6 +1,6 @@
 'use client';
 
-import { useTranslations } from '@/lib/use-translations';
+import { useTranslations } from 'next-intl';
 
 export default function Footer() {
   const t = useTranslations('footer');

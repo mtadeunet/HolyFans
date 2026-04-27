@@ -1,5 +1,3 @@
-export const dynamic = 'force-static';
-
 import Craftsmanship from '@/components/sections/craftsmanship';
 import FAQ from '@/components/sections/faq';
 import FinalCTA from '@/components/sections/final-cta';

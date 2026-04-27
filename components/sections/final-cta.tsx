@@ -3,7 +3,7 @@
 import PremiumFeaturesModal from '@/components/ui/premium-features-modal';
 import { useCart } from '@/context/cart-context';
 import { PRODUCT } from '@/lib/constants';
-import { useTranslations } from '@/lib/use-translations';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 export default function FinalCTA() {

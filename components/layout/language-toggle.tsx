@@ -1,26 +1,16 @@
 'use client';
 
-import {useRouter, usePathname} from 'next/navigation';
+import { useLocale } from 'next-intl';
+import { useRouter, usePathname } from '@/lib/navigation';
 
 export default function LanguageToggle() {
+  const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
 
-  // Get current locale from pathname
-  const getCurrentLocale = () => {
-    const segments = pathname.split('/').filter(Boolean);
-    const firstSegment = segments[0];
-    return ['pt', 'en'].includes(firstSegment) ? firstSegment : 'pt';
-  };
-
-  const locale = getCurrentLocale();
-
   const toggleLanguage = () => {
     const newLocale = locale === 'pt' ? 'en' : 'pt';
-    
-    // Get the current path without locale and navigate to new locale
-    const pathWithoutLocale = pathname.replace(`/${locale}`, '') || '/';
-    router.push(`/${newLocale}${pathWithoutLocale}`);
+    router.replace(pathname, { locale: newLocale });
   };
 
   return (

@@ -1,6 +1,6 @@
 'use client';
 
-import { useTranslations } from '@/lib/use-translations';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 export default function FAQ() {

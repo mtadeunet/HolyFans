@@ -1,7 +1,7 @@
 'use client';
 
 import { useCart } from '@/context/cart-context';
-import { useTranslations } from '@/lib/use-translations';
+import { useTranslations } from 'next-intl';
 import { formatPrice, validateEmail, validatePhone } from '@/lib/utils';
 import { useState } from 'react';
 

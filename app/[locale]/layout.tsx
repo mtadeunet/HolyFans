@@ -1,24 +1,21 @@
-import {SITE_CONFIG} from '@/lib/constants';
-import {CartProvider} from '@/context/cart-context';
+import { NextIntlClientProvider } from 'next-intl';
+import { getMessages } from 'next-intl/server';
+import { SITE_CONFIG } from '@/lib/constants';
+import { CartProvider } from '@/context/cart-context';
 import Header from '@/components/layout/header';
 import Footer from '@/components/layout/footer';
 import {Analytics} from '@vercel/analytics/next';
 import './globals.css';
 
-export const dynamic = 'force-static';
-
-export function generateStaticParams() {
-  return [{locale: 'en'}, {locale: 'pt'}];
-}
-
 export default async function LocaleLayout({
   children,
-  params
+  params,
 }: {
   children: React.ReactNode;
-  params: Promise<{locale: string}>;
+  params: Promise<{ locale: string }>;
 }) {
-  const {locale} = await params;
+  const { locale } = await params;
+  const messages = await getMessages();
 
   return (
     <html lang={locale}>
@@ -28,15 +25,15 @@ export default async function LocaleLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1" key="viewport" />
       </head>
       <body>
-        <CartProvider>
-          <div className="min-h-screen flex flex-col">
-            <Header />
-            <main className="flex-1">
-              {children}
-            </main>
-            <Footer />
-          </div>
-        </CartProvider>
+        <NextIntlClientProvider messages={messages}>
+          <CartProvider>
+            <div className="min-h-screen flex flex-col">
+              <Header />
+              <main className="flex-1">{children}</main>
+              <Footer />
+            </div>
+          </CartProvider>
+        </NextIntlClientProvider>
         <Analytics />
       </body>
     </html>

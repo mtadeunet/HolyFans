@@ -1,6 +1,6 @@
 'use client';
 
-import { useTranslations } from '@/lib/use-translations';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 interface PremiumFeaturesModalProps {
