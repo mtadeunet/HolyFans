@@ -81,13 +81,13 @@ export default function Header() {
               {t('faq')}
             </button>
             <button
-              onClick={() => handleNavClick('#social')}
+              onClick={() => handleNavClick('#social-proof')}
               className="text-text-secondary hover:text-primary transition-colors"
             >
               {t('contact')}
             </button>
             <button
-              onClick={() => handleNavClick('#purchase')}
+              onClick={() => handleNavClick('/checkout')}
               className="text-text-secondary hover:text-primary transition-colors"
             >
               {t('cart')}
@@ -115,28 +115,28 @@ export default function Header() {
         {/* Mobile Menu */}
         {isMenuOpen && (
           <div className="md:hidden absolute top-full left-0 right-0 bg-background border-b border-border">
-            <div className="container py-4 space-y-4">
+            <div className="container py-2">
               <button
                 onClick={() => handleNavClick('#products')}
-                className="block w-full text-left text-text-secondary hover:text-primary transition-colors"
+                className="block w-full text-left text-text-secondary hover:text-primary transition-colors py-3 min-h-12 text-base border-b border-border/40"
               >
                 {t('about')}
               </button>
               <button
                 onClick={() => handleNavClick('#faq')}
-                className="block w-full text-left text-text-secondary hover:text-primary transition-colors"
+                className="block w-full text-left text-text-secondary hover:text-primary transition-colors py-3 min-h-12 text-base border-b border-border/40"
               >
                 {t('faq')}
               </button>
               <button
-                onClick={() => handleNavClick('#social')}
-                className="block w-full text-left text-text-secondary hover:text-primary transition-colors"
+                onClick={() => handleNavClick('#social-proof')}
+                className="block w-full text-left text-text-secondary hover:text-primary transition-colors py-3 min-h-12 text-base border-b border-border/40"
               >
                 {t('contact')}
               </button>
               <button
-                onClick={() => handleNavClick('#cart')}
-                className="block w-full text-left text-text-secondary hover:text-primary transition-colors"
+                onClick={() => handleNavClick('/checkout')}
+                className="block w-full text-left text-text-secondary hover:text-primary transition-colors py-3 min-h-12 text-base"
               >
                 {t('cart')}
               </button>

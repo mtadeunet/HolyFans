@@ -123,11 +123,11 @@ export default function Craftsmanship() {
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.map((feature) => (
+            {features.map((feature, index) => (
               <button
                 key={feature.id}
                 onClick={() => setActiveFeature(feature.id)}
-                className={`p-6 rounded-xl border-2 transition-all duration-500 text-left ${activeFeature === feature.id
+                className={`p-6 rounded-xl border-2 transition-all duration-500 text-left ${index === 3 ? 'hidden md:block' : ''} ${activeFeature === feature.id
                     ? 'border-accent bg-accent/5 shadow-lg'
                     : 'border-transparent hover:border-accent/30 bg-background'
                   }`}
@@ -163,8 +163,8 @@ export default function Craftsmanship() {
           </div>
         </div>
 
-        {/* Process Timeline */}
-        <div className="mt-20">
+        {/* Process Timeline (desktop only — trimmed on mobile to keep the page compact) */}
+        <div className="hidden md:block mt-20">
           <h3 className="text-2xl md:text-3xl font-serif text-primary text-center mb-12">
             {t('process.title')}
           </h3>
