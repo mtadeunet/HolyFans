@@ -4,7 +4,7 @@ import { SITE_CONFIG } from '@/lib/constants';
 import { CartProvider } from '@/context/cart-context';
 import Header from '@/components/layout/header';
 import Footer from '@/components/layout/footer';
-import {Analytics} from '@vercel/analytics/next';
+import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 
 export default async function LocaleLayout({
