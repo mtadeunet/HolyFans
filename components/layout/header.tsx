@@ -3,13 +3,21 @@
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import LanguageToggle from './language-toggle';
 
 export default function Header() {
   const t = useTranslations('navigation');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   const handleNavClick = (href: string) => {
     if (href.startsWith('#')) {
@@ -27,28 +35,34 @@ export default function Header() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
       <div className="container">
-        <nav className="flex items-center justify-between h-16 md:h-20">
+        <nav className="relative flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
           <button
             onClick={() => handleNavClick('/')}
-            className="flex items-center"
+            className={`flex items-center md:relative md:overflow-visible md:transition-transform md:duration-300 md:ease-out ${
+              scrolled ? 'md:self-center md:translate-y-0' : 'md:self-end md:translate-y-1/2'
+            }`}
             aria-label="HolyFans home"
           >
             <Image
               src="/logo/logo-mark.png"
               alt="HolyFans"
-              width={52}
-              height={40}
+              width={3072}
+              height={3072}
               priority
+              quality={95}
               className="md:hidden h-10 w-auto"
             />
             <Image
               src="/logo/logo-full.png"
               alt="HolyFans"
-              width={200}
-              height={56}
+              width={806}
+              height={280}
               priority
-              className="hidden md:block h-10 w-auto"
+              quality={95}
+              className={`hidden md:block w-auto transition-all duration-300 ease-out ${
+                scrolled ? 'md:h-10' : 'md:h-40'
+              }`}
             />
           </button>
 
