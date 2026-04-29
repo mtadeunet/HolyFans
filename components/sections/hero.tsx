@@ -5,7 +5,11 @@ import { PRODUCT } from '@/lib/constants';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
-export default function Hero() {
+interface HeroProps {
+  showPremiumFeaturesModal?: boolean;
+}
+
+export default function Hero({ showPremiumFeaturesModal = true }: HeroProps) {
   const t = useTranslations('hero');
   const [isScrolled, setIsScrolled] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -48,12 +52,14 @@ export default function Hero() {
               <button className="btn-primary text-lg px-8 py-4 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-200">
                 {t('cta')}
               </button>
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="btn-secondary text-lg px-8 py-4"
-              >
-                {t('learn_more')}
-              </button>
+              {showPremiumFeaturesModal && (
+                <button
+                  onClick={() => setIsModalOpen(true)}
+                  className="btn-secondary text-lg px-8 py-4"
+                >
+                  {t('learn_more')}
+                </button>
+              )}
             </div>
 
             {/* Trust Indicators */}
@@ -138,10 +144,12 @@ export default function Hero() {
       )}
 
       {/* Premium Features Modal */}
-      <PremiumFeaturesModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-      />
+      {showPremiumFeaturesModal && (
+        <PremiumFeaturesModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+        />
+      )}
     </section>
   );
 }
