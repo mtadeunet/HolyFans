@@ -86,7 +86,37 @@ The project is configured with:
 - TypeScript strict mode
 - Tailwind CSS optimization
 
-## 📱 Browser Support
+## � Admin & Site Toggles
+
+A password-protected `/admin` page lets you enable/disable homepage sections
+and global chrome (header, footer, mobile sticky CTA, premium features modal)
+without redeploying. State is stored in **Vercel Edge Config**.
+
+### Setup
+
+1. In the Vercel dashboard, create an **Edge Config** store and connect it to
+   this project. Vercel will inject the `EDGE_CONFIG` connection string
+   automatically.
+2. Create a personal/team API token with Edge Config write scope.
+3. Set the following env vars on the project:
+
+   | Variable                 | Purpose                                                       |
+   | ------------------------ | ------------------------------------------------------------- |
+   | `EDGE_CONFIG`            | Auto-injected connection string (read access).                |
+   | `VERCEL_EDGE_CONFIG_ID`  | Bare id (`ecfg_...`) used for REST writes.                    |
+   | `VERCEL_API_TOKEN`       | Token used by the admin UI to PATCH the Edge Config.          |
+   | `VERCEL_TEAM_ID`         | Only required when the Edge Config lives under a team.        |
+   | `ADMIN_PASSWORD`         | Password for `/admin` (basic auth, any username is accepted). |
+
+4. Visit `/admin`, authenticate, toggle sections, Save.
+
+5. For `/qrcoderedirect`, store the destination URL at
+   `siteConfig.sections.qrcoderedirect` in the Edge Config JSON payload.
+
+Missing/invalid config falls back to all sections enabled. The admin route is
+excluded from indexing and gated by middleware basic auth.
+
+## �📱 Browser Support
 
 - Chrome (latest)
 - Firefox (latest)

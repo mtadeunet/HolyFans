@@ -1,9 +1,11 @@
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { SITE_CONFIG } from '@/lib/constants';
+import { getSiteConfig } from '@/lib/site-config';
 import { CartProvider } from '@/context/cart-context';
 import Header from '@/components/layout/header';
 import Footer from '@/components/layout/footer';
+import MobileStickyCta from '@/components/layout/mobile-sticky-cta';
 import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 
@@ -15,7 +17,10 @@ export default async function LocaleLayout({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const messages = await getMessages();
+  const [messages, siteConfig] = await Promise.all([
+    getMessages(),
+    getSiteConfig(),
+  ]);
 
   return (
     <html lang={locale}>
@@ -28,10 +33,11 @@ export default async function LocaleLayout({
         <NextIntlClientProvider messages={messages}>
           <CartProvider>
             <div className="min-h-screen flex flex-col">
-              <Header />
+              {siteConfig.chrome.header && <Header />}
               <main className="flex-1">{children}</main>
-              <Footer />
+              {siteConfig.chrome.footer && <Footer />}
             </div>
+            {siteConfig.chrome.mobileStickyCta && <MobileStickyCta />}
           </CartProvider>
         </NextIntlClientProvider>
         <Analytics />

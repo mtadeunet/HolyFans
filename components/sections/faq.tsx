@@ -119,8 +119,8 @@ export default function FAQ() {
           </div>
         </div>
 
-        {/* Category Tabs */}
-        <div className="flex flex-wrap justify-center gap-4 mb-12">
+        {/* Category Tabs (desktop only) */}
+        <div className="hidden md:flex flex-wrap justify-center gap-4 mb-12">
           {Object.entries(categories).map(([key, category]) => (
             <button
               key={key}
@@ -139,15 +139,53 @@ export default function FAQ() {
           ))}
         </div>
 
-        {/* Active Category Description */}
-        <div className="text-center mb-12">
+        {/* Active Category Description (desktop only) */}
+        <div className="hidden md:block text-center mb-12">
           <p className="text-text-secondary max-w-2xl mx-auto">
             {categories[expandedCategory as keyof typeof categories].description}
           </p>
         </div>
 
-        {/* FAQ Items */}
-        <div className="max-w-4xl mx-auto space-y-4">
+        {/* FAQ Items — mobile: flat across all categories */}
+        <div className="md:hidden max-w-4xl mx-auto space-y-3">
+          {Object.entries(categories).flatMap(([key, category]) =>
+            category.questions.map((item) => ({ ...item, categoryKey: key, categoryTitle: category.title }))
+          ).map((item) => (
+            <div
+              key={item.id}
+              className="bg-background rounded-xl overflow-hidden border border-border/40"
+            >
+              <button
+                onClick={() => setExpandedQuestion(
+                  expandedQuestion === item.id ? null : item.id
+                )}
+                className="w-full p-4 text-left flex items-start space-x-3 min-h-12"
+              >
+                <div className="flex-1">
+                  <p className="text-xs text-accent uppercase tracking-wide mb-1">{item.categoryTitle}</p>
+                  <h4 className="text-base font-semibold text-primary">
+                    {item.question}
+                  </h4>
+                  <div className={`transition-all duration-500 overflow-hidden ${expandedQuestion === item.id ? 'max-h-96 mt-2' : 'max-h-0'
+                    }`}>
+                    <p className="text-sm text-text-secondary leading-relaxed">
+                      {item.answer}
+                    </p>
+                  </div>
+                </div>
+                <div className={`transform transition-transform duration-300 mt-1 ${expandedQuestion === item.id ? 'rotate-180' : ''
+                  }`}>
+                  <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </button>
+            </div>
+          ))}
+        </div>
+
+        {/* FAQ Items — desktop: filtered by active category */}
+        <div className="hidden md:block max-w-4xl mx-auto space-y-4">
           {categories[expandedCategory as keyof typeof categories].questions.map((item) => (
             <div
               key={item.id}
