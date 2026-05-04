@@ -42,12 +42,26 @@ function checkBasicAuth(header: string | null): boolean {
 
 export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const normalizedPath = pathname.endsWith('/') && pathname !== '/'
+    ? pathname.slice(0, -1)
+    : pathname;
 
-  if (pathname === '/admin' || pathname.startsWith('/admin/')) {
+  if (normalizedPath === '/admin' || normalizedPath.startsWith('/admin/')) {
     if (!checkBasicAuth(request.headers.get('authorization'))) {
       return unauthorizedResponse();
     }
     return NextResponse.next();
+  }
+
+  if (normalizedPath === '/qrcoderedirect') {
+    return NextResponse.next();
+  }
+
+  const localeRedirectRegex = new RegExp(
+    `^/(?:${locales.join('|')})/qrcoderedirect$`
+  );
+  if (localeRedirectRegex.test(normalizedPath)) {
+    return NextResponse.redirect(new URL('/qrcoderedirect', request.url));
   }
 
   return intlMiddleware(request);

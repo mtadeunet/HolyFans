@@ -16,8 +16,12 @@ export type ChromeKey =
   | 'mobileStickyCta'
   | 'premiumFeaturesModal';
 
+export type SiteSections = Record<SectionKey, boolean> & {
+  qrcoderedirect: string;
+};
+
 export type SiteConfig = {
-  sections: Record<SectionKey, boolean>;
+  sections: SiteSections;
   chrome: Record<ChromeKey, boolean>;
 };
 
@@ -29,6 +33,7 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
     craftsmanship: true,
     faq: true,
     finalCta: true,
+    qrcoderedirect: '',
   },
   chrome: {
     header: true,
@@ -69,6 +74,12 @@ export function normalizeSiteConfig(raw: unknown): SiteConfig {
     for (const key of SECTION_KEYS) {
       const value = (source.sections as Record<string, unknown>)[key];
       if (typeof value === 'boolean') out.sections[key] = value;
+    }
+    const qrcoderedirect = (source.sections as Record<string, unknown>)[
+      'qrcoderedirect'
+    ];
+    if (typeof qrcoderedirect === 'string') {
+      out.sections.qrcoderedirect = qrcoderedirect;
     }
   }
   if (source.chrome && typeof source.chrome === 'object') {

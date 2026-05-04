@@ -23,6 +23,10 @@ export async function saveSiteConfig(formData: FormData): Promise<SaveResult> {
     next.chrome[key] = formData.get(`chrome.${key}`) === 'on';
   }
 
+  const redirectUrl = formData.get('sections.qrcoderedirect');
+  next.sections.qrcoderedirect =
+    typeof redirectUrl === 'string' ? redirectUrl.trim() : '';
+
   try {
     await writeSiteConfig(next);
   } catch (error) {

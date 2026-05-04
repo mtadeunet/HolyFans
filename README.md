@@ -110,6 +110,9 @@ without redeploying. State is stored in **Vercel Edge Config**.
 
 4. Visit `/admin`, authenticate, toggle sections, Save.
 
+5. For `/qrcoderedirect`, store the destination URL at
+   `siteConfig.sections.qrcoderedirect` in the Edge Config JSON payload.
+
 Missing/invalid config falls back to all sections enabled. The admin route is
 excluded from indexing and gated by middleware basic auth.
 

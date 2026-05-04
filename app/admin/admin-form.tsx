@@ -49,6 +49,12 @@ export default function AdminForm({ initial }: { initial: SiteConfig }) {
       chrome: { ...prev.chrome, [key]: !prev.chrome[key] },
     }));
 
+  const updateQrCodeRedirect = (value: string) =>
+    setConfig((prev) => ({
+      ...prev,
+      sections: { ...prev.sections, qrcoderedirect: value },
+    }));
+
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData();
@@ -58,6 +64,7 @@ export default function AdminForm({ initial }: { initial: SiteConfig }) {
     for (const key of CHROME_KEYS) {
       if (config.chrome[key]) formData.set(`chrome.${key}`, 'on');
     }
+    formData.set('sections.qrcoderedirect', config.sections.qrcoderedirect);
     setStatus(null);
     startTransition(async () => {
       const result = await saveSiteConfig(formData);
@@ -92,6 +99,24 @@ export default function AdminForm({ initial }: { initial: SiteConfig }) {
             </li>
           ))}
         </ul>
+
+        <div className="mt-4 rounded-lg border border-border bg-background px-4 py-3">
+          <label className="block">
+            <span className="mb-1 block text-sm font-medium text-primary">
+              QR Redirect URL
+            </span>
+            <input
+              type="url"
+              value={config.sections.qrcoderedirect}
+              onChange={(event) => updateQrCodeRedirect(event.target.value)}
+              placeholder="https://www.instagram.com/holyfans.store/"
+              className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-primary outline-none ring-accent/30 transition focus:border-accent focus:ring"
+            />
+            <span className="mt-1 block text-xs text-text-secondary">
+              Used by the <code>/qrcoderedirect</code> endpoint.
+            </span>
+          </label>
+        </div>
       </section>
 
       <section className="rounded-xl border border-border bg-surface p-6">
