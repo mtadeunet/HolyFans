@@ -2,18 +2,22 @@
   "name": "holyfans",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
   "scripts": {
-    "dev": "next dev",
-    "dev:debug": "NODE_OPTIONS='--inspect' next dev",
+    "dev": "next dev --webpack",
+    "dev:debug": "NODE_OPTIONS=--inspect next dev --webpack",
     "build": "next build",
     "build:debug": "NODE_OPTIONS='--inspect' next build",
     "start": "next start",
     "type-check": "tsc --noEmit",
-    "lint": "next lint",
-    "lint:fix": "next lint --fix",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
     "clean": "rm -rf .next out",
-    "clean:build": "npm run clean && npm run build"
+    "clean:build": "npm run clean && npm run build",
+    "dev:turbopack": "next dev"
   },
   "keywords": [],
   "author": "",
@@ -26,7 +30,7 @@
     "@vercel/edge-config": "^1.4.3",
     "autoprefixer": "^10.4.27",
     "clsx": "^2.1.1",
-    "next": "^16.1.6",
+    "next": "16.1.6",
     "next-intl": "^4.9.1",
     "postcss": "^8.5.8",
     "react": "^19.2.4",
@@ -34,5 +38,14 @@
     "tailwind-merge": "^2.5.4",
     "tailwindcss": "^3.4.19",
     "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "16.1.6",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.9.10",
+    "typescript-eslint": "8.72.0",
+    "vitest": "^5.0.5"
   }
 }

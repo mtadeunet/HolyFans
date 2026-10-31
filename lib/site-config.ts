@@ -3,18 +3,10 @@ import { get } from '@vercel/edge-config';
 export const SITE_CONFIG_KEY = 'siteConfig';
 
 export type SectionKey =
-  | 'hero'
-  | 'socialProof'
-  | 'products'
-  | 'craftsmanship'
-  | 'faq'
-  | 'finalCta';
+  'hero' | 'socialProof' | 'products' | 'craftsmanship' | 'faq' | 'finalCta';
 
 export type ChromeKey =
-  | 'header'
-  | 'footer'
-  | 'mobileStickyCta'
-  | 'premiumFeaturesModal';
+  'header' | 'footer' | 'mobileStickyCta' | 'premiumFeaturesModal';
 
 export type SiteSections = Record<SectionKey, boolean> & {
   qrcoderedirect: string;

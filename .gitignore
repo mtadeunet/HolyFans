@@ -8,8 +8,12 @@ node_modules/
 yarn.lock
 pnpm-lock.yaml
 
-# Testing
+# Testing — keep in sync with the ignore lists in .prettierignore,
+# .gitleaks.toml and eslint.config.mjs (all cover the same generated dirs).
 coverage/
+test-results/
+playwright-report/
+blob-report/
 
 # Next.js
 .next/
@@ -22,15 +26,24 @@ dist/
 # Misc
 .DS_Store
 *.pem
+.venv/
+
+# Generated QR artifact — encodes the real store URL; never track it
+# (identifier hygiene, ADR 00-007). Regenerate via scripts/generate_qr.sh.
+qr_holyfans.svg
 
 # Debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Local env files
-.env*.local
+# Env files — all real env files stay untracked (secrets and the public
+# base URL live in the Hosting Platform's env config); only the template
+# .env.example is tracked. Implements ADR 00-007: "secrets exist only as
+# environment variables ... never in tracked files".
 .env
+.env.*
+!.env.example
 
 # Vercel
 .vercel
@@ -38,3 +51,9 @@ yarn-error.log*
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+# ADR review reports — generated audit output, not source
+docs/adr-reports/
+
+# Local tooling scripts — QR generator, IDE launcher; not repo source
+scripts/

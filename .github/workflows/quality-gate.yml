@@ -1,0 +1,61 @@
+# Implements ADR 00-007: Quality Tooling and CI - "a hosted
+# continuous-integration gate (GitHub Actions) verifies the complete quality
+# baseline — install, lint, format check, typecheck, unit tests, production
+# build — on every change; merges are gated by these automated checks. CI
+# never deploys: previews and production deploys are owned by the Hosting
+# Platform's Git integration (ADR 00-002)."
+#
+# This workflow is the merge gate only; it contains no deploy job.
+name: Quality Gate
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  quality-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Node (LTS)
+        uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Format check
+        run: npm run format:check
+
+      - name: Typecheck
+        run: npm run type-check
+
+      - name: Unit tests
+        run: npm run test
+
+      - name: Secret/identifier scan
+        # Implements ADR 00-007: "secrets exist only as environment
+        # variables ... never in tracked files; tracked files carry no
+        # real-world identifiers, supported by review and secret/identifier
+        # scanning." gitleaks scans the tracked working tree and fails the
+        # gate on any detected secret. Version pinned for reproducibility.
+        run: |
+          GITLEAKS_VERSION="8.30.1"
+          curl -sSfL \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            -o /tmp/gitleaks.tar.gz
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+          /tmp/gitleaks dir --redact --verbose .
+
+      - name: Production build
+        run: npm run build

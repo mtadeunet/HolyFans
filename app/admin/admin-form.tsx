@@ -105,11 +105,14 @@ export default function AdminForm({ initial }: { initial: SiteConfig }) {
             <span className="mb-1 block text-sm font-medium text-primary">
               QR Redirect URL
             </span>
+            {/* Implements ADR 00-007: Quality Tooling and CI - "tracked
+                files carry no real-world identifiers". Generic placeholder;
+                real destinations are operator-supplied via Site Config. */}
             <input
               type="url"
               value={config.sections.qrcoderedirect}
               onChange={(event) => updateQrCodeRedirect(event.target.value)}
-              placeholder="https://www.instagram.com/holyfans.store/"
+              placeholder="https://example.com/your-destination"
               className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-primary outline-none ring-accent/30 transition focus:border-accent focus:ring"
             />
             <span className="mt-1 block text-xs text-text-secondary">

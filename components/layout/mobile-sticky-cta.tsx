@@ -23,14 +23,19 @@ export default function MobileStickyCta() {
 
   useEffect(() => {
     const target = document.querySelector('#products');
+    // `productsExists` starts false; when #products is absent there is
+    // nothing to observe and the bar simply never renders.
     if (!target) {
-      setProductsExists(false);
       return;
     }
-    setProductsExists(true);
 
     const observer = new IntersectionObserver(
-      ([entry]) => setProductsInView(entry.intersectionRatio > 0.05),
+      ([entry]) => {
+        // Mark existence from the observer callback (async — not a
+        // synchronous setState in the effect body).
+        setProductsExists(true);
+        setProductsInView(entry.intersectionRatio > 0.05);
+      },
       { threshold: [0, 0.05, 0.5, 1] }
     );
     observer.observe(target);
@@ -50,9 +55,7 @@ export default function MobileStickyCta() {
   const hidden = productsInView || !scrolledPastTop;
 
   const handleClick = () => {
-    document
-      .querySelector('#products')
-      ?.scrollIntoView({ behavior: 'smooth' });
+    document.querySelector('#products')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (

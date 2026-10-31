@@ -1,0 +1,22 @@
+# Generated / vendored output — never formatted. Keep in sync with the
+# ignore lists in .gitignore, .gitleaks.toml and eslint.config.mjs (all
+# cover the same generated dirs).
+node_modules
+.next
+out
+coverage
+playwright-report
+test-results
+blob-report
+.venv
+next-env.d.ts
+package-lock.json
+
+# Binary and machine-generated assets.
+*.svg
+assets
+public
+
+# Specification corpus — architecture documents, not code; kept free of
+# style churn so the governing docs stay authoritative as written.
+docs

@@ -50,12 +50,6 @@
     },
     "colors": {
       "white": "White"
-    },
-    "features": {
-      "premium_materials": "Premium Materials",
-      "handcrafted": "Handcrafted Production",
-      "limited_edition": "Limited Edition",
-      "ethical_production": "Ethical Production"
     }
   },
   "craftsmanship": {
@@ -427,28 +421,6 @@
     "copyright": " 2024 HolyFans. All rights reserved.",
     "privacy": "Privacy",
     "terms": "Terms and Conditions"
-  },
-  "checkout": {
-    "title": "Checkout",
-    "shipping_info": "Shipping Information",
-    "email": "Email",
-    "name": "Full Name",
-    "address": "Address",
-    "city": "City",
-    "postal_code": "Postal Code",
-    "country": "Country",
-    "order_summary": "Order Summary",
-    "quantity": "Quantity",
-    "price": "Price",
-    "total": "Total",
-    "place_order": "Place Order",
-    "thank_you": "Thank you for your order!",
-    "thank_you_message": "We'll contact you soon with shipping details.",
-    "empty": {
-      "title": "Your cart is empty",
-      "description": "Looks like you haven't added anything to your cart yet.",
-      "return_to_cart": "Return to Cart"
-    }
   },
   "modal": {
     "title": "Premium Features",

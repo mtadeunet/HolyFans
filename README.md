@@ -55,24 +55,28 @@ npm start
 ## 🎯 Key Features
 
 ### Shopping Cart
+
 - Add/remove items
 - Quantity management
 - Price calculation
 - Empty state handling
 
 ### Checkout Process
+
 - Multi-step checkout flow
 - Form validation
 - Payment integration ready
 - Order confirmation
 
 ### Internationalization
+
 - Complete Portuguese translations
 - Complete English translations
 - Locale-based routing
 - Language toggle functionality
 
 ### Responsive Design
+
 - Mobile-first approach
 - Tablet and desktop optimizations
 - Touch-friendly interactions
@@ -80,6 +84,7 @@ npm start
 ## 🔧 Configuration
 
 The project is configured with:
+
 - Portuguese as default locale
 - Automatic locale detection
 - Cache control headers
@@ -100,13 +105,13 @@ without redeploying. State is stored in **Vercel Edge Config**.
 2. Create a personal/team API token with Edge Config write scope.
 3. Set the following env vars on the project:
 
-   | Variable                 | Purpose                                                       |
-   | ------------------------ | ------------------------------------------------------------- |
-   | `EDGE_CONFIG`            | Auto-injected connection string (read access).                |
-   | `VERCEL_EDGE_CONFIG_ID`  | Bare id (`ecfg_...`) used for REST writes.                    |
-   | `VERCEL_API_TOKEN`       | Token used by the admin UI to PATCH the Edge Config.          |
-   | `VERCEL_TEAM_ID`         | Only required when the Edge Config lives under a team.        |
-   | `ADMIN_PASSWORD`         | Password for `/admin` (basic auth, any username is accepted). |
+   | Variable                | Purpose                                                       |
+   | ----------------------- | ------------------------------------------------------------- |
+   | `EDGE_CONFIG`           | Auto-injected connection string (read access).                |
+   | `VERCEL_EDGE_CONFIG_ID` | Bare id (`ecfg_...`) used for REST writes.                    |
+   | `VERCEL_API_TOKEN`      | Token used by the admin UI to PATCH the Edge Config.          |
+   | `VERCEL_TEAM_ID`        | Only required when the Edge Config lives under a team.        |
+   | `ADMIN_PASSWORD`        | Password for `/admin` (basic auth, any username is accepted). |
 
 4. Visit `/admin`, authenticate, toggle sections, Save.
 

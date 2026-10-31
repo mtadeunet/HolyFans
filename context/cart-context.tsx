@@ -1,7 +1,12 @@
 'use client';
 
-import React, {createContext, useContext, useState, ReactNode} from 'react';
-import {CartItem, CartContextType} from '@/types/product';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
+import {
+  CartItem,
+  CartContextType,
+  Product,
+  ProductVariant,
+} from '@/types/product';
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
@@ -17,35 +22,37 @@ interface CartProviderProps {
   children: ReactNode;
 }
 
-export function CartProvider({children}: CartProviderProps) {
+export function CartProvider({ children }: CartProviderProps) {
   const [items, setItems] = useState<CartItem[]>([]);
 
-  const addItem = (product: any, variant: any) => {
+  const addItem = (product: Product, variant: ProductVariant) => {
     const newItem: CartItem = {
       product,
       variant,
-      quantity: 1
+      quantity: 1,
     };
-    
-    setItems(prevItems => {
+
+    setItems((prevItems) => {
       const existingItem = prevItems.find(
-        item => item.variant.id === variant.id
+        (item) => item.variant.id === variant.id
       );
-      
+
       if (existingItem) {
-        return prevItems.map(item =>
+        return prevItems.map((item) =>
           item.variant.id === variant.id
             ? { ...item, quantity: item.quantity + 1 }
             : item
         );
       }
-      
+
       return [...prevItems, newItem];
     });
   };
 
   const removeItem = (productId: string) => {
-    setItems(prevItems => prevItems.filter(item => item.product.id !== productId));
+    setItems((prevItems) =>
+      prevItems.filter((item) => item.product.id !== productId)
+    );
   };
 
   const updateQuantity = (productId: string, quantity: number) => {
@@ -53,12 +60,10 @@ export function CartProvider({children}: CartProviderProps) {
       removeItem(productId);
       return;
     }
-    
-    setItems(prevItems =>
-      prevItems.map(item =>
-        item.product.id === productId
-          ? { ...item, quantity }
-          : item
+
+    setItems((prevItems) =>
+      prevItems.map((item) =>
+        item.product.id === productId ? { ...item, quantity } : item
       )
     );
   };
@@ -68,7 +73,10 @@ export function CartProvider({children}: CartProviderProps) {
   };
 
   const getTotal = () => {
-    return items.reduce((total, item) => total + (item.product.price * item.quantity), 0);
+    return items.reduce(
+      (total, item) => total + item.product.price * item.quantity,
+      0
+    );
   };
 
   const getItemCount = () => {
@@ -82,12 +90,8 @@ export function CartProvider({children}: CartProviderProps) {
     updateQuantity,
     clearCart,
     getTotal,
-    getItemCount
+    getItemCount,
   };
 
-  return (
-    <CartContext.Provider value={value}>
-      {children}
-    </CartContext.Provider>
-  );
+  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

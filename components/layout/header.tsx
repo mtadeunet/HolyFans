@@ -6,7 +6,20 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import LanguageToggle from './language-toggle';
 
-export default function Header() {
+interface HeaderProps {
+  /**
+   * Implements ADR 00-004: Commerce and Checkout - "Checkout is delegated to
+   * the PSP's Hosted Checkout."
+   *
+   * Interim purchase-surface gate (plan M0): while the checkout submit is
+   * simulated, `false` suppresses every navigation CTA that links to the
+   * checkout page. Passed from the server layout, which evaluates the
+   * fail-closed `PURCHASE_SURFACE_ENABLED` flag per request.
+   */
+  purchaseSurfaceEnabled: boolean;
+}
+
+export default function Header({ purchaseSurfaceEnabled }: HeaderProps) {
   const t = useTranslations('navigation');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -40,7 +53,9 @@ export default function Header() {
           <button
             onClick={() => handleNavClick('/')}
             className={`flex items-center md:relative md:overflow-visible md:transition-transform md:duration-300 md:ease-out ${
-              scrolled ? 'md:self-center md:translate-y-0' : 'md:self-end md:translate-y-1/2'
+              scrolled
+                ? 'md:self-center md:translate-y-0'
+                : 'md:self-end md:translate-y-1/2'
             }`}
             aria-label="HolyFans home"
           >
@@ -86,12 +101,18 @@ export default function Header() {
             >
               {t('contact')}
             </button>
-            <button
-              onClick={() => handleNavClick('/checkout')}
-              className="text-text-secondary hover:text-primary transition-colors"
-            >
-              {t('cart')}
-            </button>
+            {/* Purchase-surface gate (ADR 00-004 / plan M0): the cart nav CTA
+                to /checkout only exists while PURCHASE_SURFACE_ENABLED is
+                'true'; suppressed entirely otherwise. */}
+            {purchaseSurfaceEnabled && (
+              <button
+                data-testid="nav-cart"
+                onClick={() => handleNavClick('/checkout')}
+                className="text-text-secondary hover:text-primary transition-colors"
+              >
+                {t('cart')}
+              </button>
+            )}
             <LanguageToggle />
           </div>
 
@@ -104,9 +125,15 @@ export default function Header() {
               aria-label="Toggle menu"
             >
               <div className="space-y-1">
-                <div className={`w-6 h-0.5 bg-current transition-all ${isMenuOpen ? 'rotate-45 translate-y-1.5' : ''}`}></div>
-                <div className={`w-6 h-0.5 bg-current transition-all ${isMenuOpen ? 'opacity-0' : ''}`}></div>
-                <div className={`w-6 h-0.5 bg-current transition-all ${isMenuOpen ? '-rotate-45 -translate-y-1.5' : ''}`}></div>
+                <div
+                  className={`w-6 h-0.5 bg-current transition-all ${isMenuOpen ? 'rotate-45 translate-y-1.5' : ''}`}
+                ></div>
+                <div
+                  className={`w-6 h-0.5 bg-current transition-all ${isMenuOpen ? 'opacity-0' : ''}`}
+                ></div>
+                <div
+                  className={`w-6 h-0.5 bg-current transition-all ${isMenuOpen ? '-rotate-45 -translate-y-1.5' : ''}`}
+                ></div>
               </div>
             </button>
           </div>
@@ -134,12 +161,17 @@ export default function Header() {
               >
                 {t('contact')}
               </button>
-              <button
-                onClick={() => handleNavClick('/checkout')}
-                className="block w-full text-left text-text-secondary hover:text-primary transition-colors py-3 min-h-12 text-base"
-              >
-                {t('cart')}
-              </button>
+              {/* Purchase-surface gate (ADR 00-004 / plan M0): same
+                  suppression as the desktop nav above. */}
+              {purchaseSurfaceEnabled && (
+                <button
+                  data-testid="nav-cart"
+                  onClick={() => handleNavClick('/checkout')}
+                  className="block w-full text-left text-text-secondary hover:text-primary transition-colors py-3 min-h-12 text-base"
+                >
+                  {t('cart')}
+                </button>
+              )}
             </div>
           </div>
         )}

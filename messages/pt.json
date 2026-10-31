@@ -50,29 +50,6 @@
     },
     "colors": {
       "white": "Branco"
-    },
-    "features": {
-      "title": "Recursos Premium",
-      "premium_materials": {
-        "title": "Materiais Premium",
-        "description": "Apenas os melhores tecidos e tintas, selecionados para durabilidade, conforto e impacto visual."
-      },
-      "handcrafted": {
-        "title": "Produção Manual",
-        "description": "Cada peça é cuidadosamente criada por artesãos qualificados, garantindo qualidade e atenção aos detalhes."
-      },
-      "limited_edition": {
-        "title": "Edição Limitada",
-        "description": "Produção em quantidade limitada para garantir exclusividade e valor."
-      },
-      "ethical_production": {
-        "title": "Produção Ética",
-        "description": "Compromisso com práticas sustentáveis e condições de trabalho justas em toda a cadeia de produção."
-      },
-      "description": {
-        "title": "A Nossa Promessa de Qualidade",
-        "content": "Estamos por trás de cada peça que criamos. A sua satisfação é garantida, e o nosso compromisso com a excelência é inabalável."
-      }
     }
   },
   "craftsmanship": {
@@ -444,99 +421,6 @@
     "copyright": "© 2024 HolyFans. Todos os direitos reservados.",
     "privacy": "Privacidade",
     "terms": "Termos e Condições"
-  },
-  "checkout": {
-    "title": "Finalizar Compra",
-    "subtitle": "Preencha os seus dados para completar a encomenda",
-    "shipping_info": "Informação de Envio",
-    "email": "Email",
-    "name": "Nome Completo",
-    "address": "Morada",
-    "city": "Cidade",
-    "postal_code": "Código Postal",
-    "country": "País",
-    "order_summary": "Resumo do Pedido",
-    "quantity": "Quantidade",
-    "price": "Preço",
-    "total": "Total",
-    "place_order": "Confirmar Encomenda",
-    "thank_you": "Obrigado pela sua encomenda!",
-    "thank_you_message": "Entraremos em contacto em breve com os detalhes do envio.",
-    "steps": {
-      "contact": "Contacto",
-      "shipping": "Envio",
-      "payment": "Pagamento",
-      "review": "Revisão"
-    },
-    "summary": {
-      "title": "Resumo do Pedido",
-      "subtotal": "Subtotal",
-      "shipping": "Envio",
-      "free": "Grátis",
-      "tax": "Imposto",
-      "total": "Total"
-    },
-    "form": {
-      "email": "Endereço de Email",
-      "email_placeholder": "seu@email.com",
-      "phone": "Número de Telefone",
-      "phone_placeholder": "+351 123 456 789",
-      "first_name": "Nome Próprio",
-      "first_name_placeholder": "João",
-      "last_name": "Apelido",
-      "last_name_placeholder": "Silva",
-      "address": "Morada",
-      "address_placeholder": "123 Rua Principal",
-      "city": "Cidade",
-      "city_placeholder": "Lisboa",
-      "postal_code": "Código Postal",
-      "postal_code_placeholder": "1000-001",
-      "country": "País",
-      "save_info": "Guardar a minha informação para compras futuras"
-    },
-    "validation": {
-      "email_required": "Email é obrigatório",
-      "email_invalid": "Por favor, introduza um email válido",
-      "phone_required": "Número de telefone é obrigatório",
-      "phone_invalid": "Por favor, introduza um número de telefone válido",
-      "first_name_required": "Nome próprio é obrigatório",
-      "last_name_required": "Apelido é obrigatório",
-      "address_required": "Morada é obrigatória",
-      "city_required": "Cidade é obrigatória",
-      "postal_code_required": "Código postal é obrigatório",
-      "country_required": "País é obrigatório"
-    },
-    "payment": {
-      "credit_card": "Cartão de Crédito",
-      "paypal": "PayPal",
-      "secure_message": "A sua informação de pagamento é segura e encriptada"
-    },
-    "review": {
-      "contact_info": "Informação de Contacto",
-      "shipping_info": "Informação de Envio",
-      "payment_method": "Método de Pagamento"
-    },
-    "navigation": {
-      "previous": "Anterior",
-      "next": "Seguinte",
-      "complete_order": "Concluir Encomenda",
-      "processing": "A processar..."
-    },
-    "success": {
-      "title": "Encomenda Concluída com Sucesso!",
-      "order_number": "Número da Encomenda:",
-      "description": "Obrigado pela sua encomenda! Enviaremos um email de confirmação com os detalhes da sua encomenda e informação de rastreamento.",
-      "next_steps": "• Receberá um email de confirmação dentro de minutos<br/>• Processaremos a sua encomenda dentro de 1-2 dias úteis<br/>• Receberá informação de rastreamento assim que for enviada",
-      "step1": "Confirmação por email",
-      "step2": "Processamento da encomenda",
-      "step3": "Notificação de envio",
-      "continue_shopping": "Continuar a Comprar"
-    },
-    "empty": {
-      "title": "O seu carrinho está vazio",
-      "description": "Parece que ainda não adicionou nada ao seu carrinho.",
-      "return_to_cart": "Voltar ao Carrinho"
-    }
   },
   "modal": {
     "title": "Características Premium",

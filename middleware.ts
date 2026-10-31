@@ -42,9 +42,10 @@ function checkBasicAuth(header: string | null): boolean {
 
 export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const normalizedPath = pathname.endsWith('/') && pathname !== '/'
-    ? pathname.slice(0, -1)
-    : pathname;
+  const normalizedPath =
+    pathname.endsWith('/') && pathname !== '/'
+      ? pathname.slice(0, -1)
+      : pathname;
 
   if (normalizedPath === '/admin' || normalizedPath.startsWith('/admin/')) {
     if (!checkBasicAuth(request.headers.get('authorization'))) {

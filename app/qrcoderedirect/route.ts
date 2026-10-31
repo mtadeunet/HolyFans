@@ -10,17 +10,44 @@ type SiteConfigRecord = {
   sections?: Record<string, unknown>;
 };
 
+/**
+ * Implements ADR 00-003: Permanent QR Redirect Route - "The route carries
+ * `noindex` — it is a handoff artifact, not indexable content".
+ *
+ * Every redirect this route emits is marked `X-Robots-Tag: noindex` so the
+ * handoff URL stays out of search indexes regardless of destination.
+ *
+ * @param url - Destination URL for the redirect.
+ * @returns A `NextResponse` redirect carrying the `noindex` header.
+ */
+function redirectNoIndex(url: string | URL): NextResponse {
+  const response = NextResponse.redirect(url);
+  response.headers.set('X-Robots-Tag', 'noindex');
+  return response;
+}
+
+/**
+ * Implements ADR 00-003: Permanent QR Redirect Route - the permanent Route
+ * Handler that "reads its destination from Site Config (Edge Config) at
+ * request time and issues an HTTP redirect to it" and "MUST always resolve
+ * successfully (never 404)", falling back to the site root when the
+ * destination is unset or Edge Config cannot be read.
+ *
+ * @param request - Incoming request; the request origin builds the
+ *   site-root fallback URL.
+ * @returns A redirect `NextResponse` — never a 404.
+ */
 export async function GET(request: NextRequest) {
   const fallbackUrl = new URL('/', request.nextUrl).href;
 
   if (!process.env.EDGE_CONFIG) {
-    return NextResponse.redirect(fallbackUrl);
+    return redirectNoIndex(fallbackUrl);
   }
 
   try {
     const dottedValue = await get(QRCODE_REDIRECT_DOTTED_KEY);
     if (typeof dottedValue === 'string' && dottedValue.trim().length > 0) {
-      return NextResponse.redirect(dottedValue);
+      return redirectNoIndex(dottedValue);
     }
 
     const siteConfig = await get<SiteConfigRecord>(SITE_CONFIG_KEY);
@@ -30,12 +57,12 @@ export async function GET(request: NextRequest) {
         : undefined;
 
     if (typeof value === 'string' && value.trim().length > 0) {
-      return NextResponse.redirect(value);
+      return redirectNoIndex(value);
     }
 
-    return NextResponse.redirect(fallbackUrl);
+    return redirectNoIndex(fallbackUrl);
   } catch (error) {
     console.error('[qrcoderedirect] Edge Config read failed:', error);
-    return NextResponse.redirect(fallbackUrl);
+    return redirectNoIndex(fallbackUrl);
   }
 }

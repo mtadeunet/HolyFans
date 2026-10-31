@@ -3,7 +3,8 @@ import { Product } from '@/types/product';
 export const PRODUCT: Product = {
   id: 'holyfans-nsr-001',
   name: 'Nossa Senhora da Rosa T-Shirt',
-  description: 'Premium t-shirt with Our Lady of the Rose design, featuring high-quality printing with embroidered and metal details.',
+  description:
+    'Premium t-shirt with Our Lady of the Rose design, featuring high-quality printing with embroidered and metal details.',
   price: 89,
   currency: 'EUR',
   images: {
@@ -11,14 +12,14 @@ export const PRODUCT: Product = {
       '/images/product-male-1.jpg',
       '/images/product-male-2.jpg',
       '/images/product-male-3.jpg',
-      '/images/product-male-4.jpg'
+      '/images/product-male-4.jpg',
     ],
     female: [
       '/images/product-female-1.jpg',
       '/images/product-female-2.jpg',
       '/images/product-female-3.jpg',
-      '/images/product-female-4.jpg'
-    ]
+      '/images/product-female-4.jpg',
+    ],
   },
   variants: {
     male: {
@@ -31,8 +32,8 @@ export const PRODUCT: Product = {
         '/images/product-male-1.jpg',
         '/images/product-male-2.jpg',
         '/images/product-male-3.jpg',
-        '/images/product-male-4.jpg'
-      ]
+        '/images/product-male-4.jpg',
+      ],
     },
     female: {
       id: 'nsr-female-m',
@@ -44,57 +45,55 @@ export const PRODUCT: Product = {
         '/images/product-female-1.jpg',
         '/images/product-female-2.jpg',
         '/images/product-female-3.jpg',
-        '/images/product-female-4.jpg'
-      ]
-    }
+        '/images/product-female-4.jpg',
+      ],
+    },
   },
   features: [
     'Premium cotton material',
     'Hand-finished details',
     'Limited edition production',
-    'Ethical manufacturing'
+    'Ethical manufacturing',
   ],
   materials: [
     '100% premium cotton',
     'High-quality printing',
     'Embroidered details',
-    'Metal accent details'
+    'Metal accent details',
   ],
   care: [
     'Hand wash or machine wash at 30°C',
     'Do not bleach',
     'Dry in shade',
-    'Iron on reverse side'
-  ]
+    'Iron on reverse side',
+  ],
 };
 
+/**
+ * Implements ADR 00-007: Quality Tooling and CI - "tracked files carry no
+ * real-world identifiers".
+ *
+ * The public base URL is environment-driven: set `NEXT_PUBLIC_BASE_URL` in
+ * the Hosting Platform's environment configuration (or an untracked local
+ * env file). The fallback is the localhost dev origin — a placeholder, never
+ * a real-world identifier — so the constant stays usable when the variable
+ * is unset in local development.
+ *
+ * Social links are intentionally empty placeholder-neutral values: real
+ * profile URLs are owner-supplied configuration and must not be hard-coded
+ * into tracked files. They are populated from environment configuration
+ * when the owner supplies them.
+ */
 export const SITE_CONFIG = {
   name: 'HolyFans',
-  tagline: 'Faith You\'ll Want to Share',
-  description: 'Premium Christian clothing with discrete but meaningful designs. High quality t-shirts for believers who want to share their faith.',
-  url: 'https://holyfans.pt',
+  tagline: "Faith You'll Want to Share",
+  description:
+    'Premium Christian clothing with discrete but meaningful designs. High quality t-shirts for believers who want to share their faith.',
+  url: process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000',
   ogImage: '/images/og-image.jpg',
   links: {
-    twitter: 'https://twitter.com/holyfans',
-    instagram: 'https://instagram.com/holyfans',
-    facebook: 'https://facebook.com/holyfans'
-  }
+    twitter: '',
+    instagram: '',
+    facebook: '',
+  },
 };
-
-export const CHECKOUT_STEPS = [
-  {
-    id: 'cart',
-    name: 'Cart',
-    description: 'Review your items'
-  },
-  {
-    id: 'shipping',
-    name: 'Shipping',
-    description: 'Enter shipping information'
-  },
-  {
-    id: 'confirmation',
-    name: 'Confirmation',
-    description: 'Review and confirm'
-  }
-];

@@ -9,9 +9,9 @@ export default function NotFound() {
           Page Not Found
         </h2>
         <p className="text-gray-600 mt-2 mb-8">
-          Sorry, we couldn't find the page you're looking for.
+          Sorry, we couldn&rsquo;t find the page you&rsquo;re looking for.
         </p>
-        <Link 
+        <Link
           href="/"
           className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
         >

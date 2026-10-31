@@ -2,11 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { writeSiteConfig } from '@/lib/edge-config-write';
-import {
-  CHROME_KEYS,
-  SECTION_KEYS,
-  type SiteConfig,
-} from '@/lib/site-config';
+import { CHROME_KEYS, SECTION_KEYS, type SiteConfig } from '@/lib/site-config';
 
 export type SaveResult = { ok: true } | { ok: false; error: string };
 

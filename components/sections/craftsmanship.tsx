@@ -14,9 +14,13 @@ export default function Craftsmanship() {
       description: t('features.premium_materials.description'),
       icon: (
         <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+          <path
+            fillRule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+            clipRule="evenodd"
+          />
         </svg>
-      )
+      ),
     },
     {
       id: 1,
@@ -26,7 +30,7 @@ export default function Craftsmanship() {
         <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
           <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
         </svg>
-      )
+      ),
     },
     {
       id: 2,
@@ -36,7 +40,7 @@ export default function Craftsmanship() {
         <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
           <path d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 1.293a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414L7.586 10 5.293 7.707a1 1 0 010-1.414zM11 12a1 1 0 100 2h3a1 1 0 100-2h-3z" />
         </svg>
-      )
+      ),
     },
     {
       id: 3,
@@ -44,10 +48,14 @@ export default function Craftsmanship() {
       description: t('features.metal_details.description'),
       icon: (
         <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z" clipRule="evenodd" />
+          <path
+            fillRule="evenodd"
+            d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z"
+            clipRule="evenodd"
+          />
         </svg>
-      )
-    }
+      ),
+    },
   ];
 
   return (
@@ -93,9 +101,17 @@ export default function Craftsmanship() {
               <div className="absolute inset-0 bg-gradient-to-br from-background to-border rounded-2xl shadow-2xl flex items-center justify-center">
                 <div className="text-center space-y-4">
                   <div className="w-32 h-32 bg-accent/20 rounded-full flex items-center justify-center mx-auto">
-                    <svg className="w-16 h-16 text-accent" fill="currentColor" viewBox="0 0 20 20">
+                    <svg
+                      className="w-16 h-16 text-accent"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
                       <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                      <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                      <path
+                        fillRule="evenodd"
+                        d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                   </div>
                   <p className="text-text-secondary">Craftsmanship Details</p>
@@ -127,10 +143,11 @@ export default function Craftsmanship() {
               <button
                 key={feature.id}
                 onClick={() => setActiveFeature(feature.id)}
-                className={`p-6 rounded-xl border-2 transition-all duration-500 text-left ${index === 3 ? 'hidden md:block' : ''} ${activeFeature === feature.id
+                className={`p-6 rounded-xl border-2 transition-all duration-500 text-left ${index === 3 ? 'hidden md:block' : ''} ${
+                  activeFeature === feature.id
                     ? 'border-accent bg-accent/5 shadow-lg'
                     : 'border-transparent hover:border-accent/30 bg-background'
-                  }`}
+                }`}
               >
                 <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4 text-accent">
                   {feature.icon}
@@ -174,25 +191,31 @@ export default function Craftsmanship() {
               {
                 step: t('process.step1.title'),
                 description: t('process.step1.description'),
-                number: '01'
+                number: '01',
               },
               {
                 step: t('process.step2.title'),
                 description: t('process.step2.description'),
-                number: '02'
+                number: '02',
               },
               {
                 step: t('process.step3.title'),
                 description: t('process.step3.description'),
-                number: '03'
-              }
+                number: '03',
+              },
             ].map((process, index) => (
               <div key={index} className="text-center space-y-4">
                 <div className="w-16 h-16 bg-accent/20 rounded-full flex items-center justify-center mx-auto">
-                  <span className="text-accent font-bold text-xl">{process.number}</span>
+                  <span className="text-accent font-bold text-xl">
+                    {process.number}
+                  </span>
                 </div>
-                <h4 className="text-lg font-semibold text-primary">{process.step}</h4>
-                <p className="text-sm text-text-secondary">{process.description}</p>
+                <h4 className="text-lg font-semibold text-primary">
+                  {process.step}
+                </h4>
+                <p className="text-sm text-text-secondary">
+                  {process.description}
+                </p>
               </div>
             ))}
           </div>

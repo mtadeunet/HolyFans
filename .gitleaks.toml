@@ -1,0 +1,27 @@
+# Implements ADR 00-007: Quality Tooling and CI - "secrets exist only as
+# environment variables ... never in tracked files; tracked files carry no
+# real-world identifiers, supported by review and secret/identifier
+# scanning."
+#
+# Extends the default gitleaks ruleset (without `useDefault` a custom
+# config REPLACES all detection rules — required or nothing is detected).
+[extend]
+useDefault = true
+
+# Allowlist for the CI `gitleaks dir` scan: generated, vendored, and
+# machine-local output can contain random key material (e.g. Next.js
+# preview-mode encryption keys under .next/) that is not a repository
+# secret. Everything else — tracked files AND new untracked files — is
+# scanned and any finding fails the gate.
+[allowlist]
+paths = [
+  '''\.git/''',
+  '''node_modules/''',
+  '''\.next/''',
+  '''out/''',
+  '''coverage/''',
+  '''playwright-report/''',
+  '''test-results/''',
+  '''blob-report/''',
+  '''\.venv/''',
+]

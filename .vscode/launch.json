@@ -5,19 +5,18 @@
       "name": "Debug Development Server",
       "type": "node",
       "request": "launch",
+      "runtimeExecutable": "${env:HOME}/.local/bin/node",
       "program": "${workspaceFolder}/node_modules/.bin/next",
-      "args": ["dev"],
+      "args": ["dev", "--webpack"],
       "cwd": "${workspaceFolder}",
       "runtimeArgs": ["--inspect"],
       "env": {
-        "NODE_OPTIONS": "--inspect"
+        "NODE_OPTIONS": "--inspect",
+        "PATH": "${env:HOME}/.local/bin:${env:PATH}"
       },
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
-      "skipFiles": [
-        "<node_internals>/**",
-        "**/node_modules/**"
-      ],
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
       "presentation": {
         "hidden": false,
         "group": "Debug",
@@ -32,20 +31,19 @@
       "name": "Debug Build Process",
       "type": "node",
       "request": "launch",
+      "runtimeExecutable": "${env:HOME}/.local/bin/node",
       "program": "${workspaceFolder}/node_modules/.bin/next",
       "args": ["build"],
       "cwd": "${workspaceFolder}",
       "runtimeArgs": ["--inspect"],
       "env": {
         "NODE_OPTIONS": "--inspect",
-        "NODE_ENV": "production"
+        "NODE_ENV": "production",
+        "PATH": "${env:HOME}/.local/bin:${env:PATH}"
       },
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
-      "skipFiles": [
-        "<node_internals>/**",
-        "**/node_modules/**"
-      ],
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
       "presentation": {
         "hidden": false,
         "group": "Debug",
@@ -56,6 +54,7 @@
       "name": "Debug TypeScript",
       "type": "node",
       "request": "launch",
+      "runtimeExecutable": "${env:HOME}/.local/bin/node",
       "program": "${workspaceFolder}/node_modules/.bin/tsc",
       "args": ["--noEmit", "--sourceMap"],
       "cwd": "${workspaceFolder}",
@@ -74,10 +73,7 @@
       "port": 9229,
       "localRoot": "${workspaceFolder}",
       "remoteRoot": "${workspaceFolder}",
-      "skipFiles": [
-        "<node_internals>/**",
-        "**/node_modules/**"
-      ],
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
       "presentation": {
         "hidden": false,
         "group": "Debug",
