@@ -1,7 +1,7 @@
 {
   "common": {
     "brand": "HolyFans",
-    "tagline": "Fé que você vai querer compartilhar",
+    "tagline": "Fé que vai querer partilhar",
     "language": "Idioma",
     "currency": "EUR",
     "contact": "Contacto",
@@ -32,8 +32,8 @@
     "name": "T-Shirt Nossa Senhora da Rosa",
     "description": "T-shirt premium com design da Nossa Senhora da Rosa, impressão de alta qualidade com detalhes em bordado e metal.",
     "material": "Algodão premium de alta qualidade",
-    "choose_fit": "Escolha o Seu Tamanho",
-    "features_title": "Recursos",
+    "choose_fit": "Escolha o Seu Corte",
+    "features_title": "Caraterísticas",
     "materials_care": "Materiais e Cuidados",
     "materials": "Materiais",
     "care_instructions": "Instruções de Cuidado",
@@ -54,9 +54,9 @@
   },
   "craftsmanship": {
     "title": "Artesanato Excepcional",
-    "subtitle": "Cada peça HolyFans é meticulosamente crafted com materiais premium e atenção artística aos detalhes, criando arte usável que dura toda a vida.",
+    "subtitle": "Cada peça HolyFans é meticulosamente confecionada com materiais premium e atenção artística aos detalhes, criando arte que se veste que dura toda a vida.",
     "story": {
-      "paragraph1": "A nossa jornada começa com os melhores materiais adquiridos a fornecedores confiáveis que partilham o nosso compromisso com a excelência. Cada fio, cada impressão, e cada detalhe é cuidadosamente selecionado para garantir que a sua peça HolyFans não apenas pareça bonita, mas resista ao teste do tempo.",
+      "paragraph1": "A nossa jornada começa com os melhores materiais adquiridos a fornecedores fiáveis que partilham o nosso compromisso com a excelência. Cada fio, cada impressão, e cada detalhe é cuidadosamente selecionado para garantir que a sua peça HolyFans não apenas pareça bonita, mas resista ao teste do tempo.",
       "paragraph2": "O processo artístico por detrás do nosso design 'Nossa Senhora da Rosa' combina técnicas tradicionais com inovação moderna. Os nossos artesãos qualificados trazem cada peça à vida através de um processo meticuloso que honra tanto o património como o estilo contemporâneo.",
       "paragraph3": "Do esboço inicial à verificação final de qualidade, cada passo no nosso processo de criação é infundido com paixão e precisão. Acreditamos que o verdadeiro luxo reside nos detalhes, e isso mostra-se em cada ponto, impressão e acabamento."
     },
@@ -65,7 +65,7 @@
       "description": "Estamos por trás de cada peça que criamos. A sua satisfação é garantida, e o nosso compromisso com a excelência é inabalável."
     },
     "features": {
-      "title": "Recursos Premium",
+      "title": "Caraterísticas Premium",
       "premium_materials": {
         "title": "Materiais Premium",
         "description": "Apenas os melhores tecidos e tintas, selecionados para durabilidade, conforto e impacto visual."
@@ -108,15 +108,15 @@
     },
     "objection1": {
       "question": "O design é muito religioso ou óbvio?",
-      "answer": "O nosso design 'Nossa Senhora da Rosa' é criado para ser significativo mas discreto. A interpretação artística permite-lhe expressar a sua fé de uma forma que se sente pessoal e confortável, tornando-o apropriado para várias configurações enquanto ainda carrega significado profundo."
+      "answer": "O nosso design 'Nossa Senhora da Rosa' é criado para ser significativo mas discreto. A interpretação artística permite-lhe expressar a sua fé de uma forma que se sente pessoal e confortável, tornando-o apropriado para vários contextos enquanto ainda carrega significado profundo."
     },
     "objection2": {
       "question": "E a qualidade e durabilidade?",
-      "answer": "Usamos materiais premium e técnicas de impressão avançadas para garantir que a sua peça dure. A combinação de tecido de alta qualidade, impressão profissional e detalhes reforçados significa que a sua peça HolyFans manterá a sua beleza através do uso regular e cuidados adequados."
+      "answer": "Usamos materiais premium e técnicas de impressão avançadas para garantir que a sua peça dure. A combinação de tecido de alta qualidade, impressão profissional e detalhes reforçados significa que a sua peça HolyFans manterá a sua beleza com o uso regular e cuidados adequados."
     },
     "objection3": {
       "question": "Vale o investimento?",
-      "answer": "As peças HolyFans são mais do que roupa - são arte usável com significado. A combinação de materiais premium, design artístico e significado espiritual cria valor que se estende muito além do preço. Além disso, a nossa garantia de qualidade protege o seu investimento."
+      "answer": "As peças HolyFans são mais do que roupa - são arte que se veste com significado. A combinação de materiais premium, design artístico e significado espiritual cria valor que se estende muito além do preço. Além disso, a nossa garantia de qualidade protege o seu investimento."
     },
     "objection4": {
       "question": "E se não servir ou não gostar?",
@@ -159,15 +159,15 @@
         "questions": {
           "q1": {
             "question": "O que é a HolyFans?",
-            "answer": "HolyFans é uma marca de roupa cristã que cria peças stylish e significativas com designs inspirados na fé. Focamo-nos em criar peças que permitem expressar a sua fé de forma elegante e confortável."
+            "answer": "HolyFans é uma marca de roupa cristã que cria peças elegantes e significativas com designs inspirados na fé. Focamo-nos em criar peças que permitem expressar a sua fé de forma elegante e confortável."
           },
           "q2": {
             "question": "Onde são produzidos os produtos HolyFans?",
-            "answer": "Os nossos produtos são crafted com cuidado usando materiais premium de fornecedores confiáveis. Trabalhamos com artesãos qualificados que partilham o nosso compromisso com a qualidade e atenção aos detalhes."
+            "answer": "Os nossos produtos são produzidos com cuidado usando materiais premium de fornecedores fiáveis. Trabalhamos com artesãos qualificados que partilham o nosso compromisso com a qualidade e atenção aos detalhes."
           },
           "q3": {
             "question": "Enviam internacionalmente?",
-            "answer": "Sim! Enviamos para todo o mundo. Com base em Portugal, orgulhamo-nos de servir clientes em toda a Europa e globalmente. Os tempos e taxas de envio variam por localização."
+            "answer": "Sim! Enviamos para todo o mundo. Com base em Portugal, orgulhamo-nos de servir clientes em toda a Europa e globalmente. Os tempos e custos de envio variam por localização."
           }
         }
       },
@@ -212,7 +212,7 @@
       "title": "Ainda Tem Perguntas?",
       "description": "A nossa equipa de suporte amigável está aqui para ajudar. Contacte-nos e voltaremos para si o mais rápido possível.",
       "contact_button": "Contactar Suporte",
-      "email_button": "Email-nos"
+      "email_button": "Envie-nos um Email"
     },
     "quick_links": {
       "email": {
@@ -234,7 +234,7 @@
   },
   "social_proof": {
     "title": "Junte-se à Nossa Comunidade em Crescimento",
-    "subtitle": "Milhares de amantes da moda fiel descobriram a HolyFans. Veja o que a nossa comunidade diz sobre a sua experiência.",
+    "subtitle": "Milhares de fiéis amantes de moda descobriram a HolyFans. Veja o que a nossa comunidade diz sobre a sua experiência.",
     "stats": {
       "customers": "Clientes Satisfeitos",
       "rating": "Classificação Média",
@@ -263,7 +263,7 @@
         "text": "Finalmente, moda inspirada na fé que não compromete o estilo. A HolyFans acertou no equilíbrio perfeitamente."
       },
       "t5": {
-        "name": "Lucia Torres",
+        "name": "Lúcia Torres",
         "location": "Madrid, Espanha",
         "text": "O serviço ao cliente foi excecional, e o produto é ainda melhor pessoalmente. Já estou a planear a minha próxima compra!"
       }
@@ -274,14 +274,14 @@
       "follow_button": "Seguir no Instagram"
     },
     "press": {
-      "title": "Conforme Destacado Em",
+      "title": "Na Imprensa",
       "mention1": {
-        "name": "Fé & Style Magazine",
+        "name": "Faith & Style Magazine",
         "quote": "A HolyFans está a redefinir a moda inspirada na fé com elegância e significado."
       },
       "mention2": {
         "name": "Christian Lifestyle",
-        "quote": "A combinação perfeita de estilo contemporâneo e expressão de fé atemporal."
+        "quote": "A combinação perfeita de estilo contemporâneo e expressão de fé intemporal."
       },
       "mention3": {
         "name": "Modern Believer",
@@ -290,7 +290,7 @@
     },
     "community": {
       "title": "Torne-se Parte da Nossa Comunidade",
-      "description": "Junte-se a milhares que estão a expressar a sua fé com estilo e confiança. Partilhe a sua história HolyFans e conecte-se com crentes de mentalidade semelhante em todo o mundo.",
+      "description": "Junte-se a milhares que estão a expressar a sua fé com estilo e confiança. Partilhe a sua história HolyFans e ligue-se a pessoas que partilham a sua fé em todo o mundo.",
       "join_button": "Juntar-se à Comunidade",
       "hashtag": "#HolyFansStyle"
     }
@@ -302,20 +302,20 @@
     "guarantee_description": "Se não ficar 100% satisfeito, devolvemos o seu dinheiro sem perguntas.",
     "free_returns": "Devoluções Gratuitas",
     "quality_promise": "Garantia de Qualidade Vitalícia",
-    "secure_checkout": "Checkout Seguro"
+    "secure_checkout": "Compra Segura"
   },
   "final_cta": {
     "title": "Última Oportunidade",
     "subtitle": "Edição Limitada",
     "description": "Não perca a oportunidade de ter esta peça exclusiva. Stock limitado.",
     "urgency": {
-      "badge": "Apenas 50 peças disponíveis",
+      "badge": "Restam apenas 50 peças",
       "limited": "Edição Limitada"
     },
     "stats": {
       "limited_edition": "Edição Limitada",
       "pieces_available": "Peças Disponíveis",
-      "handcrafted": "Produção Manual",
+      "handcrafted": "Artesanal",
       "premium_quality": "Qualidade Premium",
       "exclusive": "Design Exclusivo",
       "unique_design": "Design Único"
@@ -344,8 +344,8 @@
     }
   },
   "purchase": {
-    "title": "Complete a sua Compra",
-    "subtitle": "Revise a sua encomenda e forneça os seus detalhes",
+    "title": "Conclua a Sua Compra",
+    "subtitle": "Reveja a sua encomenda e forneça os seus dados",
     "items": {
       "title": "A sua Encomenda"
     },
@@ -355,12 +355,12 @@
       "email_placeholder": "seu@email.com",
       "phone": "Número de Telefone",
       "phone_placeholder": "+351 123 456 789",
-      "first_name": "Nome Próprio",
+      "first_name": "Nome",
       "first_name_placeholder": "João",
       "last_name": "Apelido",
       "last_name_placeholder": "Silva",
       "address": "Morada",
-      "address_placeholder": "123 Rua Principal",
+      "address_placeholder": "Rua Principal, 123",
       "city": "Cidade",
       "city_placeholder": "Lisboa",
       "postal_code": "Código Postal",
@@ -368,7 +368,7 @@
       "country": "País"
     },
     "summary": {
-      "title": "Resumo do Pedido",
+      "title": "Resumo da Encomenda",
       "subtotal": "Subtotal",
       "shipping": "Envio",
       "free": "Grátis",
@@ -412,7 +412,7 @@
     }
   },
   "footer": {
-    "brand_story": "Fé que você vai querer compartilhar",
+    "brand_story": "Fé que vai querer partilhar",
     "brand_description": "Criamos roupa de qualidade que permite expressar a sua fé com estilo e confiança.",
     "newsletter_title": "Receba Ofertas Exclusivas",
     "newsletter_description": "Subscreva para receber 10% de desconto na sua primeira compra.",

@@ -44,8 +44,8 @@
     "fast_shipping": "Fast Shipping",
     "quality_guarantee": "Quality Guarantee",
     "fit": {
-      "male": "Male",
-      "female": "Female",
+      "male": "Men's",
+      "female": "Women's",
       "size_assurance": "Size M fits most people perfectly"
     },
     "colors": {
@@ -329,8 +329,8 @@
       "price": "89"
     },
     "fit": {
-      "male": "Male",
-      "female": "Female"
+      "male": "Men's",
+      "female": "Women's"
     },
     "cta": {
       "button": "Pre-order Now",
@@ -418,7 +418,7 @@
     "newsletter_description": "Subscribe to receive 10% off your first purchase.",
     "newsletter_placeholder": "Your email",
     "newsletter_button": "Subscribe",
-    "copyright": " 2024 HolyFans. All rights reserved.",
+    "copyright": "© 2024 HolyFans. All rights reserved.",
     "privacy": "Privacy",
     "terms": "Terms and Conditions"
   },
