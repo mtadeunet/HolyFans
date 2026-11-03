@@ -11,14 +11,17 @@
     "checkout": "Purchase",
     "preorder": "Pre-order",
     "learn_more": "Learn More",
-    "close": "Close"
+    "close": "Close",
+    "toggle_language": "Toggle language"
   },
   "navigation": {
     "home": "Home",
     "about": "About Us",
     "contact": "Contact",
     "faq": "Frequently Asked Questions",
-    "cart": "Purchase"
+    "cart": "Purchase",
+    "logo_aria": "HolyFans home",
+    "toggle_menu": "Toggle menu"
   },
   "hero": {
     "title": "Faith with Style",
@@ -26,7 +29,14 @@
     "description": "Exceptional quality, profound meaning. Wear your faith with elegance.",
     "cta": "Pre-order Now",
     "learn_more": "Learn More",
-    "scroll_indicator": "Discover More"
+    "scroll_indicator": "Discover More",
+    "trust": {
+      "materials": "Premium Materials",
+      "limited": "Limited Edition",
+      "guarantee": "30-Day Guarantee"
+    },
+    "image_placeholder": "Product Image",
+    "badge_new": "NEW"
   },
   "product": {
     "name": "Our Lady of the Rose T-Shirt",
@@ -43,6 +53,28 @@
     "secure_payment": "Secure Payment",
     "fast_shipping": "Fast Shipping",
     "quality_guarantee": "Quality Guarantee",
+    "image_main": "Main Product Image",
+    "image_counter": "Image {current} of {total}",
+    "variation": {
+      "title": "Complete Your Order",
+      "subtitle": "Select your preferred fit and quantity",
+      "preview": "Product Preview",
+      "size_info": "Size Information",
+      "size": "Size",
+      "color": "Color",
+      "fit": "Fit",
+      "select_fit": "Select Fit",
+      "regular_fit": "Regular fit",
+      "tapered_fit": "Tapered fit",
+      "max_quantity": "Maximum 10 pieces per order",
+      "summary": "Order Summary",
+      "product": "Product",
+      "variant": "Variant",
+      "unit_price": "Unit Price",
+      "total": "Total",
+      "adding_to_cart": "Adding to Cart...",
+      "guarantee": "30-Day Guarantee"
+    },
     "fit": {
       "male": "Men's",
       "female": "Women's",
@@ -55,6 +87,10 @@
   "craftsmanship": {
     "title": "Exceptional Craftsmanship",
     "subtitle": "Each HolyFans piece is meticulously crafted with premium materials and artistic attention to detail, creating wearable art that lasts a lifetime.",
+    "image_placeholder": "Craftsmanship Details",
+    "image_caption": "Premium materials & artistic design",
+    "badge_handmade": "HANDMADE",
+    "badge_premium": "PREMIUM",
     "story": {
       "paragraph1": "Our journey begins with the finest materials sourced from trusted suppliers who share our commitment to excellence. Every thread, every print, and every detail is carefully selected to ensure your HolyFans piece not only looks beautiful but stands the test of time.",
       "paragraph2": "The artistic process behind our 'Nossa Senhora da Rosa' design combines traditional techniques with modern innovation. Our skilled artisans bring each piece to life through a meticulous process that honors both heritage and contemporary style.",
@@ -233,66 +269,78 @@
     }
   },
   "social_proof": {
-    "title": "Join Our Growing Community",
-    "subtitle": "Thousands of faithful fashion lovers have discovered HolyFans. See what our community is saying about their experience.",
+    "title": "What Our Customers Say",
+    "subtitle": "Join thousands of satisfied customers who have discovered the perfect blend of tradition and innovation",
     "stats": {
-      "customers": "Happy Customers",
-      "rating": "Average Rating",
-      "countries": "Countries Served",
-      "satisfaction": "Satisfaction Rate"
+      "customers": {
+        "number": "10K+",
+        "label": "Happy Customers"
+      },
+      "rating": {
+        "number": "4.9/5",
+        "label": "Average Rating"
+      },
+      "countries": {
+        "number": "50+",
+        "label": "Countries"
+      },
+      "satisfaction": {
+        "number": "98%",
+        "label": "Satisfaction"
+      }
     },
     "testimonials": {
       "t1": {
-        "name": "João Dias",
+        "name": "João Silva",
         "location": "Lisbon, Portugal",
-        "text": "The quality exceeded my expectations. The design is beautiful yet subtle, perfect for expressing my faith at work and socially."
+        "text": "The quality is exceptional! Worth every penny."
       },
       "t2": {
         "name": "Maria Costa",
         "location": "Porto, Portugal",
-        "text": "I've received so many compliments on my HolyFans piece. It's become my favorite way to share my faith with style."
+        "text": "Beautiful craftsmanship and fast shipping."
       },
       "t3": {
-        "name": "Ana Silva",
-        "location": "Rio de Janeiro, Brazil",
-        "text": "The craftsmanship is incredible. You can feel the quality in every detail. Worth every penny and then some."
+        "name": "Ana Santos",
+        "location": "Faro, Portugal",
+        "text": "Exceeded my expectations. Highly recommend!"
       },
       "t4": {
-        "name": "Pedro Santos",
-        "location": "Lisbon, Portugal",
-        "text": "Finally, faith-inspired fashion that doesn't compromise on style. HolyFans nailed the balance perfectly."
+        "name": "Rui Fernandes",
+        "location": "Coimbra, Portugal",
+        "text": "Perfect gift for my husband. He loves it!"
       },
       "t5": {
         "name": "Lucia Torres",
-        "location": "Madrid, Spain",
-        "text": "The customer service was outstanding, and the product is even better in person. I'm already planning my next purchase!"
+        "location": "Madeira, Portugal",
+        "text": "Outstanding quality and customer service."
       }
     },
     "instagram": {
-      "title": "Follow Our Journey",
-      "handle": "holyfans.official",
-      "follow_button": "Follow on Instagram"
+      "title": "Follow Us on Instagram",
+      "handle": "",
+      "follow_button": "Follow Us"
     },
     "press": {
-      "title": "As Featured In",
+      "title": "As Seen In",
       "mention1": {
-        "name": "Faith & Style Magazine",
-        "quote": "HolyFans is redefining faith-inspired fashion with elegance and meaning."
+        "name": "Fashion Weekly",
+        "quote": "Exceptional quality and design"
       },
       "mention2": {
-        "name": "Christian Lifestyle",
-        "quote": "The perfect blend of contemporary style and timeless faith expression."
+        "name": "Luxury Magazine",
+        "quote": "The perfect blend of tradition and modernity"
       },
       "mention3": {
-        "name": "Modern Believer",
-        "quote": "Finally, Christian fashion that speaks to the modern generation."
+        "name": "Style Journal",
+        "quote": "Outstanding craftsmanship that stands out"
       }
     },
     "community": {
-      "title": "Become Part of Our Community",
-      "description": "Join thousands who are expressing their faith with style and confidence. Share your HolyFans story and connect with like-minded believers around the world.",
-      "join_button": "Join Community",
-      "hashtag": "#HolyFansStyle"
+      "title": "Join Our Community",
+      "description": "Be part of a growing community of enthusiasts who appreciate quality craftsmanship and timeless design",
+      "join_button": "Join Now",
+      "hashtag": "#HolyFans"
     }
   },
   "risk_reversal": {
@@ -347,7 +395,8 @@
     "title": "Complete Your Purchase",
     "subtitle": "Review your order and provide your details",
     "items": {
-      "title": "Your Order"
+      "title": "Your Order",
+      "remove": "Remove item"
     },
     "customer": {
       "title": "Customer Information",
@@ -365,7 +414,16 @@
       "city_placeholder": "Lisbon",
       "postal_code": "Postal Code",
       "postal_code_placeholder": "1000-001",
-      "country": "Country"
+      "country": "Country",
+      "countries": {
+        "portugal": "Portugal",
+        "spain": "Spain",
+        "france": "France",
+        "germany": "Germany",
+        "italy": "Italy",
+        "united_kingdom": "United Kingdom",
+        "other": "Other"
+      }
     },
     "summary": {
       "title": "Order Summary",
@@ -411,6 +469,11 @@
       "description": "Your information is protected with SSL encryption and 30-day return guarantee."
     }
   },
+  "not_found": {
+    "title": "Page Not Found",
+    "description": "Sorry, we couldn't find the page you're looking for.",
+    "go_home": "Go Home"
+  },
   "footer": {
     "brand_story": "Faith you'll want to share",
     "brand_description": "We create quality clothing that allows you to express your faith with style and confidence.",
@@ -420,7 +483,21 @@
     "newsletter_button": "Subscribe",
     "copyright": "© 2024 HolyFans. All rights reserved.",
     "privacy": "Privacy",
-    "terms": "Terms and Conditions"
+    "terms": "Terms and Conditions",
+    "shop": {
+      "title": "Shop",
+      "products": "Products",
+      "sizing_guide": "Sizing Guide",
+      "care_instructions": "Care Instructions",
+      "shipping_info": "Shipping Information"
+    },
+    "customer_care": {
+      "title": "Customer Care",
+      "contact": "Contact Us",
+      "faq": "FAQ",
+      "returns": "Returns & Exchanges",
+      "tracking": "Order Tracking"
+    }
   },
   "modal": {
     "title": "Premium Features",

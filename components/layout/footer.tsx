@@ -28,7 +28,9 @@ export default function Footer() {
             {/* Social Links */}
             <div className="flex space-x-4">
               <a
-                href="#"
+                href={process.env.NEXT_PUBLIC_INSTAGRAM_URL || '#'}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors"
                 aria-label="Instagram"
               >
@@ -71,14 +73,14 @@ export default function Footer() {
 
           {/* Shop Column */}
           <div className="space-y-4">
-            <h4 className="font-semibold text-white">Shop</h4>
+            <h4 className="font-semibold text-white">{t('shop.title')}</h4>
             <ul className="space-y-2">
               <li>
                 <a
                   href="#"
                   className="text-white/80 hover:text-white transition-colors text-sm"
                 >
-                  Products
+                  {t('shop.products')}
                 </a>
               </li>
               <li>
@@ -86,7 +88,7 @@ export default function Footer() {
                   href="#"
                   className="text-white/80 hover:text-white transition-colors text-sm"
                 >
-                  Sizing Guide
+                  {t('shop.sizing_guide')}
                 </a>
               </li>
               <li>
@@ -94,7 +96,7 @@ export default function Footer() {
                   href="#"
                   className="text-white/80 hover:text-white transition-colors text-sm"
                 >
-                  Care Instructions
+                  {t('shop.care_instructions')}
                 </a>
               </li>
               <li>
@@ -102,7 +104,7 @@ export default function Footer() {
                   href="#"
                   className="text-white/80 hover:text-white transition-colors text-sm"
                 >
-                  Shipping Information
+                  {t('shop.shipping_info')}
                 </a>
               </li>
             </ul>
@@ -110,14 +112,16 @@ export default function Footer() {
 
           {/* Customer Care Column */}
           <div className="space-y-4">
-            <h4 className="font-semibold text-white">Customer Care</h4>
+            <h4 className="font-semibold text-white">
+              {t('customer_care.title')}
+            </h4>
             <ul className="space-y-2">
               <li>
                 <a
                   href="#"
                   className="text-white/80 hover:text-white transition-colors text-sm"
                 >
-                  Contact Us
+                  {t('customer_care.contact')}
                 </a>
               </li>
               <li>
@@ -125,7 +129,7 @@ export default function Footer() {
                   href="#"
                   className="text-white/80 hover:text-white transition-colors text-sm"
                 >
-                  FAQ
+                  {t('customer_care.faq')}
                 </a>
               </li>
               <li>
@@ -133,7 +137,7 @@ export default function Footer() {
                   href="#"
                   className="text-white/80 hover:text-white transition-colors text-sm"
                 >
-                  Returns & Exchanges
+                  {t('customer_care.returns')}
                 </a>
               </li>
               <li>
@@ -141,7 +145,7 @@ export default function Footer() {
                   href="#"
                   className="text-white/80 hover:text-white transition-colors text-sm"
                 >
-                  Order Tracking
+                  {t('customer_care.tracking')}
                 </a>
               </li>
             </ul>

@@ -114,19 +114,25 @@ export default function Craftsmanship() {
                       />
                     </svg>
                   </div>
-                  <p className="text-text-secondary">Craftsmanship Details</p>
+                  <p className="text-text-secondary">
+                    {t('image_placeholder')}
+                  </p>
                   <p className="text-sm text-text-secondary/60">
-                    Premium materials & artistic design
+                    {t('image_caption')}
                   </p>
                 </div>
               </div>
 
               {/* Floating badges */}
               <div className="absolute -top-4 -right-4 w-20 h-20 bg-accent/10 rounded-full flex items-center justify-center animate-pulse">
-                <span className="text-accent font-bold text-sm">HANDMADE</span>
+                <span className="text-accent font-bold text-sm">
+                  {t('badge_handmade')}
+                </span>
               </div>
               <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-                <span className="text-primary font-bold text-xs">PREMIUM</span>
+                <span className="text-primary font-bold text-xs">
+                  {t('badge_premium')}
+                </span>
               </div>
             </div>
           </div>

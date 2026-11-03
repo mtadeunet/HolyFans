@@ -79,7 +79,7 @@ export default function Hero({ showPremiumFeaturesModal = true }: HeroProps) {
                     clipRule="evenodd"
                   />
                 </svg>
-                <span>Premium Materials</span>
+                <span>{t('trust.materials')}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <svg
@@ -93,7 +93,7 @@ export default function Hero({ showPremiumFeaturesModal = true }: HeroProps) {
                     clipRule="evenodd"
                   />
                 </svg>
-                <span>Limited Edition</span>
+                <span>{t('trust.limited')}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <svg
@@ -107,7 +107,7 @@ export default function Hero({ showPremiumFeaturesModal = true }: HeroProps) {
                     clipRule="evenodd"
                   />
                 </svg>
-                <span>30-Day Guarantee</span>
+                <span>{t('trust.guarantee')}</span>
               </div>
             </div>
           </div>
@@ -132,7 +132,9 @@ export default function Hero({ showPremiumFeaturesModal = true }: HeroProps) {
                       />
                     </svg>
                   </div>
-                  <p className="text-text-secondary">Product Image</p>
+                  <p className="text-text-secondary">
+                    {t('image_placeholder')}
+                  </p>
                   <p className="text-sm text-text-secondary/60">
                     {PRODUCT.name}
                   </p>
@@ -141,7 +143,9 @@ export default function Hero({ showPremiumFeaturesModal = true }: HeroProps) {
 
               {/* Floating Elements */}
               <div className="absolute -top-4 -right-4 w-20 h-20 bg-accent/10 rounded-full flex items-center justify-center animate-pulse">
-                <span className="text-accent font-bold text-sm">NEW</span>
+                <span className="text-accent font-bold text-sm">
+                  {t('badge_new')}
+                </span>
               </div>
               <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
                 <span className="text-primary font-bold text-xs">M</span>

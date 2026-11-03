@@ -57,7 +57,7 @@ export default function Header({ purchaseSurfaceEnabled }: HeaderProps) {
                 ? 'md:self-center md:translate-y-0'
                 : 'md:self-end md:translate-y-1/2'
             }`}
-            aria-label="HolyFans home"
+            aria-label={t('logo_aria')}
           >
             <Image
               src="/logo/logo-mark.png"
@@ -122,7 +122,7 @@ export default function Header({ purchaseSurfaceEnabled }: HeaderProps) {
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="text-text-secondary hover:text-primary"
-              aria-label="Toggle menu"
+              aria-label={t('toggle_menu')}
             >
               <div className="space-y-1">
                 <div

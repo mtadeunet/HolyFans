@@ -73,9 +73,12 @@ export default function ProductGallery() {
                       />
                     </svg>
                   </div>
-                  <p className="text-text-secondary">Main Product Image</p>
+                  <p className="text-text-secondary">{t('image_main')}</p>
                   <p className="text-sm text-text-secondary/60">
-                    Image {selectedImage + 1} of {currentImages.length}
+                    {t('image_counter', {
+                      current: selectedImage + 1,
+                      total: currentImages.length,
+                    })}
                   </p>
                 </div>
               </div>

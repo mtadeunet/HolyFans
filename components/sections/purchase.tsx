@@ -232,7 +232,7 @@ export default function Purchase() {
                         <button
                           onClick={() => removeItem(item.product.id)}
                           className="text-text-secondary hover:text-red-500 transition-colors"
-                          aria-label="Remove item"
+                          aria-label={t('items.remove')}
                         >
                           <svg
                             className="w-4 h-4"
@@ -469,13 +469,29 @@ export default function Purchase() {
                     }
                     className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:border-accent"
                   >
-                    <option value="Portugal">Portugal</option>
-                    <option value="Spain">Spain</option>
-                    <option value="France">France</option>
-                    <option value="Germany">Germany</option>
-                    <option value="Italy">Italy</option>
-                    <option value="United Kingdom">United Kingdom</option>
-                    <option value="Other">Other</option>
+                    {/* `value` attributes keep their EN form semantics;
+                        only the visible labels are localized (ADR 00-005). */}
+                    <option value="Portugal">
+                      {t('customer.countries.portugal')}
+                    </option>
+                    <option value="Spain">
+                      {t('customer.countries.spain')}
+                    </option>
+                    <option value="France">
+                      {t('customer.countries.france')}
+                    </option>
+                    <option value="Germany">
+                      {t('customer.countries.germany')}
+                    </option>
+                    <option value="Italy">
+                      {t('customer.countries.italy')}
+                    </option>
+                    <option value="United Kingdom">
+                      {t('customer.countries.united_kingdom')}
+                    </option>
+                    <option value="Other">
+                      {t('customer.countries.other')}
+                    </option>
                   </select>
                 </div>
               </div>

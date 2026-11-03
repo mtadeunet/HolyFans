@@ -1,57 +1,59 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useState, useEffect } from 'react';
 
+/**
+ * Implements ADR 00-005: Internationalization - "Translations are
+ * maintained as versioned message catalogs alongside the code, one per
+ * Locale, covering all UI strings and page copy, held to key-for-key
+ * parity."
+ *
+ * All copy (section title/subtitle, stats labels and values, testimonial
+ * names/locations/texts, press names and quotes, Instagram and community
+ * calls to action) resolves from the `social_proof` message subtree.
+ * Only structure that is not copy — icons, ratings, initials and grid
+ * order — stays in code; testimonial avatar initials are derived from the
+ * localized name so they stay consistent across Locales.
+ */
 export default function SocialProof() {
+  const t = useTranslations('social_proof');
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
 
-  const testimonials = [
-    {
-      id: 1,
-      name: 'João Silva',
-      location: 'Lisbon, Portugal',
-      rating: 5,
-      text: 'The quality is exceptional! Worth every penny.',
-      avatar: 'JD',
-    },
-    {
-      id: 2,
-      name: 'Maria Costa',
-      location: 'Porto, Portugal',
-      rating: 5,
-      text: 'Beautiful craftsmanship and fast shipping.',
-      avatar: 'MC',
-    },
-    {
-      id: 3,
-      name: 'Ana Santos',
-      location: 'Faro, Portugal',
-      rating: 5,
-      text: 'Exceeded my expectations. Highly recommend!',
-      avatar: 'AS',
-    },
-    {
-      id: 4,
-      name: 'Rui Fernandes',
-      location: 'Coimbra, Portugal',
-      rating: 5,
-      text: 'Perfect gift for my husband. He loves it!',
-      avatar: 'RF',
-    },
-    {
-      id: 5,
-      name: 'Lucia Torres',
-      location: 'Madeira, Portugal',
-      rating: 5,
-      text: 'Outstanding quality and customer service.',
-      avatar: 'LT',
-    },
-  ];
+  // Implements ADR 00-007: real-world identifiers never live in tracked
+  // files. The Instagram handle/profile URL resolve from environment
+  // configuration; when unset, the handle overlay and profile link fall
+  // back to the neutral catalog value / '#'.
+  const instagramHandle =
+    process.env.NEXT_PUBLIC_INSTAGRAM_HANDLE || t('instagram.handle');
+  const instagramUrl = process.env.NEXT_PUBLIC_INSTAGRAM_URL || '#';
 
+  const testimonialKeys = ['t1', 't2', 't3', 't4', 't5'] as const;
+  const testimonials = testimonialKeys.map((key, index) => {
+    const name = t(`testimonials.${key}.name`);
+    return {
+      id: index + 1,
+      name,
+      location: t(`testimonials.${key}.location`),
+      rating: 5,
+      text: t(`testimonials.${key}.text`),
+      avatar: name
+        .split(' ')
+        .map((word) => word[0])
+        .join('')
+        .toUpperCase(),
+    };
+  });
+
+  const statKeys = [
+    'customers',
+    'rating',
+    'countries',
+    'satisfaction',
+  ] as const;
   const socialStats = [
     {
-      number: '10K+',
-      label: 'Happy Customers',
+      key: statKeys[0],
       icon: (
         <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
           <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
@@ -59,8 +61,7 @@ export default function SocialProof() {
       ),
     },
     {
-      number: '4.9/5',
-      label: 'Average Rating',
+      key: statKeys[1],
       icon: (
         <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
           <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
@@ -68,8 +69,7 @@ export default function SocialProof() {
       ),
     },
     {
-      number: '50+',
-      label: 'Countries',
+      key: statKeys[2],
       icon: (
         <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
           <path
@@ -81,8 +81,7 @@ export default function SocialProof() {
       ),
     },
     {
-      number: '98%',
-      label: 'Satisfaction',
+      key: statKeys[3],
       icon: (
         <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
           <path
@@ -120,11 +119,10 @@ export default function SocialProof() {
       <div className="container">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif text-primary mb-6">
-            What Our Customers Say
+            {t('title')}
           </h2>
           <p className="text-lg md:text-xl text-text-secondary max-w-3xl mx-auto leading-relaxed">
-            Join thousands of satisfied customers who have discovered the
-            perfect blend of tradition and innovation
+            {t('subtitle')}
           </p>
         </div>
 
@@ -136,9 +134,11 @@ export default function SocialProof() {
                 {stat.icon}
               </div>
               <div className="text-3xl font-bold text-primary">
-                {stat.number}
+                {t(`stats.${stat.key}.number`)}
               </div>
-              <div className="text-sm text-text-secondary">{stat.label}</div>
+              <div className="text-sm text-text-secondary">
+                {t(`stats.${stat.key}.label`)}
+              </div>
             </div>
           ))}
         </div>
@@ -197,7 +197,7 @@ export default function SocialProof() {
         {/* Instagram Gallery */}
         <div className="mb-20">
           <h3 className="text-2xl md:text-3xl font-serif text-primary text-center mb-12">
-            Follow Us on Instagram
+            {t('instagram.title')}
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {Array.from({ length: 8 }, (_, i) => (
@@ -218,39 +218,36 @@ export default function SocialProof() {
                     />
                   </svg>
                 </div>
-                <div className="absolute bottom-2 left-2 text-white text-xs">
-                  @holyfans
-                </div>
+                {instagramHandle && (
+                  <div className="absolute bottom-2 left-2 text-white text-xs">
+                    @{instagramHandle}
+                  </div>
+                )}
               </div>
             ))}
           </div>
           <div className="text-center mt-8">
-            <button className="btn-secondary">Follow Us</button>
+            <a
+              href={instagramUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-secondary inline-block"
+            >
+              {t('instagram.follow_button')}
+            </a>
           </div>
         </div>
 
         {/* Press Mentions */}
         <div className="mb-20">
           <h3 className="text-2xl md:text-3xl font-serif text-primary text-center mb-12">
-            As Seen In
+            {t('press.title')}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              {
-                name: 'Fashion Weekly',
-                logo: 'P1',
-                quote: 'Exceptional quality and design',
-              },
-              {
-                name: 'Luxury Magazine',
-                logo: 'P2',
-                quote: 'The perfect blend of tradition and modernity',
-              },
-              {
-                name: 'Style Journal',
-                logo: 'P3',
-                quote: 'Outstanding craftsmanship that stands out',
-              },
+              { key: 'mention1', logo: 'P1' },
+              { key: 'mention2', logo: 'P2' },
+              { key: 'mention3', logo: 'P3' },
             ].map((mention, index) => (
               <div
                 key={index}
@@ -262,10 +259,10 @@ export default function SocialProof() {
                   </span>
                 </div>
                 <h4 className="font-semibold text-primary mb-2">
-                  {mention.name}
+                  {t(`press.${mention.key}.name`)}
                 </h4>
                 <p className="text-text-secondary text-sm italic">
-                  &ldquo;{mention.quote}&rdquo;
+                  &ldquo;{t(`press.${mention.key}.quote`)}&rdquo;
                 </p>
               </div>
             ))}
@@ -276,19 +273,18 @@ export default function SocialProof() {
         <div className="bg-gradient-to-r from-primary to-accent rounded-2xl p-8 md:p-12 text-white">
           <div className="text-center space-y-6">
             <h3 className="text-2xl md:text-3xl font-serif">
-              Join Our Community
+              {t('community.title')}
             </h3>
             <p className="text-lg max-w-3xl mx-auto text-white/90">
-              Be part of a growing community of enthusiasts who appreciate
-              quality craftsmanship and timeless design
+              {t('community.description')}
             </p>
 
             <div className="flex flex-wrap justify-center gap-4">
               <button className="bg-white text-primary px-6 py-3 rounded-lg font-semibold hover:bg-white/90 transition-colors">
-                Join Now
+                {t('community.join_button')}
               </button>
               <button className="bg-transparent border-2 border-white text-white px-6 py-3 rounded-lg font-semibold hover:bg-white hover:text-primary transition-all duration-500">
-                #HolyFans
+                {t('community.hashtag')}
               </button>
             </div>
           </div>

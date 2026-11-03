@@ -1,9 +1,10 @@
 'use client';
 
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useRouter, usePathname } from '@/lib/navigation';
 
 export default function LanguageToggle() {
+  const t = useTranslations('common');
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
@@ -17,7 +18,7 @@ export default function LanguageToggle() {
     <button
       onClick={toggleLanguage}
       className="flex items-center space-x-2 px-3 py-1.5 rounded-lg border border-border hover:bg-surface transition-colors"
-      aria-label="Toggle language"
+      aria-label={t('toggle_language')}
     >
       <span
         className={`text-sm font-medium ${locale === 'pt' ? 'text-primary' : 'text-text-secondary'}`}

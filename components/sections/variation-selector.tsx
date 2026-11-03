@@ -49,10 +49,10 @@ export default function VariationSelector({
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-serif text-primary mb-4">
-              Complete Your Order
+              {t('variation.title')}
             </h2>
             <p className="text-lg text-text-secondary">
-              Select your preferred fit and quantity
+              {t('variation.subtitle')}
             </p>
           </div>
 
@@ -77,7 +77,9 @@ export default function VariationSelector({
                         />
                       </svg>
                     </div>
-                    <p className="text-text-secondary">Product Preview</p>
+                    <p className="text-text-secondary">
+                      {t('variation.preview')}
+                    </p>
                     <p className="text-sm text-text-secondary/60">
                       {currentVariant.name}
                     </p>
@@ -93,19 +95,25 @@ export default function VariationSelector({
               {/* Size Information */}
               <div className="bg-surface rounded-lg p-6">
                 <h3 className="font-semibold text-primary mb-3">
-                  Size Information
+                  {t('variation.size_info')}
                 </h3>
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-text-secondary">Size:</span>
+                    <span className="text-text-secondary">
+                      {t('variation.size')}:
+                    </span>
                     <span className="font-medium">{currentVariant.size}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-text-secondary">Color:</span>
+                    <span className="text-text-secondary">
+                      {t('variation.color')}:
+                    </span>
                     <span className="font-medium">{t('colors.white')}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-text-secondary">Fit:</span>
+                    <span className="text-text-secondary">
+                      {t('variation.fit')}:
+                    </span>
                     <span className="font-medium">{currentVariant.fit}</span>
                   </div>
                 </div>
@@ -122,7 +130,7 @@ export default function VariationSelector({
               {/* Variation Selection */}
               <div className="space-y-4">
                 <h3 className="text-xl font-semibold text-primary">
-                  Select Fit
+                  {t('variation.select_fit')}
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <button
@@ -151,7 +159,7 @@ export default function VariationSelector({
                         {t('fit.male')}
                       </h4>
                       <p className="text-xs text-text-secondary mt-1">
-                        Regular fit
+                        {t('variation.regular_fit')}
                       </p>
                     </div>
                   </button>
@@ -182,7 +190,7 @@ export default function VariationSelector({
                         {t('fit.female')}
                       </h4>
                       <p className="text-xs text-text-secondary mt-1">
-                        Tapered fit
+                        {t('variation.tapered_fit')}
                       </p>
                     </div>
                   </button>
@@ -191,7 +199,9 @@ export default function VariationSelector({
 
               {/* Quantity Selector */}
               <div className="space-y-4">
-                <h3 className="text-xl font-semibold text-primary">Quantity</h3>
+                <h3 className="text-xl font-semibold text-primary">
+                  {t('quantity')}
+                </h3>
                 <div className="flex items-center space-x-4">
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
@@ -243,38 +253,46 @@ export default function VariationSelector({
                   </button>
                 </div>
                 <p className="text-sm text-text-secondary">
-                  Maximum 10 pieces per order
+                  {t('variation.max_quantity')}
                 </p>
               </div>
 
               {/* Price Summary */}
               <div className="bg-surface rounded-lg p-6 space-y-4">
                 <h3 className="text-xl font-semibold text-primary">
-                  Order Summary
+                  {t('variation.summary')}
                 </h3>
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-text-secondary">Product:</span>
+                    <span className="text-text-secondary">
+                      {t('variation.product')}:
+                    </span>
                     <span className="font-medium">{PRODUCT.name}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-text-secondary">Variant:</span>
+                    <span className="text-text-secondary">
+                      {t('variation.variant')}:
+                    </span>
                     <span className="font-medium">{currentVariant.name}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-text-secondary">Unit Price:</span>
+                    <span className="text-text-secondary">
+                      {t('variation.unit_price')}:
+                    </span>
                     <span className="font-medium">
                       {PRODUCT.currency} {PRODUCT.price}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-text-secondary">Quantity:</span>
+                    <span className="text-text-secondary">
+                      {t('quantity')}:
+                    </span>
                     <span className="font-medium">{quantity}</span>
                   </div>
                   <div className="border-t border-border pt-2">
                     <div className="flex justify-between">
                       <span className="text-lg font-semibold text-primary">
-                        Total:
+                        {t('variation.total')}:
                       </span>
                       <span className="text-lg font-semibold text-primary">
                         {PRODUCT.currency} {PRODUCT.price * quantity}
@@ -311,11 +329,12 @@ export default function VariationSelector({
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                       ></path>
                     </svg>
-                    <span>Adding to Cart...</span>
+                    <span>{t('variation.adding_to_cart')}</span>
                   </span>
                 ) : (
                   <span>
-                    Add to Cart - {PRODUCT.currency} {PRODUCT.price * quantity}
+                    {t('add_to_cart')} - {PRODUCT.currency}{' '}
+                    {PRODUCT.price * quantity}
                   </span>
                 )}
               </button>
@@ -336,24 +355,8 @@ export default function VariationSelector({
                       />
                     </svg>
                   </div>
-                  <p className="text-xs text-text-secondary">Secure Payment</p>
-                </div>
-                <div className="space-y-2">
-                  <div className="w-8 h-8 bg-accent/20 rounded-full flex items-center justify-center mx-auto">
-                    <svg
-                      className="w-4 h-4 text-accent"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </div>
                   <p className="text-xs text-text-secondary">
-                    30-Day Guarantee
+                    {t('secure_payment')}
                   </p>
                 </div>
                 <div className="space-y-2">
@@ -370,7 +373,27 @@ export default function VariationSelector({
                       />
                     </svg>
                   </div>
-                  <p className="text-xs text-text-secondary">Fast Shipping</p>
+                  <p className="text-xs text-text-secondary">
+                    {t('variation.guarantee')}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <div className="w-8 h-8 bg-accent/20 rounded-full flex items-center justify-center mx-auto">
+                    <svg
+                      className="w-4 h-4 text-accent"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                  <p className="text-xs text-text-secondary">
+                    {t('fast_shipping')}
+                  </p>
                 </div>
               </div>
             </div>
