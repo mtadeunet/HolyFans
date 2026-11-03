@@ -3,6 +3,7 @@
 import { useCart } from '@/context/cart-context';
 import { PRODUCT } from '@/lib/constants';
 import { useTranslations } from 'next-intl';
+import Image from 'next/image';
 import { useState } from 'react';
 
 export default function ProductGallery() {
@@ -10,7 +11,7 @@ export default function ProductGallery() {
   const { addItem } = useCart();
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedVariation, setSelectedVariation] = useState<'male' | 'female'>(
-    'male'
+    'female'
   );
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
@@ -56,32 +57,20 @@ export default function ProductGallery() {
           {/* Main Image */}
           <div className="space-y-4">
             <div className="relative aspect-square bg-background rounded-2xl overflow-hidden shadow-xl">
-              {/* Placeholder for main product image */}
-              <div className="absolute inset-0 bg-gradient-to-br from-surface to-border flex items-center justify-center">
-                <div className="text-center space-y-4">
-                  <div className="w-48 h-48 bg-accent/20 rounded-full flex items-center justify-center mx-auto">
-                    <svg
-                      className="w-24 h-24 text-accent"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                      <path
-                        fillRule="evenodd"
-                        d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </div>
-                  <p className="text-text-secondary">{t('image_main')}</p>
-                  <p className="text-sm text-text-secondary/60">
-                    {t('image_counter', {
-                      current: selectedImage + 1,
-                      total: currentImages.length,
-                    })}
-                  </p>
-                </div>
-              </div>
+              <Image
+                src={currentImages[selectedImage]}
+                alt={`${PRODUCT.name} — ${t('image_main')} ${selectedImage + 1}`}
+                fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                className="object-cover"
+                priority
+              />
+              <p className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 text-sm text-text-secondary shadow-lg">
+                {t('image_counter', {
+                  current: selectedImage + 1,
+                  total: currentImages.length,
+                })}
+              </p>
 
               {/* Zoom indicator */}
               <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg">
@@ -113,22 +102,13 @@ export default function ProductGallery() {
                       : 'border-transparent hover:border-accent/30'
                   }`}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-br from-surface to-border flex items-center justify-center">
-                    <div className="w-8 h-8 bg-accent/20 rounded-full flex items-center justify-center">
-                      <svg
-                        className="w-4 h-4 text-accent"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                        <path
-                          fillRule="evenodd"
-                          d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    </div>
-                  </div>
+                  <Image
+                    src={image}
+                    alt={`${PRODUCT.name} ${index + 1}`}
+                    fill
+                    sizes="25vw"
+                    className="object-cover"
+                  />
                   <span className="absolute bottom-1 right-1 bg-black/50 text-white text-xs px-1 rounded">
                     {index + 1}
                   </span>
@@ -146,13 +126,14 @@ export default function ProductGallery() {
               </h3>
               <div className="grid grid-cols-2 gap-4">
                 <button
-                  onClick={() => setSelectedVariation('male')}
-                  className={`p-6 rounded-xl border-2 transition-all duration-500 ${
-                    selectedVariation === 'male'
-                      ? 'border-accent bg-accent/5 shadow-lg'
-                      : 'border-transparent hover:border-accent/30 bg-background'
-                  }`}
+                  disabled
+                  aria-disabled="true"
+                  title={t('fit.coming_soon')}
+                  className="relative p-6 rounded-xl border-2 border-dashed border-border bg-surface/50 opacity-70 cursor-not-allowed"
                 >
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent text-white text-xs font-bold uppercase tracking-wide px-3 py-1 rounded-full whitespace-nowrap">
+                    {t('fit.coming_soon')}
+                  </span>
                   <div className="text-center">
                     <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
                       <svg

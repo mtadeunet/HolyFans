@@ -3,6 +3,7 @@
 import PremiumFeaturesModal from '@/components/ui/premium-features-modal';
 import { PRODUCT } from '@/lib/constants';
 import { useTranslations } from 'next-intl';
+import Image from 'next/image';
 import { useEffect, useState } from 'react';
 
 interface HeroProps {
@@ -115,31 +116,14 @@ export default function Hero({ showPremiumFeaturesModal = true }: HeroProps) {
           {/* Product Image */}
           <div className="relative">
             <div className="relative aspect-square max-w-lg mx-auto">
-              {/* Placeholder for product image */}
-              <div className="absolute inset-0 bg-gradient-to-br from-surface to-border rounded-2xl shadow-2xl flex items-center justify-center">
-                <div className="text-center space-y-4">
-                  <div className="w-32 h-32 bg-accent/20 rounded-full flex items-center justify-center mx-auto">
-                    <svg
-                      className="w-16 h-16 text-accent"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                      <path
-                        fillRule="evenodd"
-                        d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </div>
-                  <p className="text-text-secondary">
-                    {t('image_placeholder')}
-                  </p>
-                  <p className="text-sm text-text-secondary/60">
-                    {PRODUCT.name}
-                  </p>
-                </div>
-              </div>
+              <Image
+                src="/images/product-female-1.jpg"
+                alt={t('image_alt')}
+                fill
+                priority
+                sizes="(max-width: 1024px) 100vw, 512px"
+                className="object-cover rounded-2xl shadow-2xl"
+              />
 
               {/* Floating Elements */}
               <div className="absolute -top-4 -right-4 w-20 h-20 bg-accent/10 rounded-full flex items-center justify-center animate-pulse">

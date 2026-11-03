@@ -35,7 +35,7 @@
       "limited": "Limited Edition",
       "guarantee": "30-Day Guarantee"
     },
-    "image_placeholder": "Product Image",
+    "image_alt": "Our Lady of the Rose T-Shirt",
     "badge_new": "NEW"
   },
   "product": {
@@ -78,7 +78,8 @@
     "fit": {
       "male": "Men's",
       "female": "Women's",
-      "size_assurance": "Size M fits most people perfectly"
+      "size_assurance": "Size M fits most people perfectly",
+      "coming_soon": "Coming Soon"
     },
     "colors": {
       "white": "White"
@@ -87,8 +88,7 @@
   "craftsmanship": {
     "title": "Exceptional Craftsmanship",
     "subtitle": "Each HolyFans piece is meticulously crafted with premium materials and artistic attention to detail, creating wearable art that lasts a lifetime.",
-    "image_placeholder": "Craftsmanship Details",
-    "image_caption": "Premium materials & artistic design",
+    "image_alt": "Craftsmanship details",
     "badge_handmade": "HANDMADE",
     "badge_premium": "PREMIUM",
     "story": {

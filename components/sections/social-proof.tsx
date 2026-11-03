@@ -1,6 +1,8 @@
 'use client';
 
+import { PRODUCT } from '@/lib/constants';
 import { useTranslations } from 'next-intl';
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 
 /**
@@ -200,11 +202,21 @@ export default function SocialProof() {
             {t('instagram.title')}
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {Array.from({ length: 8 }, (_, i) => (
-              <div
-                key={i}
-                className="relative aspect-square bg-gradient-to-br from-surface to-border rounded-xl overflow-hidden group cursor-pointer"
+            {PRODUCT.images.female.map((src, index) => (
+              <a
+                key={src}
+                href={instagramUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="relative aspect-square rounded-xl overflow-hidden group cursor-pointer"
               >
+                <Image
+                  src={src}
+                  alt={`${PRODUCT.name} ${index + 1}`}
+                  fill
+                  sizes="(max-width: 768px) 50vw, 25vw"
+                  className="object-cover"
+                />
                 <div className="absolute inset-0 bg-accent/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                   <svg
                     className="w-8 h-8 text-white"
@@ -223,7 +235,7 @@ export default function SocialProof() {
                     @{instagramHandle}
                   </div>
                 )}
-              </div>
+              </a>
             ))}
           </div>
           <div className="text-center mt-8">

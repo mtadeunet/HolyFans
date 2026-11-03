@@ -35,7 +35,7 @@
       "limited": "Edição Limitada",
       "guarantee": "Garantia de 30 Dias"
     },
-    "image_placeholder": "Imagem do Produto",
+    "image_alt": "T-Shirt Nossa Senhora da Rosa",
     "badge_new": "NOVO"
   },
   "product": {
@@ -78,7 +78,8 @@
     "fit": {
       "male": "Masculino",
       "female": "Feminino",
-      "size_assurance": "Tamanho M ajusta perfeitamente na maioria das pessoas"
+      "size_assurance": "Tamanho M ajusta perfeitamente na maioria das pessoas",
+      "coming_soon": "Em Breve"
     },
     "colors": {
       "white": "Branco"
@@ -87,8 +88,7 @@
   "craftsmanship": {
     "title": "Artesanato Excepcional",
     "subtitle": "Cada peça HolyFans é meticulosamente confecionada com materiais premium e atenção artística aos detalhes, criando arte que se veste que dura toda a vida.",
-    "image_placeholder": "Detalhes de Artesanato",
-    "image_caption": "Materiais premium e design artístico",
+    "image_alt": "Detalhes de artesanato",
     "badge_handmade": "ARTESANAL",
     "badge_premium": "PREMIUM",
     "story": {

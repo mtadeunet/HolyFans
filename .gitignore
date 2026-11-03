@@ -57,3 +57,27 @@ docs/adr-reports/
 
 # Local tooling scripts — QR generator, IDE launcher; not repo source
 scripts/
+.playwright-mcp/console-2026-11-03T13-08-02-923Z.log
+.playwright-mcp/console-2026-11-03T13-16-14-778Z.log
+.playwright-mcp/console-2026-11-03T22-30-40-485Z.log
+.playwright-mcp/console-2026-11-03T22-39-05-133Z.log
+.playwright-mcp/console-2026-11-03T22-39-33-084Z.log
+.playwright-mcp/console-2026-11-03T22-40-49-934Z.log
+.playwright-mcp/console-2026-11-03T22-41-40-560Z.log
+.playwright-mcp/console-2026-11-03T22-42-38-732Z.log
+.playwright-mcp/craftsmanship-en.png
+.playwright-mcp/gallery-view.png
+.playwright-mcp/hero-en.png
+.playwright-mcp/hero-pt.png
+.playwright-mcp/hero-view.png
+.playwright-mcp/instagram-grid-en.png
+.playwright-mcp/page-2026-11-03T13-08-05-300Z.yml
+.playwright-mcp/page-2026-11-03T22-30-44-692Z.yml
+.playwright-mcp/page-2026-11-03T22-39-14-301Z.yml
+.playwright-mcp/page-2026-11-03T22-39-38-739Z.yml
+.playwright-mcp/page-2026-11-03T22-40-56-867Z.yml
+.playwright-mcp/page-2026-11-03T22-41-45-748Z.yml
+.playwright-mcp/page-2026-11-03T22-42-45-896Z.yml
+.playwright-mcp/verify-craftsmanship.png
+.playwright-mcp/verify-fullpage.png
+.playwright-mcp/verify-hero.png
