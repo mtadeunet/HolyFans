@@ -1,6 +1,5 @@
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
-import { SITE_CONFIG } from '@/lib/constants';
 import { getSiteConfig } from '@/lib/site-config';
 import { isPurchaseSurfaceEnabled } from '@/lib/purchase-surface';
 import { CartProvider } from '@/context/cart-context';
@@ -8,7 +7,6 @@ import Header from '@/components/layout/header';
 import Footer from '@/components/layout/footer';
 import MobileStickyCta from '@/components/layout/mobile-sticky-cta';
 import { Analytics } from '@vercel/analytics/next';
-import './globals.css';
 
 /**
  * Implements ADR 00-002: Rendering and Hosting Model - "Site Config is read
@@ -24,12 +22,9 @@ export const dynamic = 'force-dynamic';
 
 export default async function LocaleLayout({
   children,
-  params,
 }: {
   children: React.ReactNode;
-  params: Promise<{ locale: string }>;
 }) {
-  const { locale } = await params;
   const [messages, siteConfig] = await Promise.all([
     getMessages(),
     getSiteConfig(),
@@ -40,35 +35,18 @@ export default async function LocaleLayout({
   const purchaseSurfaceEnabled = isPurchaseSurfaceEnabled();
 
   return (
-    <html lang={locale}>
-      <head>
-        <title key="title">{SITE_CONFIG.name}</title>
-        <meta
-          name="description"
-          content={SITE_CONFIG.description}
-          key="description"
-        />
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1"
-          key="viewport"
-        />
-      </head>
-      <body>
-        <NextIntlClientProvider messages={messages}>
-          <CartProvider>
-            <div className="min-h-screen flex flex-col">
-              {siteConfig.chrome.header && (
-                <Header purchaseSurfaceEnabled={purchaseSurfaceEnabled} />
-              )}
-              <main className="flex-1">{children}</main>
-              {siteConfig.chrome.footer && <Footer />}
-            </div>
-            {siteConfig.chrome.mobileStickyCta && <MobileStickyCta />}
-          </CartProvider>
-        </NextIntlClientProvider>
-        <Analytics />
-      </body>
-    </html>
+    <NextIntlClientProvider messages={messages}>
+      <CartProvider>
+        <div className="min-h-screen flex flex-col">
+          {siteConfig.chrome.header && (
+            <Header purchaseSurfaceEnabled={purchaseSurfaceEnabled} />
+          )}
+          <main className="flex-1">{children}</main>
+          {siteConfig.chrome.footer && <Footer />}
+        </div>
+        {siteConfig.chrome.mobileStickyCta && <MobileStickyCta />}
+      </CartProvider>
+      <Analytics />
+    </NextIntlClientProvider>
   );
 }

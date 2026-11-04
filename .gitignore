@@ -81,3 +81,5 @@ scripts/
 .playwright-mcp/verify-craftsmanship.png
 .playwright-mcp/verify-fullpage.png
 .playwright-mcp/verify-hero.png
+.playwright-mcp/console-2026-11-04T11-16-56-324Z.log
+.playwright-mcp/page-2026-11-04T11-17-01-369Z.yml
