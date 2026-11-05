@@ -393,77 +393,63 @@
   },
   "purchase": {
     "title": "Conclua a Sua Compra",
-    "subtitle": "Reveja a sua encomenda e forneça os seus dados",
+    "subtitle": "Reveja a sua encomenda — o envio, os impostos e o pagamento são tratados no nosso checkout seguro",
     "items": {
       "title": "A sua Encomenda",
       "remove": "Remover item"
-    },
-    "customer": {
-      "title": "Informação do Cliente",
-      "email": "Endereço de Email",
-      "email_placeholder": "seu@email.com",
-      "phone": "Número de Telefone",
-      "phone_placeholder": "+351 123 456 789",
-      "first_name": "Nome",
-      "first_name_placeholder": "João",
-      "last_name": "Apelido",
-      "last_name_placeholder": "Silva",
-      "address": "Morada",
-      "address_placeholder": "Rua Principal, 123",
-      "city": "Cidade",
-      "city_placeholder": "Lisboa",
-      "postal_code": "Código Postal",
-      "postal_code_placeholder": "1000-001",
-      "country": "País",
-      "countries": {
-        "portugal": "Portugal",
-        "spain": "Espanha",
-        "france": "França",
-        "germany": "Alemanha",
-        "italy": "Itália",
-        "united_kingdom": "Reino Unido",
-        "other": "Outro"
-      }
     },
     "summary": {
       "title": "Resumo da Encomenda",
       "subtotal": "Subtotal",
       "shipping": "Envio",
-      "free": "Grátis",
-      "tax": "Imposto",
+      "tax": "Imposto (IVA)",
+      "at_checkout": "Calculado no checkout",
       "total": "Total"
-    },
-    "payment": {
-      "title": "Método de Pagamento",
-      "credit_card": "Cartão de Crédito",
-      "credit_card_desc": "Pague de forma segura com Visa, Mastercard ou American Express",
-      "paypal": "PayPal",
-      "paypal_desc": "Pague com a sua conta PayPal"
-    },
-    "validation": {
-      "email_required": "Email é obrigatório",
-      "email_invalid": "Por favor, introduza um email válido",
-      "phone_required": "Número de telefone é obrigatório",
-      "phone_invalid": "Por favor, introduza um número de telefone válido",
-      "first_name_required": "Nome próprio é obrigatório",
-      "last_name_required": "Apelido é obrigatório",
-      "address_required": "Morada é obrigatória",
-      "city_required": "Cidade é obrigatória",
-      "postal_code_required": "Código postal é obrigatório"
     },
     "empty": {
       "title": "O seu carrinho está vazio",
       "description": "Parece que ainda não adicionou nada ao seu carrinho.",
       "continue_shopping": "Continuar a Comprar"
     },
-    "success": {
-      "title": "Encomenda Concluída com Sucesso!",
-      "order_number": "Número da Encomenda:",
-      "description": "Obrigado pela sua encomenda! Enviaremos um email de confirmação com os detalhes da sua encomenda e informação de rastreamento.",
+    "drift": {
+      "title": "O seu carrinho foi atualizado",
+      "description": "Alguns artigos mudaram desde que os adicionou. Corrigimos o seu carrinho — por favor reveja-o e tente novamente.",
+      "reasons": {
+        "unknown": "{name} deixou de estar disponível e foi removido.",
+        "sold_out": "{name} esgotou e foi removido.",
+        "over_cap": "{name} foi limitado a {maxQuantity} por encomenda."
+      }
+    },
+    "unavailable": {
+      "title": "Checkout indisponível",
+      "description": "Não foi possível iniciar o checkout seguro neste momento. O seu carrinho está guardado — por favor tente novamente dentro de instantes."
+    },
+    "test_mode": {
+      "title": "Modo de teste",
+      "description": "Esta loja está a funcionar com chaves de pagamento de teste — as encomendas são simuladas e não será efetuada qualquer cobrança real."
+    },
+    "success_page": {
+      "paid": {
+        "title": "Encomenda confirmada",
+        "description": "Obrigado — o seu pagamento foi recebido. Receberá um recibo por email do nosso prestador de pagamentos e vamos começar a preparar a sua encomenda."
+      },
+      "pending": {
+        "title": "Pagamento pendente",
+        "description": "A sua encomenda foi criada e foi emitida uma referência Multibanco. Conclua o pagamento num multibanco ou na sua app de homebanking com essa referência — prepararemos a sua encomenda assim que o pagamento for confirmado."
+      },
+      "generic": {
+        "title": "Obrigado pela sua encomenda",
+        "description": "Se concluiu um pagamento, receberá um email de confirmação em breve. Para qualquer questão sobre a sua encomenda, contacte-nos."
+      },
       "continue_shopping": "Continuar a Comprar"
     },
-    "processing": "A processar...",
-    "submit_button": "Concluir Compra",
+    "cancel_page": {
+      "title": "Checkout cancelado",
+      "description": "Não foi efetuado qualquer pagamento — o seu carrinho foi preservado exatamente como o deixou.",
+      "back_to_checkout": "Voltar ao checkout"
+    },
+    "processing": "A redirecionar para o checkout seguro…",
+    "submit_button": "Continuar para Pagamento Seguro",
     "trust": {
       "title": "Compra Segura",
       "description": "A sua informação está protegida com encriptação SSL e garantia de devolução de 30 dias."

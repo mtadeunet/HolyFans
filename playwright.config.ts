@@ -34,7 +34,7 @@ export default defineConfig({
     {
       name: 'purchase-enabled',
       use: { baseURL: enabledBaseURL },
-      testMatch: /purchase-surface-enabled\.spec\.ts/,
+      testMatch: /(purchase-surface-enabled|checkout)\.spec\.ts/,
     },
   ],
   webServer: [

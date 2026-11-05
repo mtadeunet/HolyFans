@@ -1,136 +1,151 @@
 'use client';
 
 import { useCart } from '@/context/cart-context';
-import { useTranslations } from 'next-intl';
-import { formatPrice, validateEmail, validatePhone } from '@/lib/utils';
+import { useLocale, useTranslations } from 'next-intl';
+import { formatPrice } from '@/lib/utils';
 import { useState } from 'react';
+import type {
+  CartCorrection,
+  CartDriftReason,
+} from '@/lib/checkout-validation';
 
+/**
+ * A Cart/Product-Data divergence reported by the Route Handler, snapshotted
+ * with its display label so the panel stays stable after the Cart is
+ * corrected.
+ */
+interface DriftLine {
+  label: string;
+  reason: CartDriftReason;
+  maxQuantity?: number;
+}
+
+/**
+ * Implements ADR 00-004: Commerce and Checkout - "refuses checkout on any
+ * Cart/Product Data divergence, surfacing a review-and-correct state to the
+ * shopper" and "checkout must degrade gracefully" (the unavailable state).
+ */
+type CheckoutFailure =
+  { kind: 'drift'; lines: DriftLine[] } | { kind: 'unavailable' };
+
+/**
+ * Implements ADR 00-004: Commerce and Checkout - "the shopper's Cart is
+ * submitted to the Storefront's single checkout Route Handler ... then
+ * redirects the shopper to the PSP-hosted payment page". Shipping address
+ * and payment method are collected by the PSP's Hosted Checkout, not by
+ * local forms.
+ */
 export default function Purchase() {
   const t = useTranslations('purchase');
-  const { items, getTotal, removeItem, updateQuantity, clearCart } = useCart();
+  const locale = useLocale();
+  const { items, hydrated, getTotal, removeItem, updateQuantity } = useCart();
   const [isProcessing, setIsProcessing] = useState(false);
-  const [orderComplete, setOrderComplete] = useState(false);
-  const [orderNumber, setOrderNumber] = useState('');
+  const [failure, setFailure] = useState<CheckoutFailure | null>(null);
 
-  const [formData, setFormData] = useState({
-    email: '',
-    firstName: '',
-    lastName: '',
-    phone: '',
-    address: '',
-    city: '',
-    postalCode: '',
-    country: 'Portugal',
-    paymentMethod: 'credit_card',
-  });
+  /**
+   * Implements ADR 00-004: Commerce and Checkout - "creates Sessions
+   * idempotently — retries never produce duplicate Checkout Sessions".
+   *
+   * One idempotency key per mounted purchase session: retries reuse the
+   * same `attemptId`, so a retry after a failed or abandoned handoff can
+   * never mint a second Checkout Session. A successful attempt navigates
+   * away to the PSP-hosted page, so the key never needs regenerating.
+   */
+  const [attemptId] = useState<string>(() => crypto.randomUUID());
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.email) {
-      newErrors.email = t('validation.email_required');
-    } else if (!validateEmail(formData.email)) {
-      newErrors.email = t('validation.email_invalid');
-    }
-
-    if (!formData.firstName) {
-      newErrors.firstName = t('validation.first_name_required');
-    }
-
-    if (!formData.lastName) {
-      newErrors.lastName = t('validation.last_name_required');
-    }
-
-    if (!formData.phone) {
-      newErrors.phone = t('validation.phone_required');
-    } else if (!validatePhone(formData.phone)) {
-      newErrors.phone = t('validation.phone_invalid');
-    }
-
-    if (!formData.address) {
-      newErrors.address = t('validation.address_required');
-    }
-
-    if (!formData.city) {
-      newErrors.city = t('validation.city_required');
-    }
-
-    if (!formData.postalCode) {
-      newErrors.postalCode = t('validation.postal_code_required');
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: '' }));
+  /**
+   * Correct the local Cart to match Product Data using the handler's
+   * corrections: `over_cap` clamps (a `maxQuantity` of `0` removes the
+   * line via updateQuantity's non-positive path), `unknown`/`sold_out`
+   * remove the line. Corrections are keyed by `variantId` — the same key
+   * the Cart lines are stored under.
+   */
+  const applyCorrections = (corrections: CartCorrection[]) => {
+    for (const correction of corrections) {
+      if (
+        correction.reason === 'over_cap' &&
+        typeof correction.maxQuantity === 'number'
+      ) {
+        updateQuantity(correction.variantId, correction.maxQuantity);
+      } else {
+        removeItem(correction.variantId);
+      }
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!validateForm()) {
+    if (isProcessing || items.length === 0) {
       return;
     }
 
+    // Idempotent submit (ADR 00-004): the control disables on first use
+    // and every retry reuses this mount's `attemptId` as the idempotency
+    // key, so retries never create duplicate Checkout Sessions.
     setIsProcessing(true);
+    setFailure(null);
 
-    // Simulate order processing
-    setTimeout(() => {
-      const orderNum = `HF${Date.now().toString().slice(-6)}`;
-      setOrderNumber(orderNum);
-      setOrderComplete(true);
-      clearCart();
+    try {
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: items.map((item) => ({
+            variantId: item.variant.id,
+            quantity: item.quantity,
+          })),
+          locale: locale === 'pt' ? 'pt' : 'en',
+          attemptId,
+        }),
+      });
+
+      if (response.status === 409) {
+        const data = (await response.json()) as {
+          corrections?: CartCorrection[];
+        };
+        const corrections = data.corrections ?? [];
+        setFailure({
+          kind: 'drift',
+          lines: corrections.map((correction) => ({
+            label:
+              items.find((i) => i.variant.id === correction.variantId)?.variant
+                .name ?? correction.variantId,
+            reason: correction.reason,
+            maxQuantity: correction.maxQuantity,
+          })),
+        });
+        applyCorrections(corrections);
+        setIsProcessing(false);
+        return;
+      }
+
+      if (!response.ok) {
+        setFailure({ kind: 'unavailable' });
+        setIsProcessing(false);
+        return;
+      }
+
+      const data = (await response.json()) as { url?: string };
+      if (!data.url) {
+        setFailure({ kind: 'unavailable' });
+        setIsProcessing(false);
+        return;
+      }
+
+      // Handoff to the PSP-hosted page; keep the control disabled while the
+      // browser navigates away.
+      window.location.href = data.url;
+    } catch {
+      setFailure({ kind: 'unavailable' });
       setIsProcessing(false);
-    }, 3000);
+    }
   };
 
-  if (orderComplete) {
-    return (
-      <section
-        data-testid="purchase-surface"
-        className="py-16 md:py-24 lg:py-32 bg-surface"
-      >
-        <div className="container">
-          <div className="max-w-2xl mx-auto text-center space-y-8">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-              <svg
-                className="w-10 h-10 text-green-600"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </div>
-            <h1 className="text-3xl md:text-4xl font-serif text-primary">
-              {t('success.title')}
-            </h1>
-            <div className="bg-background rounded-xl p-6 border-2 border-accent/20">
-              <p className="text-lg font-semibold text-primary mb-2">
-                {t('success.order_number')} {orderNumber}
-              </p>
-              <p className="text-text-secondary">{t('success.description')}</p>
-            </div>
-            <button
-              onClick={() => (window.location.href = '/')}
-              className="btn-primary"
-            >
-              {t('success.continue_shopping')}
-            </button>
-          </div>
-        </div>
-      </section>
-    );
+  // Stored Cart lines rehydrate in an effect after mount; holding the
+  // render until then avoids a one-frame "cart is empty" flash for
+  // returning shoppers.
+  if (!hydrated) {
+    return null;
   }
 
   if (items.length === 0) {
@@ -230,7 +245,7 @@ export default function Purchase() {
                           </p>
                         </div>
                         <button
-                          onClick={() => removeItem(item.product.id)}
+                          onClick={() => removeItem(item.variant.id)}
                           className="text-text-secondary hover:text-red-500 transition-colors"
                           aria-label={t('items.remove')}
                         >
@@ -254,7 +269,7 @@ export default function Purchase() {
                         <div className="flex items-center space-x-2">
                           <button
                             onClick={() =>
-                              updateQuantity(item.product.id, item.quantity - 1)
+                              updateQuantity(item.variant.id, item.quantity - 1)
                             }
                             className="w-6 h-6 rounded border border-border bg-background hover:bg-surface transition-colors flex items-center justify-center"
                           >
@@ -277,7 +292,7 @@ export default function Purchase() {
                           </span>
                           <button
                             onClick={() =>
-                              updateQuantity(item.product.id, item.quantity + 1)
+                              updateQuantity(item.variant.id, item.quantity + 1)
                             }
                             className="w-6 h-6 rounded border border-border bg-background hover:bg-surface transition-colors flex items-center justify-center"
                           >
@@ -308,197 +323,9 @@ export default function Purchase() {
                 ))}
               </div>
             </div>
-
-            {/* Customer Information */}
-            <div className="bg-background rounded-xl p-6 border-2 border-transparent hover:border-accent/30 transition-all duration-500">
-              <h2 className="text-xl font-semibold text-primary mb-6">
-                {t('customer.title')}
-              </h2>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-primary mb-2">
-                    {t('customer.email')}
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-accent ${
-                      errors.email ? 'border-red-500' : 'border-border'
-                    }`}
-                    placeholder={t('customer.email_placeholder')}
-                  />
-                  {errors.email && (
-                    <p className="text-red-500 text-sm mt-1">{errors.email}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-primary mb-2">
-                    {t('customer.phone')}
-                  </label>
-                  <input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => handleInputChange('phone', e.target.value)}
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-accent ${
-                      errors.phone ? 'border-red-500' : 'border-border'
-                    }`}
-                    placeholder={t('customer.phone_placeholder')}
-                  />
-                  {errors.phone && (
-                    <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-primary mb-2">
-                    {t('customer.first_name')}
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.firstName}
-                    onChange={(e) =>
-                      handleInputChange('firstName', e.target.value)
-                    }
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-accent ${
-                      errors.firstName ? 'border-red-500' : 'border-border'
-                    }`}
-                    placeholder={t('customer.first_name_placeholder')}
-                  />
-                  {errors.firstName && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.firstName}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-primary mb-2">
-                    {t('customer.last_name')}
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.lastName}
-                    onChange={(e) =>
-                      handleInputChange('lastName', e.target.value)
-                    }
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-accent ${
-                      errors.lastName ? 'border-red-500' : 'border-border'
-                    }`}
-                    placeholder={t('customer.last_name_placeholder')}
-                  />
-                  {errors.lastName && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.lastName}
-                    </p>
-                  )}
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-primary mb-2">
-                    {t('customer.address')}
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.address}
-                    onChange={(e) =>
-                      handleInputChange('address', e.target.value)
-                    }
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-accent ${
-                      errors.address ? 'border-red-500' : 'border-border'
-                    }`}
-                    placeholder={t('customer.address_placeholder')}
-                  />
-                  {errors.address && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.address}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-primary mb-2">
-                    {t('customer.city')}
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.city}
-                    onChange={(e) => handleInputChange('city', e.target.value)}
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-accent ${
-                      errors.city ? 'border-red-500' : 'border-border'
-                    }`}
-                    placeholder={t('customer.city_placeholder')}
-                  />
-                  {errors.city && (
-                    <p className="text-red-500 text-sm mt-1">{errors.city}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-primary mb-2">
-                    {t('customer.postal_code')}
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.postalCode}
-                    onChange={(e) =>
-                      handleInputChange('postalCode', e.target.value)
-                    }
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-accent ${
-                      errors.postalCode ? 'border-red-500' : 'border-border'
-                    }`}
-                    placeholder={t('customer.postal_code_placeholder')}
-                  />
-                  {errors.postalCode && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.postalCode}
-                    </p>
-                  )}
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-primary mb-2">
-                    {t('customer.country')}
-                  </label>
-                  <select
-                    value={formData.country}
-                    onChange={(e) =>
-                      handleInputChange('country', e.target.value)
-                    }
-                    className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:border-accent"
-                  >
-                    {/* `value` attributes keep their EN form semantics;
-                        only the visible labels are localized (ADR 00-005). */}
-                    <option value="Portugal">
-                      {t('customer.countries.portugal')}
-                    </option>
-                    <option value="Spain">
-                      {t('customer.countries.spain')}
-                    </option>
-                    <option value="France">
-                      {t('customer.countries.france')}
-                    </option>
-                    <option value="Germany">
-                      {t('customer.countries.germany')}
-                    </option>
-                    <option value="Italy">
-                      {t('customer.countries.italy')}
-                    </option>
-                    <option value="United Kingdom">
-                      {t('customer.countries.united_kingdom')}
-                    </option>
-                    <option value="Other">
-                      {t('customer.countries.other')}
-                    </option>
-                  </select>
-                </div>
-              </div>
-            </div>
           </div>
 
-          {/* Order Summary & Payment */}
+          {/* Order Summary & Submit */}
           <div className="space-y-6">
             {/* Order Summary */}
             <div className="bg-background rounded-xl p-6 border-2 border-transparent hover:border-accent/30 transition-all duration-500">
@@ -520,14 +347,16 @@ export default function Purchase() {
                   <span className="text-text-secondary">
                     {t('summary.shipping')}
                   </span>
-                  <span className="font-medium">{t('summary.free')}</span>
+                  <span className="font-medium">
+                    {t('summary.at_checkout')}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-text-secondary">
                     {t('summary.tax')}
                   </span>
                   <span className="font-medium">
-                    {items[0]?.product.currency || 'EUR'} {formatPrice(0)}
+                    {t('summary.at_checkout')}
                   </span>
                 </div>
               </div>
@@ -545,56 +374,44 @@ export default function Purchase() {
               </div>
             </div>
 
-            {/* Payment Method */}
-            <div className="bg-background rounded-xl p-6 border-2 border-transparent hover:border-accent/30 transition-all duration-500">
-              <h2 className="text-xl font-semibold text-primary mb-6">
-                {t('payment.title')}
-              </h2>
-
-              <div className="space-y-3">
-                <label className="flex items-center space-x-3 p-3 border border-border rounded-lg hover:bg-surface cursor-pointer">
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="credit_card"
-                    checked={formData.paymentMethod === 'credit_card'}
-                    onChange={(e) =>
-                      handleInputChange('paymentMethod', e.target.value)
-                    }
-                    className="text-accent"
-                  />
-                  <div>
-                    <span className="font-medium text-primary">
-                      {t('payment.credit_card')}
-                    </span>
-                    <p className="text-sm text-text-secondary">
-                      {t('payment.credit_card_desc')}
-                    </p>
-                  </div>
-                </label>
-
-                <label className="flex items-center space-x-3 p-3 border border-border rounded-lg hover:bg-surface cursor-pointer">
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="paypal"
-                    checked={formData.paymentMethod === 'paypal'}
-                    onChange={(e) =>
-                      handleInputChange('paymentMethod', e.target.value)
-                    }
-                    className="text-accent"
-                  />
-                  <div>
-                    <span className="font-medium text-primary">
-                      {t('payment.paypal')}
-                    </span>
-                    <p className="text-sm text-text-secondary">
-                      {t('payment.paypal_desc')}
-                    </p>
-                  </div>
-                </label>
+            {/* Cart/Product-Data divergence — "cart updated, review changes" */}
+            {failure?.kind === 'drift' && (
+              <div className="bg-amber-50 border-2 border-amber-300 rounded-xl p-6">
+                <h2 className="text-lg font-semibold text-amber-800 mb-2">
+                  {t('drift.title')}
+                </h2>
+                <p className="text-sm text-amber-800 mb-3">
+                  {t('drift.description')}
+                </p>
+                <ul className="space-y-1">
+                  {failure.lines.map((line, index) => (
+                    <li key={index} className="text-sm text-amber-800">
+                      {line.reason === 'over_cap' &&
+                      typeof line.maxQuantity === 'number'
+                        ? t('drift.reasons.over_cap', {
+                            name: line.label,
+                            maxQuantity: line.maxQuantity,
+                          })
+                        : t(`drift.reasons.${line.reason}`, {
+                            name: line.label,
+                          })}
+                    </li>
+                  ))}
+                </ul>
               </div>
-            </div>
+            )}
+
+            {/* Degradation — "checkout unavailable, cart preserved" */}
+            {failure?.kind === 'unavailable' && (
+              <div className="bg-red-50 border-2 border-red-300 rounded-xl p-6">
+                <h2 className="text-lg font-semibold text-red-800 mb-2">
+                  {t('unavailable.title')}
+                </h2>
+                <p className="text-sm text-red-800">
+                  {t('unavailable.description')}
+                </p>
+              </div>
+            )}
 
             {/* Submit Button */}
             <button

@@ -14,31 +14,17 @@ export default function ProductGallery() {
     'female'
   );
   const [quantity, setQuantity] = useState(1);
-  const [isAdding, setIsAdding] = useState(false);
 
   const currentImages =
     selectedVariation === 'male' ? PRODUCT.images.male : PRODUCT.images.female;
 
-  const handleAddToCart = async () => {
-    setIsAdding(true);
-
-    // Simulate processing time
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    addItem(
-      PRODUCT,
-      selectedVariation === 'male'
-        ? PRODUCT.variants.male
-        : PRODUCT.variants.female
-    );
-    setIsAdding(false);
-
-    // You could add a toast notification here
-    console.log('Added to cart:', {
-      product: PRODUCT,
-      variant: selectedVariation,
-      quantity,
-    });
+  /**
+   * Add the selected Variant to the Cart at the picker's quantity;
+   * `addItem` clamps the merged line to the Variant's Purchase Cap
+   * including units already in the Cart (ADR 00-004).
+   */
+  const handleAddToCart = () => {
+    addItem(PRODUCT, PRODUCT.variants[selectedVariation], quantity);
   };
 
   return (
@@ -125,15 +111,31 @@ export default function ProductGallery() {
                 {t('choose_fit')}
               </h3>
               <div className="grid grid-cols-2 gap-4">
+                {/* Availability Flag (ADR 00-004): a Variant with
+                    `available: false` is unselectable and shows the
+                    existing "coming soon" treatment. */}
                 <button
-                  disabled
-                  aria-disabled="true"
-                  title={t('fit.coming_soon')}
-                  className="relative p-6 rounded-xl border-2 border-dashed border-border bg-surface/50 opacity-70 cursor-not-allowed"
+                  onClick={() => setSelectedVariation('male')}
+                  disabled={!PRODUCT.variants.male.available}
+                  aria-disabled={!PRODUCT.variants.male.available}
+                  title={
+                    !PRODUCT.variants.male.available
+                      ? t('fit.coming_soon')
+                      : undefined
+                  }
+                  className={`relative p-6 rounded-xl border-2 transition-all duration-500 ${
+                    !PRODUCT.variants.male.available
+                      ? 'border-dashed border-border bg-surface/50 opacity-70 cursor-not-allowed'
+                      : selectedVariation === 'male'
+                        ? 'border-accent bg-accent/5 shadow-lg'
+                        : 'border-transparent hover:border-accent/30 bg-background'
+                  }`}
                 >
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent text-white text-xs font-bold uppercase tracking-wide px-3 py-1 rounded-full whitespace-nowrap">
-                    {t('fit.coming_soon')}
-                  </span>
+                  {!PRODUCT.variants.male.available && (
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent text-white text-xs font-bold uppercase tracking-wide px-3 py-1 rounded-full whitespace-nowrap">
+                      {t('fit.coming_soon')}
+                    </span>
+                  )}
                   <div className="text-center">
                     <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
                       <svg
@@ -174,12 +176,26 @@ export default function ProductGallery() {
 
                 <button
                   onClick={() => setSelectedVariation('female')}
-                  className={`p-6 rounded-xl border-2 transition-all duration-500 ${
-                    selectedVariation === 'female'
-                      ? 'border-accent bg-accent/5 shadow-lg'
-                      : 'border-transparent hover:border-accent/30 bg-background'
+                  disabled={!PRODUCT.variants.female.available}
+                  aria-disabled={!PRODUCT.variants.female.available}
+                  title={
+                    !PRODUCT.variants.female.available
+                      ? t('fit.coming_soon')
+                      : undefined
+                  }
+                  className={`relative p-6 rounded-xl border-2 transition-all duration-500 ${
+                    !PRODUCT.variants.female.available
+                      ? 'border-dashed border-border bg-surface/50 opacity-70 cursor-not-allowed'
+                      : selectedVariation === 'female'
+                        ? 'border-accent bg-accent/5 shadow-lg'
+                        : 'border-transparent hover:border-accent/30 bg-background'
                   }`}
                 >
+                  {!PRODUCT.variants.female.available && (
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent text-white text-xs font-bold uppercase tracking-wide px-3 py-1 rounded-full whitespace-nowrap">
+                      {t('fit.coming_soon')}
+                    </span>
+                  )}
                   <div className="text-center">
                     <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
                       <svg
@@ -322,7 +338,14 @@ export default function ProductGallery() {
                     {quantity}
                   </span>
                   <button
-                    onClick={() => setQuantity(quantity + 1)}
+                    onClick={() =>
+                      setQuantity(
+                        Math.min(
+                          quantity + 1,
+                          PRODUCT.variants[selectedVariation].maxQuantity
+                        )
+                      )
+                    }
                     className="w-12 h-12 rounded-lg border-2 border-border bg-background hover:bg-surface transition-colors flex items-center justify-center"
                   >
                     <svg
@@ -344,35 +367,9 @@ export default function ProductGallery() {
 
               <button
                 onClick={handleAddToCart}
-                disabled={isAdding}
-                className="w-full btn-primary text-lg px-8 py-4 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full btn-primary text-lg px-8 py-4 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-500"
               >
-                {isAdding ? (
-                  <span className="flex items-center justify-center space-x-2">
-                    <svg
-                      className="animate-spin h-5 w-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    <span>{t('adding')}</span>
-                  </span>
-                ) : (
-                  <span>{t('add_to_cart')}</span>
-                )}
+                <span>{t('add_to_cart')}</span>
               </button>
 
               {/* Trust Seals */}

@@ -58,6 +58,13 @@ export default function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // The checkout Route Handler (ADR 00-002's enumerated dynamic surface)
+  // lives outside the Locale trees: `/api/*` must reach it directly —
+  // running intlMiddleware here would locale-prefix the POST.
+  if (normalizedPath === '/api' || normalizedPath.startsWith('/api/')) {
+    return NextResponse.next();
+  }
+
   const localeRedirectRegex = new RegExp(
     `^/(?:${locales.join('|')})/qrcoderedirect$`
   );

@@ -22,24 +22,3 @@ export function formatPrice(price: number, currency: string = 'EUR'): string {
     currency: currency,
   }).format(price);
 }
-
-/**
- * Validate an email address shape (local@domain.tld).
- * @param email - Candidate email string.
- * @returns `true` when the shape is valid.
- */
-export function validateEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-}
-
-/**
- * Validate a phone number shape (digits, spaces, dashes, parentheses,
- * optional leading `+`) of at least 10 characters.
- * @param phone - Candidate phone string.
- * @returns `true` when the shape is valid.
- */
-export function validatePhone(phone: string): boolean {
-  const phoneRegex = /^\+?[\d\s\-\(\)]+$/;
-  return phoneRegex.test(phone) && phone.length >= 10;
-}

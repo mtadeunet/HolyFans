@@ -11,8 +11,8 @@ interface HeaderProps {
    * Implements ADR 00-004: Commerce and Checkout - "Checkout is delegated to
    * the PSP's Hosted Checkout."
    *
-   * Interim purchase-surface gate (plan M0): while the checkout submit is
-   * simulated, `false` suppresses every navigation CTA that links to the
+   * Interim purchase-surface gate (plan M0): until the M4 launch enables
+   * the surface, `false` suppresses every navigation CTA that links to the
    * checkout page. Passed from the server layout, which evaluates the
    * fail-closed `PURCHASE_SURFACE_ENABLED` flag per request.
    */

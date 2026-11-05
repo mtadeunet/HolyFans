@@ -43,10 +43,12 @@ user-facing documentation.
   and provides preview deployments driven by the repository's Git integration.
 - **Route Handler** — a request-time HTTP endpoint provided by the application
   framework on the Hosting Platform. The Storefront's enumerated dynamic
-  compute surface consists of the Request-Time Middleware plus three Route
-  Handlers: the QR Redirect Route read, the Admin Console write path, and the
-  single checkout endpoint. The checkout and Admin Console write paths run on
-  the Node runtime; the QR Redirect Route is Edge-capable.
+  compute surface consists of the Request-Time Middleware, three Route
+  Handlers — the QR Redirect Route read, the Admin Console write path, and
+  the single checkout endpoint — and the dynamic post-checkout success page,
+  which performs a read-only retrieval of the Checkout Session's payment
+  status at render time (ADR 00-002). The checkout and Admin Console write
+  paths run on the Node runtime; the QR Redirect Route is Edge-capable.
 - **Request-Time Middleware** — the single middleware layer that runs on every
   inbound request to a non-static path and performs exactly three duties:
   Locale routing and browser-language detection, the fail-closed password gate

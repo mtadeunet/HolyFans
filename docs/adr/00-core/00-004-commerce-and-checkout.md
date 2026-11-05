@@ -2,7 +2,11 @@
 
 ## Status
 
-Proposed
+Proposed — Amended 2026-11-05: the VAT-inclusive pricing statement is
+superseded by the owner-approved Stripe Tax mode — automatic tax on the
+Checkout Session with inclusive tax behavior on line items — preserving
+VAT-inclusive display while the PSP computes the tax portion (see the
+Pricing and tax decision bullet).
 
 ## Related
 
@@ -52,7 +56,11 @@ PSP Hosted Checkout**:
     Checkout Sessions;
   - refuses checkout on any Cart/Product Data divergence, surfacing a
     review-and-correct state to the shopper;
-  then redirects the shopper to the PSP-hosted payment page.
+  then redirects the shopper to the PSP-hosted payment page. The localized
+  post-checkout success page distinguishes a paid outcome from an
+  asynchronous pending-payment state (e.g., a Multibanco reference awaiting
+  payment) through the session-status read enumerated in ADR 00-002's
+  dynamic surface.
 - **PSP: Stripe.** Chosen for EUR support, Portuguese-relevant payment
   methods (cards, MB Way, Multibanco, plus wallets and SEPA instruments),
   hosted PCI-compliant payment pages with strong premium branding controls,
@@ -69,8 +77,17 @@ PSP Hosted Checkout**:
   and reporting surfaces.
 - **Availability:** sold-out state is expressed through Availability Flags in
   Product Data (small handmade runs); no automated stock counters at launch.
-- All prices are presented and charged in EUR, with VAT-inclusive pricing as
-  required for EU consumer sales.
+- **Pricing and tax:** all prices are presented and charged in EUR, and the
+  displayed price remains VAT-inclusive — the shopper always sees the
+  final total before payment, as required for EU consumer sales. Tax
+  computation is delegated to the PSP: the checkout Route Handler creates
+  Checkout Sessions with automatic tax enabled and line items marked with
+  inclusive tax behavior, so the PSP computes the VAT portion inside the
+  displayed total rather than adding tax at payment time. This carries a
+  hard operational dependency: an active Stripe Tax registration covering
+  the applicable jurisdiction(s) MUST exist in the PSP Dashboard — without
+  it, no tax is computed or recorded. That registration is an owner
+  prerequisite, configured and maintained outside the codebase.
 
 ## Consequences
 
@@ -85,8 +102,11 @@ PSP Hosted Checkout**:
 - Product Data in the repository means catalog changes ship through the same
   review/deploy pipeline as everything else; zero external dependencies to
   render the catalog.
-- The payment dynamic surface is exactly one checkout Route Handler —
-  minimal attack area, minimal ops.
+- The payment dynamic surface is exactly one checkout Route Handler plus
+  the post-checkout session-status read — minimal attack area, minimal ops.
+- Automatic tax keeps displayed prices VAT-inclusive while the PSP
+  computes and reports the VAT portion — no rate tables or tax logic in
+  the codebase.
 - The PSP's hosted payment page carries brand-consistent styling, keeping
   the premium experience coherent.
 
@@ -107,6 +127,9 @@ PSP Hosted Checkout**:
   shopper leaves; without an event receiver the operator must rely on
   PSP-native notifications — a deliberately accepted constraint, since the
   alternative would violate the ADR 00-002 boundary.
+- Automatic tax depends on an owner-maintained Stripe Tax registration in
+  the PSP Dashboard; a missing or lapsed registration means no tax is
+  computed — an operational prerequisite the codebase cannot enforce.
 
 ## Alternatives Considered
 

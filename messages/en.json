@@ -393,77 +393,63 @@
   },
   "purchase": {
     "title": "Complete Your Purchase",
-    "subtitle": "Review your order and provide your details",
+    "subtitle": "Review your order — shipping, taxes and payment are handled on our secure checkout",
     "items": {
       "title": "Your Order",
       "remove": "Remove item"
-    },
-    "customer": {
-      "title": "Customer Information",
-      "email": "Email Address",
-      "email_placeholder": "your@email.com",
-      "phone": "Phone Number",
-      "phone_placeholder": "+351 123 456 789",
-      "first_name": "First Name",
-      "first_name_placeholder": "John",
-      "last_name": "Last Name",
-      "last_name_placeholder": "Doe",
-      "address": "Address",
-      "address_placeholder": "123 Main Street",
-      "city": "City",
-      "city_placeholder": "Lisbon",
-      "postal_code": "Postal Code",
-      "postal_code_placeholder": "1000-001",
-      "country": "Country",
-      "countries": {
-        "portugal": "Portugal",
-        "spain": "Spain",
-        "france": "France",
-        "germany": "Germany",
-        "italy": "Italy",
-        "united_kingdom": "United Kingdom",
-        "other": "Other"
-      }
     },
     "summary": {
       "title": "Order Summary",
       "subtotal": "Subtotal",
       "shipping": "Shipping",
-      "free": "Free",
-      "tax": "Tax",
+      "tax": "Tax (VAT)",
+      "at_checkout": "Calculated at checkout",
       "total": "Total"
-    },
-    "payment": {
-      "title": "Payment Method",
-      "credit_card": "Credit Card",
-      "credit_card_desc": "Pay securely with Visa, Mastercard, or American Express",
-      "paypal": "PayPal",
-      "paypal_desc": "Pay with your PayPal account"
-    },
-    "validation": {
-      "email_required": "Email is required",
-      "email_invalid": "Please enter a valid email",
-      "phone_required": "Phone number is required",
-      "phone_invalid": "Please enter a valid phone number",
-      "first_name_required": "First name is required",
-      "last_name_required": "Last name is required",
-      "address_required": "Address is required",
-      "city_required": "City is required",
-      "postal_code_required": "Postal code is required"
     },
     "empty": {
       "title": "Your cart is empty",
       "description": "Looks like you haven't added anything to your cart yet.",
       "continue_shopping": "Continue Shopping"
     },
-    "success": {
-      "title": "Order Completed Successfully!",
-      "order_number": "Order Number:",
-      "description": "Thank you for your order! We'll send you a confirmation email with your order details and tracking information.",
+    "drift": {
+      "title": "Your cart was updated",
+      "description": "Some items changed since you added them. We've corrected your cart — please review it and try again.",
+      "reasons": {
+        "unknown": "{name} is no longer available and was removed.",
+        "sold_out": "{name} is sold out and was removed.",
+        "over_cap": "{name} was limited to {maxQuantity} per order."
+      }
+    },
+    "unavailable": {
+      "title": "Checkout unavailable",
+      "description": "We couldn't start the secure checkout right now. Your cart is saved — please try again in a moment."
+    },
+    "test_mode": {
+      "title": "Test mode",
+      "description": "This store is running with test payment keys — orders are simulated and no real charges will be made."
+    },
+    "success_page": {
+      "paid": {
+        "title": "Order confirmed",
+        "description": "Thank you — your payment was received. You'll get a receipt by email from our payment provider, and we'll start preparing your order."
+      },
+      "pending": {
+        "title": "Payment pending",
+        "description": "Your order was created and a Multibanco payment reference was issued. Complete the payment at an ATM or in your homebanking app using that reference — we'll prepare your order as soon as the payment clears."
+      },
+      "generic": {
+        "title": "Thank you for your order",
+        "description": "If you completed a payment, a confirmation email is on its way. For any question about your order, contact us."
+      },
       "continue_shopping": "Continue Shopping"
     },
-    "processing": "Processing...",
-    "submit_button": "Complete Purchase",
+    "cancel_page": {
+      "title": "Checkout canceled",
+      "description": "No payment was taken — your cart was preserved exactly as you left it.",
+      "back_to_checkout": "Back to checkout"
+    },
+    "processing": "Redirecting to secure checkout…",
+    "submit_button": "Continue to Secure Payment",
     "trust": {
       "title": "Secure Purchase",
       "description": "Your information is protected with SSL encryption and 30-day return guarantee."

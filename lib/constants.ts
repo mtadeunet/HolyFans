@@ -1,4 +1,4 @@
-import { Product } from '@/types/product';
+import { Product, ProductVariant } from '@/types/product';
 
 export const PRODUCT: Product = {
   id: 'holyfans-nsr-001',
@@ -34,6 +34,10 @@ export const PRODUCT: Product = {
         '/images/product-male-3.jpg',
         '/images/product-male-4.jpg',
       ],
+      // Owner-editable Product Data (ADR 00-004): Availability Flag +
+      // Purchase Cap. Male fit is not yet in production — sold out.
+      available: false,
+      maxQuantity: 5,
     },
     female: {
       id: 'nsr-female-m',
@@ -47,6 +51,10 @@ export const PRODUCT: Product = {
         '/images/product-female-3.jpg',
         '/images/product-female-4.jpg',
       ],
+      // Owner-editable Product Data (ADR 00-004): Availability Flag +
+      // Purchase Cap.
+      available: true,
+      maxQuantity: 5,
     },
   },
   features: [
@@ -68,6 +76,25 @@ export const PRODUCT: Product = {
     'Iron on reverse side',
   ],
 };
+
+/**
+ * Implements ADR 00-004: Commerce and Checkout - Product Data carries
+ * "Variants — including optional per-Variant Purchase Caps ... and
+ * Availability Flags" as the single source of truth.
+ *
+ * Resolve a Variant id against Product Data. Shared by the Cart
+ * rehydration and the checkout Route Handler's server-side re-validation
+ * so both sides identify Variants the same way.
+ *
+ * @param variantId - Variant identifier from a Cart line or client input.
+ * @returns The matching `ProductVariant`, or `undefined` when Product
+ *   Data does not carry it.
+ */
+export function findVariant(variantId: string): ProductVariant | undefined {
+  return Object.values(PRODUCT.variants).find(
+    (variant) => variant.id === variantId
+  );
+}
 
 /**
  * Implements ADR 00-007: Quality Tooling and CI - "tracked files carry no

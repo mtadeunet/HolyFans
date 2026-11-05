@@ -2,7 +2,13 @@
 
 ## Status
 
-Proposed
+Proposed — Amended 2026-11-05: the enumerated dynamic surface now
+includes the post-checkout session-status read — the localized
+post-checkout success page renders per request and performs a single
+read-only PSP retrieval of the just-created Checkout Session to
+distinguish a paid outcome from an asynchronous pending-payment state
+(ADR 00-004). The no-webhook foreclosure and the "nothing else without a
+new ADR" boundary are unchanged.
 
 ## Related
 
@@ -19,8 +25,10 @@ positioning demands excellent load performance and reliability for visitors in
 Portugal. Alongside the static content, the business needs a small set of
 request-time capabilities: the permanent QR Redirect Route with a destination
 that can be retargeted without redeploys (ADR 00-003), operator-controlled
-Site Config toggles, an Admin Console write path, and the creation of Checkout
-Sessions with the PSP (ADR 00-004). Hosting must be inexpensive, low-
+Site Config toggles, an Admin Console write path, the creation of Checkout
+Sessions with the PSP, and a request-time read of the created Session's
+payment status on the post-checkout success page (ADR 00-004). Hosting must
+be inexpensive, low-
 operations, able to serve the QR Redirect Route indefinitely, and present in
 Europe for the primary market.
 
@@ -31,16 +39,19 @@ The Storefront runs a **hybrid model on the Vercel Hosting Platform**:
 - **Storefront pages are produced by Static Site Generation** — every page,
   for every Locale, is generated at build time and served from the Hosting
   Platform's edge network; no per-request rendering is performed to compose
-  storefront content beyond the request-time reads below.
+  storefront content beyond the request-time reads below. The single
+  enumerated exception is the post-checkout success page, which renders
+  per request to perform the session-status read below.
 - **Site Config is read from Edge Config at request time** — the Hosting
   Platform's edge-replicated key-value store holds section/chrome visibility
   and the QR Redirect Route destination, so operator changes apply within
   seconds without a rebuild. Reads degrade to safe defaults when the store
   is unavailable; this read is the only request-time data dependency in
-  storefront page composition.
+  storefront page composition other than the post-checkout session-status
+  read enumerated below.
 - **Request-time compute is confined to an enumerated dynamic surface** —
   a single Request-Time Middleware layer plus a small set of Route
-  Handlers, and nothing else:
+  Handlers and one dynamic page, and nothing else:
   - the **Request-Time Middleware**, which runs on every inbound request
     to a non-static path and performs exactly three duties: Locale routing
     and browser-language detection (ADR 00-005), the fail-closed password
@@ -50,11 +61,21 @@ The Storefront runs a **hybrid model on the Vercel Hosting Platform**:
   - the Admin Console write path, which persists Site Config through the
     Hosting Platform's API;
   - the single checkout Route Handler on the **Node runtime** (required by
-    the PSP SDK), which creates Checkout Sessions (ADR 00-004).
+    the PSP SDK), which creates Checkout Sessions (ADR 00-004);
+  - the **post-checkout session-status read**: the localized
+    post-checkout success page renders per request on the Node runtime
+    and performs a single read-only retrieval of the just-created
+    Checkout Session through the PSP SDK, to distinguish a paid outcome
+    from an asynchronous pending-payment state such as a Multibanco
+    reference awaiting payment (ADR 00-004). The read is implemented
+    directly in the page — not inside the checkout Route Handler — reads
+    nothing else, mutates nothing, and degrades to a generic
+    post-checkout state when the PSP is unreachable.
 - No other inbound request-time capability exists or may be added without a
   new ADR — this boundary forecloses webhook receivers, additional
-  middleware duties beyond the three enumerated, and any additional
-  dynamic endpoints.
+  middleware duties beyond the three enumerated, any additional dynamic
+  endpoints, and any other request-time page rendering or data reads
+  beyond those enumerated above.
 - **Hosting Platform: Vercel**, the framework-native platform for Next.js:
   global CDN, Edge Config, Node and Edge runtimes for Route Handlers, Git-
   integrated preview and production deployments, TLS on the Store Domain,
@@ -86,6 +107,10 @@ The Storefront runs a **hybrid model on the Vercel Hosting Platform**:
   those capabilities (the static output itself remains portable).
 - Request-time Edge Config reads are a live dependency for toggles and the
   QR destination; mitigated by default-fallback behavior but not eliminable.
+- The post-checkout session-status read is a live PSP dependency at page
+  render time; mitigated by a degrade-to-generic fallback, it extends the
+  dynamic surface beyond the Request-Time Middleware and Route Handlers
+  for the first time.
 - Commercial use requires an appropriate (paid) platform tier — a recurring
   cost the prior static-host-free-tier model did not have.
 - The Request-Time Middleware and the Route Handlers are the attack
@@ -109,7 +134,8 @@ The Storefront runs a **hybrid model on the Vercel Hosting Platform**:
 - **Server-side rendering for all pages** — Rejected: adds request-time
   rendering cost and cache complexity to serve content that is identical
   for every visitor; the only request-time need is the enumerated
-  Request-Time Middleware and Route Handler set plus Edge Config reads.
+  dynamic surface (Request-Time Middleware, Route Handlers, and the
+  post-checkout session-status read) plus Edge Config reads.
 - **A static host plus a separate functions platform** — Rejected:
   fragments deployment, routing, and operations across two providers for
   capabilities one platform already provides natively.
