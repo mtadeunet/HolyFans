@@ -42,6 +42,17 @@ const RATE_WINDOW_MS = 60_000;
 const requestLog = new Map<string, number[]>();
 
 /**
+ * Stripe Price IDs per Variant, env-configured — test-mode ids locally,
+ * live ids in production. When a Variant's id is unset the handler falls
+ * back to inline `price_data` built from Product Data, so prices are
+ * server-authoritative either way (ADR 00-004).
+ */
+const STRIPE_PRICE_IDS: Record<string, string | undefined> = {
+  'nsr-female-m': process.env.STRIPE_PRICE_ID_FEMALE,
+  'nsr-male-m': process.env.STRIPE_PRICE_ID_MALE,
+};
+
+/**
  * Check whether a client IP is within the Session-creation rate window.
  * Expired entries are pruned in place; the map is reset when it grows past
  * an arbitrary bound so hostile IP churn cannot exhaust memory.
@@ -261,20 +272,25 @@ export async function POST(request: NextRequest) {
     mode: 'payment',
     integration_identifier: integrationIdentifier(),
     locale: body.locale,
-    line_items: validation.lines.map(({ variant, quantity }) => ({
-      quantity,
-      price_data: {
-        currency: 'eur',
-        unit_amount: Math.round(PRODUCT.price * 100),
-        tax_behavior: 'inclusive',
-        product_data: {
-          name: `${PRODUCT.name} — ${variant.name}`,
-          images: variant.images[0]
-            ? [`${origin}${variant.images[0]}`]
-            : undefined,
-        },
-      },
-    })),
+    line_items: validation.lines.map(({ variant, quantity }) => {
+      const priceId = STRIPE_PRICE_IDS[variant.id];
+      return priceId
+        ? { quantity, price: priceId }
+        : {
+            quantity,
+            price_data: {
+              currency: 'eur',
+              unit_amount: Math.round(PRODUCT.price * 100),
+              tax_behavior: 'inclusive',
+              product_data: {
+                name: `${PRODUCT.name} — ${variant.name}`,
+                images: variant.images[0]
+                  ? [`${origin}${variant.images[0]}`]
+                  : undefined,
+              },
+            },
+          };
+    }),
     automatic_tax: { enabled: true },
     shipping_address_collection: {
       allowed_countries: SHIPPING_COUNTRIES.map(
