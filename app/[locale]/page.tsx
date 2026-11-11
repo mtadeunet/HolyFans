@@ -4,7 +4,7 @@ import FinalCTA from '@/components/sections/final-cta';
 import Hero from '@/components/sections/hero';
 import ProductGallery from '@/components/sections/product-gallery';
 import SocialProof from '@/components/sections/social-proof';
-import { getSiteConfig } from '@/lib/site-config';
+import { getSiteConfig } from '@/lib/site-config-server';
 
 export default async function HomePage() {
   const { sections, chrome } = await getSiteConfig();

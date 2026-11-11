@@ -1,5 +1,3 @@
-import { get } from '@vercel/edge-config';
-
 export const SITE_CONFIG_KEY = 'siteConfig';
 
 export type SectionKey =
@@ -91,21 +89,4 @@ export function normalizeSiteConfig(raw: unknown): SiteConfig {
     }
   }
   return out;
-}
-
-/**
- * Fetch the current site config from Vercel Edge Config.
- * Returns defaults (all enabled) if the store is unavailable or the key is missing.
- */
-export async function getSiteConfig(): Promise<SiteConfig> {
-  if (!process.env.EDGE_CONFIG) {
-    return DEFAULT_SITE_CONFIG;
-  }
-  try {
-    const raw = await get(SITE_CONFIG_KEY);
-    return normalizeSiteConfig(raw);
-  } catch (error) {
-    console.error('[site-config] Edge Config read failed:', error);
-    return DEFAULT_SITE_CONFIG;
-  }
 }

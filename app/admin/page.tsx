@@ -1,4 +1,4 @@
-import { getSiteConfig } from '@/lib/site-config';
+import { getSiteConfig } from '@/lib/site-config-server';
 import AdminForm from './admin-form';
 
 export const dynamic = 'force-dynamic';

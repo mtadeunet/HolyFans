@@ -1,6 +1,6 @@
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
-import { getSiteConfig } from '@/lib/site-config';
+import { getSiteConfig } from '@/lib/site-config-server';
 import { isPurchaseSurfaceEnabled } from '@/lib/purchase-surface';
 import { CartProvider } from '@/context/cart-context';
 import Header from '@/components/layout/header';
