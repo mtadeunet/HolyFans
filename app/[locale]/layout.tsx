@@ -6,6 +6,7 @@ import { CartProvider } from '@/context/cart-context';
 import Header from '@/components/layout/header';
 import Footer from '@/components/layout/footer';
 import MobileStickyCta from '@/components/layout/mobile-sticky-cta';
+import WhatsAppBubble from '@/components/layout/whatsapp-bubble';
 import { Analytics } from '@vercel/analytics/next';
 
 /**
@@ -45,6 +46,10 @@ export default async function LocaleLayout({
           {siteConfig.chrome.footer && <Footer />}
         </div>
         {siteConfig.chrome.mobileStickyCta && <MobileStickyCta />}
+        {/* Inbound Contact Surface (ADR 00-009): toggleable through Site
+            Config like other global chrome; also fails closed internally
+            when no Store Messaging Number is configured. */}
+        {siteConfig.chrome.whatsappBubble && <WhatsAppBubble />}
       </CartProvider>
       <Analytics />
     </NextIntlClientProvider>

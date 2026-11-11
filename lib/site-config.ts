@@ -5,8 +5,16 @@ export const SITE_CONFIG_KEY = 'siteConfig';
 export type SectionKey =
   'hero' | 'socialProof' | 'products' | 'craftsmanship' | 'faq' | 'finalCta';
 
+// Implements ADR 00-009: WhatsApp Deep-Link Channels — Client-Resolved
+// Vendor Deep Links for Customer Messaging - the Inbound Contact Surface
+// is "operator-toggleable through Site Config and the Admin Console like
+// other global chrome" via the `whatsappBubble` key below.
 export type ChromeKey =
-  'header' | 'footer' | 'mobileStickyCta' | 'premiumFeaturesModal';
+  | 'header'
+  | 'footer'
+  | 'mobileStickyCta'
+  | 'premiumFeaturesModal'
+  | 'whatsappBubble';
 
 export type SiteSections = Record<SectionKey, boolean> & {
   qrcoderedirect: string;
@@ -32,6 +40,7 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
     footer: true,
     mobileStickyCta: true,
     premiumFeaturesModal: true,
+    whatsappBubble: true,
   },
 };
 
@@ -49,6 +58,7 @@ export const CHROME_KEYS: ChromeKey[] = [
   'footer',
   'mobileStickyCta',
   'premiumFeaturesModal',
+  'whatsappBubble',
 ];
 
 /**

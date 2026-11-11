@@ -30,6 +30,10 @@ const CHROME_LABELS: Record<ChromeKey, { label: string; hint?: string }> = {
     label: 'Premium Features Modal',
     hint: 'Hides the "Learn more" button and modal in the hero',
   },
+  whatsappBubble: {
+    label: 'WhatsApp Bubble',
+    hint: 'Floating WhatsApp chat button, bottom-right',
+  },
 };
 
 export default function AdminForm({ initial }: { initial: SiteConfig }) {

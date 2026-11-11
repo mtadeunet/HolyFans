@@ -503,5 +503,12 @@
       "title": "Detalhes em Metal",
       "description": "Acentos e emblemas em metal premium são cuidadosamente integrados para realçar a elegância e durabilidade da peça."
     }
+  },
+  "whatsapp": {
+    "aria_label": "Fale connosco no WhatsApp",
+    "tooltip": "Dúvidas? Fale connosco",
+    "prefilled_message": "Olá! Tenho uma questão sobre a HolyFans.",
+    "share_label": "Partilhar via WhatsApp",
+    "share_text": "Descubra a HolyFans — roupa cristã premium:"
   }
 }

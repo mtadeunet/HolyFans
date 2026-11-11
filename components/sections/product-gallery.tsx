@@ -1,13 +1,16 @@
 'use client';
 
+import WhatsAppGlyph from '@/components/ui/whatsapp-glyph';
 import { useCart } from '@/context/cart-context';
-import { PRODUCT } from '@/lib/constants';
+import { PRODUCT, SITE_CONFIG } from '@/lib/constants';
+import { whatsappShareUrl } from '@/lib/whatsapp';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { useState } from 'react';
 
 export default function ProductGallery() {
   const t = useTranslations('product');
+  const tWhatsApp = useTranslations('whatsapp');
   const { addItem } = useCart();
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedVariation, setSelectedVariation] = useState<'male' | 'female'>(
@@ -371,6 +374,24 @@ export default function ProductGallery() {
               >
                 <span>{t('add_to_cart')}</span>
               </button>
+
+              {/* Implements ADR 00-009: WhatsApp Deep-Link Channels —
+                  "a control on the canonical purchase block lets a
+                  visitor compose a message containing the Storefront's
+                  canonical URL". Outbound Share Surface: ungated,
+                  configuration-free; shares `SITE_CONFIG.url` only —
+                  never a preview, deployment, or current-location URL. */}
+              <a
+                href={whatsappShareUrl(
+                  `${tWhatsApp('share_text')} ${SITE_CONFIG.url}`
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full flex items-center justify-center gap-2 rounded-lg border-2 border-border bg-background px-8 py-3 text-text-secondary font-semibold transition-colors hover:border-accent/40 hover:bg-surface"
+              >
+                <WhatsAppGlyph className="w-5 h-5 text-[#25D366]" />
+                <span>{tWhatsApp('share_label')}</span>
+              </a>
 
               {/* Trust Seals */}
               <div className="grid grid-cols-3 gap-4 pt-6">

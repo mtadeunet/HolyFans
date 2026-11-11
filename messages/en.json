@@ -503,5 +503,12 @@
       "title": "Metal Details",
       "description": "Premium metal accents and embellishments are carefully integrated to enhance the piece's elegance and durability."
     }
+  },
+  "whatsapp": {
+    "aria_label": "Chat with us on WhatsApp",
+    "tooltip": "Questions? Chat with us",
+    "prefilled_message": "Hi! I have a question about HolyFans.",
+    "share_label": "Share via WhatsApp",
+    "share_text": "Check out HolyFans — premium Christian clothing:"
   }
 }
