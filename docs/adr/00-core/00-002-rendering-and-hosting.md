@@ -2,13 +2,7 @@
 
 ## Status
 
-Proposed — Amended 2026-11-05: the enumerated dynamic surface now
-includes the post-checkout session-status read — the localized
-post-checkout success page renders per request and performs a single
-read-only PSP retrieval of the just-created Checkout Session to
-distinguish a paid outcome from an asynchronous pending-payment state
-(ADR 00-004). The no-webhook foreclosure and the "nothing else without a
-new ADR" boundary are unchanged.
+Proposed
 
 ## Related
 

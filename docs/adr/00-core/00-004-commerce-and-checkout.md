@@ -2,11 +2,7 @@
 
 ## Status
 
-Proposed — Amended 2026-11-05: the VAT-inclusive pricing statement is
-superseded by the owner-approved Stripe Tax mode — automatic tax on the
-Checkout Session with inclusive tax behavior on line items — preserving
-VAT-inclusive display while the PSP computes the tax portion (see the
-Pricing and tax decision bullet).
+Proposed
 
 ## Related
 
@@ -172,3 +168,9 @@ PSP Hosted Checkout**:
   recurring cost and an external service dependency to edit a handful of
   products a few times a year; the code-managed catalog is simpler and more
   reviewable.
+- **VAT-inclusive pricing without a PSP tax service** — Rejected: presents
+  VAT-inclusive prices but leaves the VAT portion uncomputed and
+  unrecorded on the payment — no tax data is produced for the business's
+  obligations. Delegating tax computation to the PSP preserves the required
+  VAT-inclusive display while the tax portion is computed and reported by
+  the provider.
