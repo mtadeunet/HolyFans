@@ -5,15 +5,15 @@
       "name": "Debug Development Server",
       "type": "node",
       "request": "launch",
-      "runtimeExecutable": "${env:HOME}/.local/bin/node",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-lc",
+        "source \"$HOME/.nvm/nvm.sh\" && nvm use --silent default && exec node --inspect \"$@\"",
+        "node"
+      ],
       "program": "${workspaceFolder}/node_modules/.bin/next",
       "args": ["dev", "--webpack"],
       "cwd": "${workspaceFolder}",
-      "runtimeArgs": ["--inspect"],
-      "env": {
-        "NODE_OPTIONS": "--inspect",
-        "PATH": "${env:HOME}/.local/bin:${env:PATH}"
-      },
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
       "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
@@ -31,15 +31,17 @@
       "name": "Debug Build Process",
       "type": "node",
       "request": "launch",
-      "runtimeExecutable": "${env:HOME}/.local/bin/node",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-lc",
+        "source \"$HOME/.nvm/nvm.sh\" && nvm use --silent default && exec node --inspect \"$@\"",
+        "node"
+      ],
       "program": "${workspaceFolder}/node_modules/.bin/next",
       "args": ["build"],
       "cwd": "${workspaceFolder}",
-      "runtimeArgs": ["--inspect"],
       "env": {
-        "NODE_OPTIONS": "--inspect",
-        "NODE_ENV": "production",
-        "PATH": "${env:HOME}/.local/bin:${env:PATH}"
+        "NODE_ENV": "production"
       },
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
@@ -54,7 +56,12 @@
       "name": "Debug TypeScript",
       "type": "node",
       "request": "launch",
-      "runtimeExecutable": "${env:HOME}/.local/bin/node",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-lc",
+        "source \"$HOME/.nvm/nvm.sh\" && nvm use --silent default && exec node --inspect \"$@\"",
+        "node"
+      ],
       "program": "${workspaceFolder}/node_modules/.bin/tsc",
       "args": ["--noEmit", "--sourceMap"],
       "cwd": "${workspaceFolder}",
