@@ -33,6 +33,19 @@ user-facing documentation.
   destination. Stored in Edge Config and editable via the Admin Console.
 - **Admin Console** — the password-gated `/admin` surface used by the operator
   to read and write Site Config.
+- **Store Messaging Number** — the operator-supplied WhatsApp contact number
+  the Inbound Contact Surface opens a chat to; provided via Hosting Platform
+  environment configuration and never committed to tracked files (identifier
+  hygiene, ADR 00-009).
+- **Inbound Contact Surface** — the persistent floating Storefront control
+  that opens a WhatsApp chat addressed to the Store Messaging Number;
+  operator-toggleable through Site Config / the Admin Console, and renders
+  nothing when the Store Messaging Number is unconfigured (fail-closed)
+  (ADR 00-009).
+- **Outbound Share Surface** — the control on the canonical purchase block
+  that lets a visitor compose a WhatsApp message containing the Storefront's
+  canonical URL on the Store Domain for their own contacts; ungated and
+  configuration-free (ADR 00-009).
 
 ## Technical Terms
 
