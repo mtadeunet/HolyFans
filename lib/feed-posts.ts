@@ -39,9 +39,12 @@ export interface FeedPost {
   captionKey: string;
   /** Media Slot content — image master or branded placeholder. */
   media: FeedMedia;
-  /** Static authored decorative like count shown by the Decorative
-   *  Interaction Row — never persisted, transmitted, or measured
-   *  (ADR 03-002, ADR 00-008). */
+  /** Implements ADR 03-002 - "The displayed like count is the sum of an
+   *  authored base count — part of the Post Card's code-managed content —
+   *  and a shared delta persisted server-side in the managed store of
+   *  ADR 00-002." The authored base count the Interaction Row renders
+   *  immediately and the like counter Route Handler adds the shared
+   *  delta to. */
   likes: number;
 }
 

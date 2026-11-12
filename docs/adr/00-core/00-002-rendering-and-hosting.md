@@ -9,6 +9,7 @@ Proposed
 ADR 00-001 (Application Framework — Next.js)
 ADR 00-003 (Permanent QR Redirect Route)
 ADR 00-004 (Commerce and Checkout)
+ADR 03-002 (Landing Page Composition)
 
 ## Context
 
@@ -20,8 +21,9 @@ Portugal. Alongside the static content, the business needs a small set of
 request-time capabilities: the permanent QR Redirect Route with a destination
 that can be retargeted without redeploys (ADR 00-003), operator-controlled
 Site Config toggles, an Admin Console write path, the creation of Checkout
-Sessions with the PSP, and a request-time read of the created Session's
-payment status on the post-checkout success page (ADR 00-004). Hosting must
+Sessions with the PSP, a request-time read of the created Session's
+payment status on the post-checkout success page (ADR 00-004), and shared
+like counters for the feed's Interaction Row (ADR 03-002). Hosting must
 be inexpensive, low-
 operations, able to serve the QR Redirect Route indefinitely, and present in
 Europe for the primary market.
@@ -64,7 +66,20 @@ The Storefront runs a **hybrid model on the Vercel Hosting Platform**:
     reference awaiting payment (ADR 00-004). The read is implemented
     directly in the page — not inside the checkout Route Handler — reads
     nothing else, mutates nothing, and degrades to a generic
-    post-checkout state when the PSP is unreachable.
+    post-checkout state when the PSP is unreachable;
+  - the **like counter Route Handler**, which serves the Interaction
+    Row's shared like counts and records per-visitor like toggles for
+    Post Cards (ADR 03-002) — reads and writes against the managed
+    store below, deduplicating each toggle per Post Card by the
+    visitor's anonymous client-held Like Token, hardened like the
+    checkout endpoint (input caps, IP rate limiting, fail-closed).
+- **Shared like counts persist in a managed Redis store provisioned
+  through the Hosting Platform's marketplace** — the platform-native
+  choice for small shared request-time state beyond Edge Config's
+  operator-configuration scope. It holds per-post dedup records that
+  feed aggregate counters only (ADR 03-002, ADR 00-008); when the
+  store is unconfigured or unreachable, the Interaction Row degrades
+  to authored base counts with toggling disabled rather than failing.
 - No other inbound request-time capability exists or may be added without a
   new ADR — this boundary forecloses webhook receivers, additional
   middleware duties beyond the three enumerated, any additional dynamic
@@ -96,11 +111,15 @@ The Storefront runs a **hybrid model on the Vercel Hosting Platform**:
   minimal operational surface.
 
 **Negative / trade-offs:**
-- Vendor coupling: Edge Config, Route Handler runtimes, and Git-integrated
-  deploys are Hosting-Platform-specific; migrating hosts means re-platforming
-  those capabilities (the static output itself remains portable).
+- Vendor coupling: Edge Config, the marketplace Redis store, Route Handler
+  runtimes, and Git-integrated deploys are Hosting-Platform-specific;
+  migrating hosts means re-platforming those capabilities (the static
+  output itself remains portable).
 - Request-time Edge Config reads are a live dependency for toggles and the
   QR destination; mitigated by default-fallback behavior but not eliminable.
+- The like counter store is a second live request-time data dependency;
+  the degrade-to-base fallback of ADR 03-002 bounds its blast radius, but
+  shared counts silently revert to authored values while it is down.
 - The post-checkout session-status read is a live PSP dependency at page
   render time; mitigated by a degrade-to-generic fallback, it extends the
   dynamic surface beyond the Request-Time Middleware and Route Handlers

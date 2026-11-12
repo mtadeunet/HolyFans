@@ -167,7 +167,9 @@
     "post": {
       "handle": "@holyfans",
       "likes": "{count} gostos",
-      "like_aria": "Gosto"
+      "like_aria": "Gosto",
+      "share_aria": "Partilhar esta publicação",
+      "share_copied": "Ligação copiada"
     },
     "posts": {
       "post-hero": {

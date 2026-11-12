@@ -9,6 +9,7 @@ Proposed
 ADR 00-002 (Rendering and Hosting Model)
 ADR 00-003 (Permanent QR Redirect Route)
 ADR 00-004 (Commerce and Checkout)
+ADR 03-002 (Landing Page Composition)
 
 ## Context
 
@@ -43,6 +44,13 @@ required.
 - E-commerce conversion is measured at the source: completed orders and
   revenue are read from the PSP's own reporting (ADR 00-004), not from a
   client-side tracking tag.
+- Anonymous feature tokens are within the posture: an interactive feature
+  may use a self-generated, per-browser token held in client-side storage
+  — never a cookie, never server-issued — sent only to that feature's own
+  endpoint and feeding aggregate counters only. Such a token identifies
+  no person, joins to no identity or analytics surface, and requires no
+  consent flow; the Interaction Row's Like Token (ADR 03-002) is the
+  sanctioned instance.
 - No consent-management platform, cookie banner, or tag manager is part of
   the architecture. If a future requirement ever demands identified or
   cross-session tracking, it requires a new ADR and a consent mechanism.
@@ -72,6 +80,9 @@ required.
   the mechanism (not the data contract).
 - Marketing attribution beyond aggregate referrals is not available — paid
   campaigns would not get granular tracking without a future ADR.
+- Feature tokens persist a pseudonymous per-browser value in client
+  storage; bounded by the aggregate-only, no-identity, no-analytics rules
+  above, the posture now depends on every feature honoring them.
 
 ## Alternatives Considered
 

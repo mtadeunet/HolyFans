@@ -2,8 +2,8 @@ import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import type { FeedPost } from '@/lib/feed-posts';
+import InteractionRow from './interaction-row';
 import MediaSlot from './media-slot';
-import DecorativeInteractionRow from './decorative-interaction-row';
 
 interface PostCardProps {
   /** The authored feed entry being rendered. */
@@ -26,7 +26,7 @@ interface PostCardProps {
  * self-contained unit: a header carrying the brand avatar, name, and a
  * decorative handle string (own brand only, never a third-party account
  * reference and never a link); localized caption copy; a Media Slot; and
- * a Decorative Interaction Row."
+ * an Interaction Row."
  *
  * The Feed Surface's repeating unit. The article carries the stable
  * anchor `id={post.id}` (`post-hero`, `post-faq`, …) so Nav Rail entries
@@ -41,6 +41,7 @@ export default function PostCard({
 }: PostCardProps) {
   const t = useTranslations('feed');
   const tCommon = useTranslations('common');
+  const caption = t(`posts.${post.captionKey}.caption`);
 
   return (
     <article
@@ -77,9 +78,7 @@ export default function PostCard({
       </header>
 
       <div className="px-4 pb-3">
-        <p className="text-sm leading-relaxed text-text-primary">
-          {t(`posts.${post.captionKey}.caption`)}
-        </p>
+        <p className="text-sm leading-relaxed text-text-primary">{caption}</p>
       </div>
 
       {children}
@@ -89,7 +88,7 @@ export default function PostCard({
         purchaseSurfaceEnabled={purchaseSurfaceEnabled}
       />
 
-      <DecorativeInteractionRow likes={post.likes} />
+      <InteractionRow postId={post.id} likes={post.likes} caption={caption} />
     </article>
   );
 }

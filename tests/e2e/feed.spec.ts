@@ -11,9 +11,13 @@
  * band: the Inbound Contact Surface floats above it and must never
  * occlude navigation or purchase actions."
  *
- * Implements ADR 03-002 - "Any state is ephemeral and client-local —
- * never persisted, never transmitted" (the Decorative Interaction Row's
- * like toggle resets on reload).
+ * Implements ADR 03-002 - the Interaction Row is "real but bounded — a
+ * like control with its count and a share control": "When the store is
+ * unconfigured or unreachable, the row degrades to the authored base
+ * count with toggling disabled", and when live a toggle persists
+ * through the visitor's client-held Like Token and local liked state.
+ * Unconfigured CI exercises the degraded path; the live-path assertions
+ * skip themselves when the GET reports `live: false`.
  *
  * Implements ADR 03-002 - "on the purchase route, entries that target
  * landing feed units return the shopper to that unit on the landing
@@ -68,7 +72,7 @@ test.describe('Feed Shell — Post Cards', () => {
     });
   }
 
-  test('a Post Card carries the brand header, a non-link decorative handle, a Media Slot, and the Decorative Interaction Row', async ({
+  test('a Post Card carries the brand header, a non-link decorative handle, a Media Slot, and the Interaction Row', async ({
     page,
   }) => {
     await page.goto('/en');
@@ -86,23 +90,68 @@ test.describe('Feed Shell — Post Cards', () => {
     // enabled — the link itself is asserted in the enabled project).
     await expect(card.locator('div.aspect-square').first()).toBeVisible();
 
-    // Decorative Interaction Row: the like toggle carries `aria-pressed`;
-    // comment/bookmark marks are aria-hidden decoration.
+    // Interaction Row (ADR 03-002): a like toggle carrying
+    // `aria-pressed` and a share control — the decorative comment and
+    // bookmark glyphs are gone.
     await expect(card.locator('button[aria-pressed]')).toBeVisible();
+    await expect(
+      card.getByRole('button', { name: 'Share this post' })
+    ).toBeVisible();
   });
 
-  // Implements ADR 03-002 - the like affordance is "ephemeral and
-  // client-local — never persisted, never transmitted": toggling
-  // updates only this mount's state, and a reload restores the
-  // authored count.
-  test('the Decorative Interaction Row like toggles locally and resets on reload', async ({
+  // Implements ADR 03-002 - "When the store is unconfigured or
+  // unreachable, the row degrades to the authored base count with
+  // toggling disabled — graceful, never a crash": the GET's
+  // `live: false` leaves the toggle inert and the authored base count
+  // on screen. This is the path unconfigured CI exercises; the test
+  // skips itself when a store is provisioned.
+  test('the Interaction Row degrades to the authored base count with a disabled like toggle when the like store is unconfigured', async ({
     page,
   }) => {
+    const countsResponse = page.waitForResponse('**/api/likes');
     await page.goto('/en');
+    const body = (await (await countsResponse).json()) as {
+      live?: boolean;
+    };
+    test.skip(
+      body.live === true,
+      'like store configured — the degraded path does not apply'
+    );
+
+    const card = postCards(page).first();
+    const likeButton = card.locator('button[aria-pressed]');
+    const likeCount = card.locator('button[aria-pressed] + span');
+    await expect(likeButton).toHaveAttribute('aria-pressed', 'false');
+    await expect(likeButton).toBeDisabled();
+    // The authored base count renders as a non-negative number.
+    const shown = Number((await likeCount.textContent())?.match(/\d+/)?.[0]);
+    expect(Number.isNaN(shown)).toBe(false);
+    expect(shown).toBeGreaterThanOrEqual(0);
+  });
+
+  // Implements ADR 03-002 - "a visitor's toggle persists in
+  // client-local storage" and the shared count is "deduplicated
+  // server-side per Post Card by a Like Token": a live toggle flips
+  // `aria-pressed`, raises the shared count, and survives a reload.
+  // Skips on the degraded path — unconfigured CI has no live store.
+  test('the Interaction Row like toggle persists the shared count when the like store is live', async ({
+    page,
+  }) => {
+    const countsResponse = page.waitForResponse('**/api/likes');
+    await page.goto('/en');
+    const body = (await (await countsResponse).json()) as {
+      live?: boolean;
+    };
+    test.skip(
+      body.live !== true,
+      'like store unconfigured — the live toggle path requires a provisioned store'
+    );
+
     const card = postCards(page).first();
     const likeButton = card.locator('button[aria-pressed]');
     const likeCount = card.locator('button[aria-pressed] + span');
 
+    await expect(likeButton).toBeEnabled();
     await expect(likeButton).toHaveAttribute('aria-pressed', 'false');
     const before = Number((await likeCount.textContent())?.match(/\d+/)?.[0]);
     expect(Number.isNaN(before)).toBe(false);
@@ -112,20 +161,21 @@ test.describe('Feed Shell — Post Cards', () => {
     const after = Number((await likeCount.textContent())?.match(/\d+/)?.[0]);
     expect(after).toBe(before + 1);
 
-    // Ephemeral: nothing is persisted — a fresh mount shows the authored
-    // count and the un-pressed state again.
+    // The liked state persists client-side and the shared count
+    // server-side: a reload keeps the toggle pressed and the raised
+    // count.
     await page.reload();
     const remountedCard = postCards(page).first();
     await expect(remountedCard.locator('button[aria-pressed]')).toHaveAttribute(
       'aria-pressed',
-      'false'
+      'true'
     );
     const remounted = Number(
       (
         await remountedCard.locator('button[aria-pressed] + span').textContent()
       )?.match(/\d+/)?.[0]
     );
-    expect(remounted).toBe(before);
+    expect(remounted).toBeGreaterThanOrEqual(before + 1);
   });
 });
 

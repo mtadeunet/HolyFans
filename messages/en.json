@@ -167,7 +167,9 @@
     "post": {
       "handle": "@holyfans",
       "likes": "{count} likes",
-      "like_aria": "Like"
+      "like_aria": "Like",
+      "share_aria": "Share this post",
+      "share_copied": "Link copied"
     },
     "posts": {
       "post-hero": {

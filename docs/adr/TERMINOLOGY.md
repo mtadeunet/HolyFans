@@ -68,13 +68,20 @@ user-facing documentation.
   Simplified Purchase Surface (ADR 03-002).
 - **Post Card** — the repeating content unit of the landing's feed: a
   brand header (avatar, name, decorative handle), localized caption
-  copy, a Media Slot, and a Decorative Interaction Row (ADR 03-002).
+  copy, a Media Slot, and an Interaction Row (ADR 03-002).
 - **Media Slot** — the Post Card's media region; every Media Slot links
   to the Simplified Purchase Surface within the same Locale (ADR 03-002).
-- **Decorative Interaction Row** — the social-style affordance row on a
-  Post Card (like, comment, and bookmark glyphs plus a like count);
-  presentational only — ephemeral client-local state at most, never
-  persisted, transmitted, or measured (ADR 03-002).
+- **Interaction Row** — the social affordance row on a Post Card: a
+  like control showing the shared count (the authored base plus the
+  server-persisted delta, deduplicated per visitor by a Like Token)
+  and a share control resolved on the visitor's device with a
+  clipboard fallback; feeds aggregate counts only and emits no
+  analytics signal (ADR 03-002, ADR 00-008).
+- **Like Token** — the anonymous, self-generated per-browser
+  identifier held in client-side storage (never a cookie) and sent
+  with a like toggle so the server deduplicates that visitor's like
+  per Post Card; identifies no person and feeds aggregate counts
+  only (ADR 03-002, ADR 00-008).
 - **Suggestions Rail** — the Feed Shell's right column: product and
   Variant suggestion cards, a discovery call-to-action, and the legal
   links at its foot; present only on wider viewports (ADR 03-002).
@@ -93,12 +100,15 @@ user-facing documentation.
   and provides preview deployments driven by the repository's Git integration.
 - **Route Handler** — a request-time HTTP endpoint provided by the application
   framework on the Hosting Platform. The Storefront's enumerated dynamic
-  compute surface consists of the Request-Time Middleware, three Route
-  Handlers — the QR Redirect Route read, the Admin Console write path, and
-  the single checkout endpoint — and the dynamic post-checkout success page,
-  which performs a read-only retrieval of the Checkout Session's payment
-  status at render time (ADR 00-002). The checkout and Admin Console write
-  paths run on the Node runtime; the QR Redirect Route is Edge-capable.
+  compute surface consists of the Request-Time Middleware, four Route
+  Handlers — the QR Redirect Route read, the Admin Console write path,
+  the single checkout endpoint, and the like counter endpoint serving
+  the Interaction Row (backed by the Hosting Platform's
+  marketplace-provisioned Redis store) — and the dynamic post-checkout
+  success page, which performs a read-only retrieval of the Checkout
+  Session's payment status at render time (ADR 00-002). The checkout,
+  Admin Console write, and like counter paths run on the Node runtime;
+  the QR Redirect Route is Edge-capable.
 - **Request-Time Middleware** — the single middleware layer that runs on every
   inbound request to a non-static path and performs exactly three duties:
   Locale routing and browser-language detection, the fail-closed password gate

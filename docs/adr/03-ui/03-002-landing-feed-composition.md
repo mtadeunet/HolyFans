@@ -39,11 +39,14 @@ references into tracked files; the reference layout is a composition
 pattern, not a source of content.
 
 The architecture constrains the shape the restyle can take. ADR 00-002
-confines request-time compute to an enumerated dynamic surface, so the
-feed's social-looking affordances (likes, comments, bookmarks) cannot be
-functional — there is no backend to persist or count them. ADR 00-008
-permits only Cookieless Analytics, so decorative interactions must emit
-no tracking signal. ADR 00-004 fixes the commerce contract (client-side
+confines request-time compute to an enumerated dynamic surface; within
+it, a dedicated counter endpoint backed by a managed store gives the
+feed's like affordance a real, shared count, while comments and other
+attributed social mechanics remain outside the boundary. ADR 00-008
+permits only Cookieless Analytics, so the row emits no tracking signal
+and its per-visitor dedup rests on an anonymous, self-generated
+client-held token feeding aggregate counts only. ADR 00-004 fixes the
+commerce contract (client-side
 Cart, server-side re-validation, PSP Hosted Checkout), which any new
 purchase presentation must preserve. ADR 00-005 requires every
 user-facing string in both Locales. The canonical Brand Palette and
@@ -93,24 +96,45 @@ composition obeys.
   self-contained unit: a header carrying the brand avatar, name, and a
   decorative handle string (own brand only, never a third-party
   account reference and never a link); localized caption copy; a
-  **Media Slot**; and a **Decorative Interaction Row**. On the purchase
+  **Media Slot**; and an **Interaction Row**. On the purchase
   route the Feed Surface carries a single occupant — the Simplified
   Purchase Surface, presented as a plain centered panel inside the
   column, not as a Post Card: the conversion surface carries no
-  decorative affordances and no Media Slot link, because it is the
+  interaction affordances and no Media Slot link, because it is the
   destination those affordances resolve to. The column's measure and
   rhythm are shared across both routes so the purchase route reads as
   the same composition.
 - **Media Slots convert.** Every Media Slot is a link to the Simplified
   Purchase Surface within the same Locale — seeing a product image and
   tapping it is the primary path to purchase.
-- **Decorative Interaction Row.** Social-style affordances (like,
-  comment, bookmark glyphs and a like count) are presentational only.
-  Any state is ephemeral and client-local — an Island per ADR 00-001 —
-  never persisted, never transmitted, never attributed to real people,
-  and invisible to analytics. They carry no functional obligation and
-  introduce no dynamic surface (ADR 00-002) and no measurement
-  (ADR 00-008).
+- **Interaction Row.** Each Post Card carries a row of social-style
+  affordances that is real but bounded — a like control with its
+  count and a share control:
+  - **Likes are shared counters.** The displayed like count is the
+    sum of an authored base count — part of the Post Card's
+    code-managed content — and a shared delta persisted server-side
+    in the managed store of ADR 00-002. A visitor's toggle persists
+    in client-local storage — an Island per ADR 00-001 — and is
+    deduplicated server-side per Post Card by a **Like Token**: an
+    anonymous, self-generated per-browser identifier held in
+    client-side storage, never a cookie, sent only with the toggle
+    request. The like counter Route Handler enumerated in ADR 00-002
+    serves counts and records toggles; it is hardened like the
+    checkout endpoint — input caps, IP rate limiting, fail-closed.
+    When the store is unconfigured or unreachable, the row degrades
+    to the authored base count with toggling disabled — graceful,
+    never a crash.
+  - **Share is a client-resolved affordance.** The comment and
+    bookmark glyphs are replaced by a share control that invokes the
+    visitor device's native share capability with the Post Card's
+    anchored URL on the Store Domain, falling back to clipboard copy
+    where the capability is unsupported. Sharing transmits nothing
+    to the Storefront — the client-resolved outbound posture of
+    ADR 00-009.
+  - **No comments, no attribution, no measurement.** The row feeds
+    aggregate counts only and emits no analytics signal; the Like
+    Token identifies no person and stays inside the cookieless,
+    no-personal-data posture of ADR 00-008.
 - **Suggestions Rail.** A column of product and Variant suggestion cards
   with a discovery call-to-action and the legal links (privacy, terms)
   at its foot. The rail renders on the purchase route as well, where
@@ -178,9 +202,9 @@ composition obeys.
 - **Hygiene and measurement.** The mirrored platform's name, marks,
   copy, and UI text never enter tracked files — the pattern is
   re-expressed in HolyFans' own vocabulary (ADR 00-007). The
-  composition adds no analytics mechanism; decorative interactions
-  emit nothing, and purchase conversion stays measured at the PSP
-  (ADR 00-008).
+  composition adds no analytics mechanism; the Interaction Row emits
+  no analytics signal — the Like Token feeds aggregate counts only —
+  and purchase conversion stays measured at the PSP (ADR 00-008).
 
 ## Consequences
 
@@ -198,9 +222,11 @@ composition obeys.
 - Existing content, imagery, and Site Config toggles are preserved
   through remapping — no configuration migration, no lost operator
   controls, and stored configs keep their semantics.
-- Zero new dynamic surface: the feed, rails, and decorative chrome are
-  static output plus at most client-local Islands, so the ADR 00-002
-  boundary is untouched and the pages stay fast.
+- The feed, rails, and chrome remain static output plus client
+  Islands; the Interaction Row's only request-time footprint is the
+  single enumerated like counter Route Handler inside ADR 00-002's
+  boundary, so the pages stay fast and the dynamic surface stays
+  enumerated.
 - The checkout contract of ADR 00-004 is preserved wholesale — server
   re-validation, Hosted Checkout, drift and degradation behavior — only
   the presentation that feeds it changes.
@@ -211,9 +237,18 @@ composition obeys.
 - The borrowed feed metaphor can read as imitative of the platform genre
   it mirrors; mitigated by bespoke tokens, brand, and copy, but the
   perception risk remains.
-- Decorative social affordances may invite taps that lead nowhere —
-  an accepted presentational convention; the affordances must be
-  styled to read as content, not as promised functionality.
+- The shared like count is a live store dependency: when the managed
+  store is unconfigured or unreachable the row falls back to authored
+  base counts with toggling disabled — graceful, but the shared
+  signal silently disappears.
+- The Like Token is self-minted on the visitor's device: clearing
+  client storage or scripting fresh tokens inflates likes past honest
+  dedup — an accepted vanity-metric bound, mitigated by per-post
+  dedup and IP rate limiting; counts are a presentation signal,
+  never a business metric.
+- The native share capability is uneven across desktop browsers; the
+  clipboard fallback keeps the affordance uniform but changes its
+  feel.
 - Two composition systems coexist: the Feed Shell across the
   browse-and-purchase flow and the classic chrome on post-checkout,
   auxiliary, legal, and admin routes — more layout variants to build,
@@ -247,12 +282,24 @@ composition obeys.
   components/brand** — Rejected: a kit look contradicts the bespoke,
   token-driven identity of ADR 03-001, and copying brand assets, copy,
   or UI text breaches identifier hygiene (ADR 00-007).
-- **Functional social interactions (real likes, comments, counts backed
-  by a store)** — Rejected: requires persistence and new request-time
-  surfaces outside ADR 00-002's enumerated dynamic surface, and
-  per-visitor interaction data is incompatible with the Cookieless
-  Analytics posture of ADR 00-008. Decorative affordances deliver the
-  visual pattern at zero architectural cost.
+- **Presentational-only interaction affordances** — Rejected: owner
+  decision — likes carry a real shared counter and share performs a
+  real action; purely decorative glyphs invited taps that led
+  nowhere.
+- **Full social-platform interactions (comments, attributed
+  engagement)** — Rejected: comments and per-visitor attribution
+  demand identified personal data incompatible with ADR 00-008 and
+  request-time surfaces beyond ADR 00-002's enumerated boundary; the
+  bounded version — aggregate counters plus a client-resolved share —
+  delivers the pattern without them.
+- **Server-issued identifiers for like dedup (cookie or session)** —
+  Rejected: a server-set identifier enters cookie territory under
+  ePrivacy and the no-consent-banner posture of ADR 00-008; the
+  self-generated client-held Like Token dedups per visitor with no
+  server-issued tracking surface.
+- **Share tracking or share-count endpoints** — Rejected: the share
+  affordance resolves entirely on the visitor's device; observing
+  shares would introduce a tracking signal ADR 00-008 forbids.
 - **Feed shell applied site-wide (all routes)** — Rejected: the shell
   serves the browse-and-purchase flow; post-checkout returns, legal,
   and admin surfaces are terminal or operational pages outside that
@@ -264,7 +311,7 @@ composition obeys.
   classic header/footer chrome at the purchase step preserves a
   presentation discontinuity at the highest-value moment.
 - **Simplified Purchase Surface presented as a Post Card** — Rejected:
-  a conversion surface carrying decorative social affordances and a
+  a conversion surface carrying social interaction affordances and a
   media link to itself would misrepresent engagement on a payment
   decision; it renders as a plain centered panel inside the Feed
   Surface instead.
