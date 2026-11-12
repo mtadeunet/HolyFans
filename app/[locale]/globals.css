@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&family=Dancing+Script:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -13,39 +13,31 @@
     @apply bg-background text-text-primary font-sans antialiased;
   }
 
+  /* Implements ADR 03-001: the serif display face is retained
+     exclusively for the brand mark and headings. The `primary` color
+     token is the blue interactive accent — headings must stay
+     near-black via the `text-primary` text token (`text-text-primary`),
+     never `text-primary`. */
   h1,
   h2,
   h3,
   h4,
   h5,
   h6 {
-    @apply font-serif text-primary;
-  }
-
-  .font-script {
-    font-family: 'Dancing Script', cursive;
+    @apply font-serif text-text-primary;
   }
 }
 
 @layer components {
+  /* Implements ADR 03-001: the bright blue `primary` token carries the
+     interactive accent; `accent` is its hover/emphasis companion. */
   .btn-primary {
-    @apply bg-accent text-white px-8 py-4 rounded-lg font-semibold transition-all duration-500 shadow-lg;
+    @apply bg-primary text-white px-8 py-4 rounded-lg font-semibold transition-all duration-500 shadow-lg;
     border: 2px solid transparent;
   }
 
   .btn-primary:hover {
-    @apply bg-accent/90 shadow-xl transform -translate-y-1;
-    border-color: rgba(212, 175, 55, 0.3);
-  }
-
-  .btn-secondary {
-    @apply bg-primary text-white px-8 py-4 rounded-lg font-semibold transition-all duration-500;
-    border: 2px solid transparent;
-  }
-
-  .btn-secondary:hover {
-    @apply bg-primary/90 shadow-lg transform -translate-y-1;
-    border-color: rgba(30, 58, 95, 0.3);
+    @apply bg-accent border-accent/30 shadow-xl transform -translate-y-1;
   }
 
   .container {
@@ -55,17 +47,9 @@
   .section-spacing {
     @apply py-16 md:py-24 lg:py-32;
   }
-
-  .card {
-    @apply bg-surface border border-border rounded-lg p-6 shadow-sm;
-  }
 }
 
 @layer utilities {
-  .text-gradient {
-    @apply bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent;
-  }
-
   .animate-fade-in {
     animation: fadeIn 0.6s ease-in-out;
   }

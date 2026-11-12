@@ -1,5 +1,16 @@
 export const SITE_CONFIG_KEY = 'siteConfig';
 
+/**
+ * Implements ADR 03-002: Landing Page Composition — Three-Column Feed
+ * Shell with Simplified Purchase Surface - "each existing section toggle
+ * governs the feed unit(s) carrying that content domain. Toggle keys are
+ * retained so stored Site Config documents keep working without
+ * migration."
+ *
+ * The key set is unchanged; semantics shifted from stacked page sections
+ * to landing feed units — a saved "hide FAQ" still hides FAQ content,
+ * now expressed as hiding the FAQ Post Card.
+ */
 export type SectionKey =
   'hero' | 'socialProof' | 'products' | 'craftsmanship' | 'faq' | 'finalCta';
 

@@ -5,24 +5,33 @@ import { useTranslations } from 'next-intl';
 export default function Footer() {
   const t = useTranslations('footer');
 
+  /* Implements ADR 03-001: Design System and Visual Identity — the
+     canonical light scheme carries the footer: white surface, near-black
+     headings, light-gray secondary copy, and the bright blue accent for
+     interactive affordances. */
   return (
-    <footer className="bg-primary text-white">
+    <footer className="bg-surface text-text-primary border-t border-border">
       <div className="container section-spacing">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
           {/* Brand Column */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-accent rounded-full flex items-center justify-center">
+              <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
                 <span className="text-primary font-serif text-sm font-bold">
                   HF
                 </span>
               </div>
-              <span className="font-serif text-white text-lg">HolyFans</span>
+              {/* Serif display face — brand mark whitelist (ADR 03-001). */}
+              <span className="font-serif text-text-primary text-lg">
+                HolyFans
+              </span>
             </div>
-            <h3 className="font-script text-accent text-lg">
+            {/* Tagline — the removed script face falls back to the
+                default sans in the secondary-copy role (ADR 03-001). */}
+            <h3 className="font-sans text-text-secondary text-lg">
               {t('brand_story')}
             </h3>
-            <p className="text-white/80 text-sm leading-relaxed">
+            <p className="text-text-secondary text-sm leading-relaxed">
               {t('brand_description')}
             </p>
             {/* Social Links */}
@@ -31,7 +40,7 @@ export default function Footer() {
                 href={process.env.NEXT_PUBLIC_INSTAGRAM_URL || '#'}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors"
+                className="w-8 h-8 bg-primary/10 text-primary rounded-full flex items-center justify-center hover:bg-primary/20 transition-colors"
                 aria-label="Instagram"
               >
                 <svg
@@ -44,7 +53,7 @@ export default function Footer() {
               </a>
               <a
                 href="#"
-                className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors"
+                className="w-8 h-8 bg-primary/10 text-primary rounded-full flex items-center justify-center hover:bg-primary/20 transition-colors"
                 aria-label="Facebook"
               >
                 <svg
@@ -57,7 +66,7 @@ export default function Footer() {
               </a>
               <a
                 href="#"
-                className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors"
+                className="w-8 h-8 bg-primary/10 text-primary rounded-full flex items-center justify-center hover:bg-primary/20 transition-colors"
                 aria-label="Pinterest"
               >
                 <svg
@@ -73,12 +82,14 @@ export default function Footer() {
 
           {/* Shop Column */}
           <div className="space-y-4">
-            <h4 className="font-semibold text-white">{t('shop.title')}</h4>
+            <h4 className="font-semibold text-text-primary">
+              {t('shop.title')}
+            </h4>
             <ul className="space-y-2">
               <li>
                 <a
                   href="#"
-                  className="text-white/80 hover:text-white transition-colors text-sm"
+                  className="text-text-secondary hover:text-primary transition-colors text-sm"
                 >
                   {t('shop.products')}
                 </a>
@@ -86,7 +97,7 @@ export default function Footer() {
               <li>
                 <a
                   href="#"
-                  className="text-white/80 hover:text-white transition-colors text-sm"
+                  className="text-text-secondary hover:text-primary transition-colors text-sm"
                 >
                   {t('shop.sizing_guide')}
                 </a>
@@ -94,7 +105,7 @@ export default function Footer() {
               <li>
                 <a
                   href="#"
-                  className="text-white/80 hover:text-white transition-colors text-sm"
+                  className="text-text-secondary hover:text-primary transition-colors text-sm"
                 >
                   {t('shop.care_instructions')}
                 </a>
@@ -102,7 +113,7 @@ export default function Footer() {
               <li>
                 <a
                   href="#"
-                  className="text-white/80 hover:text-white transition-colors text-sm"
+                  className="text-text-secondary hover:text-primary transition-colors text-sm"
                 >
                   {t('shop.shipping_info')}
                 </a>
@@ -112,14 +123,14 @@ export default function Footer() {
 
           {/* Customer Care Column */}
           <div className="space-y-4">
-            <h4 className="font-semibold text-white">
+            <h4 className="font-semibold text-text-primary">
               {t('customer_care.title')}
             </h4>
             <ul className="space-y-2">
               <li>
                 <a
                   href="#"
-                  className="text-white/80 hover:text-white transition-colors text-sm"
+                  className="text-text-secondary hover:text-primary transition-colors text-sm"
                 >
                   {t('customer_care.contact')}
                 </a>
@@ -127,7 +138,7 @@ export default function Footer() {
               <li>
                 <a
                   href="#"
-                  className="text-white/80 hover:text-white transition-colors text-sm"
+                  className="text-text-secondary hover:text-primary transition-colors text-sm"
                 >
                   {t('customer_care.faq')}
                 </a>
@@ -135,7 +146,7 @@ export default function Footer() {
               <li>
                 <a
                   href="#"
-                  className="text-white/80 hover:text-white transition-colors text-sm"
+                  className="text-text-secondary hover:text-primary transition-colors text-sm"
                 >
                   {t('customer_care.returns')}
                 </a>
@@ -143,7 +154,7 @@ export default function Footer() {
               <li>
                 <a
                   href="#"
-                  className="text-white/80 hover:text-white transition-colors text-sm"
+                  className="text-text-secondary hover:text-primary transition-colors text-sm"
                 >
                   {t('customer_care.tracking')}
                 </a>
@@ -153,22 +164,19 @@ export default function Footer() {
 
           {/* Newsletter Column */}
           <div className="space-y-4">
-            <h4 className="font-semibold text-white">
+            <h4 className="font-semibold text-text-primary">
               {t('newsletter_title')}
             </h4>
-            <p className="text-white/80 text-sm">
+            <p className="text-text-secondary text-sm">
               {t('newsletter_description')}
             </p>
             <form className="space-y-2">
               <input
                 type="email"
                 placeholder={t('newsletter_placeholder')}
-                className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/60 focus:outline-none focus:border-accent transition-colors"
+                className="w-full px-4 py-2 bg-background border border-border rounded-lg text-text-primary placeholder-text-secondary focus:outline-none focus:border-primary transition-colors"
               />
-              <button
-                type="submit"
-                className="w-full btn-secondary bg-accent hover:bg-accent/90"
-              >
+              <button type="submit" className="w-full btn-primary">
                 {t('newsletter_button')}
               </button>
             </form>
@@ -177,28 +185,28 @@ export default function Footer() {
       </div>
 
       {/* Bottom Bar */}
-      <div className="border-t border-white/20">
+      <div className="border-t border-border">
         <div className="container py-6">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <p className="text-white/60 text-sm">{t('copyright')}</p>
+            <p className="text-text-secondary text-sm">{t('copyright')}</p>
             <div className="flex items-center space-x-6">
               <a
                 href="#"
-                className="text-white/60 hover:text-white transition-colors text-sm"
+                className="text-text-secondary hover:text-primary transition-colors text-sm"
               >
                 {t('privacy')}
               </a>
               <a
                 href="#"
-                className="text-white/60 hover:text-white transition-colors text-sm"
+                className="text-text-secondary hover:text-primary transition-colors text-sm"
               >
                 {t('terms')}
               </a>
               <div className="flex items-center space-x-2">
-                <div className="w-6 h-4 bg-white rounded"></div>
-                <div className="w-6 h-4 bg-white rounded"></div>
-                <div className="w-6 h-4 bg-white rounded"></div>
-                <div className="w-6 h-4 bg-white rounded"></div>
+                <div className="w-6 h-4 bg-border rounded"></div>
+                <div className="w-6 h-4 bg-border rounded"></div>
+                <div className="w-6 h-4 bg-border rounded"></div>
+                <div className="w-6 h-4 bg-border rounded"></div>
               </div>
             </div>
           </div>

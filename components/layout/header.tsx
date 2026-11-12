@@ -2,7 +2,8 @@
 
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
+import { Link } from '@/lib/navigation';
+import { whatsappChatUrl } from '@/lib/whatsapp';
 import { useEffect, useState } from 'react';
 import LanguageToggle from './language-toggle';
 
@@ -19,11 +20,28 @@ interface HeaderProps {
   purchaseSurfaceEnabled: boolean;
 }
 
+/**
+ * Classic site header — non-landing chrome only.
+ *
+ * Implements ADR 03-002: Landing Page Composition — Three-Column Feed
+ * Shell with Simplified Purchase Surface - "Non-landing routes (the
+ * checkout pages, auxiliary and legal pages) keep the classic
+ * header/footer chrome"; `ChromeFrame` suppresses this header on the
+ * Locale landing roots.
+ *
+ * Since the header now only renders off the landing, its entries are
+ * locale-aware Links pointing back at the landing's Feed Shell anchors
+ * (`#products`, `#post-faq`) rather than scroll targets on the current
+ * page. The Contact entry opens the Inbound Contact Surface's
+ * click-to-chat deep link (ADR 00-009) and fails closed — it is omitted
+ * when no Store Messaging Number is configured. All links go through
+ * `lib/navigation.ts` so the Locale prefix is preserved (ADR 00-005).
+ */
 export default function Header({ purchaseSurfaceEnabled }: HeaderProps) {
   const t = useTranslations('navigation');
+  const tWhatsApp = useTranslations('whatsapp');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const router = useRouter();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -32,26 +50,26 @@ export default function Header({ purchaseSurfaceEnabled }: HeaderProps) {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const handleNavClick = (href: string) => {
-    if (href.startsWith('#')) {
-      // Smooth scroll to section
-      const element = document.querySelector(href);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth' });
-      }
-    } else {
-      router.push(href);
-    }
-    setIsMenuOpen(false);
-  };
+  // Inbound Contact Surface deep link (ADR 00-009): `null` when the
+  // Store Messaging Number is unconfigured — the entry fails closed.
+  const contactUrl = whatsappChatUrl(
+    process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '',
+    tWhatsApp('prefilled_message')
+  );
+
+  const navLinkClass =
+    'text-text-secondary hover:text-primary transition-colors';
+  const mobileNavLinkClass =
+    'block w-full text-left text-text-secondary hover:text-primary transition-colors py-3 min-h-12 text-base border-b border-border/40';
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
       <div className="container">
         <nav className="relative flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
-          <button
-            onClick={() => handleNavClick('/')}
+          <Link
+            href="/"
+            onClick={() => setIsMenuOpen(false)}
             className={`flex items-center md:relative md:overflow-visible md:transition-transform md:duration-300 md:ease-out ${
               scrolled
                 ? 'md:self-center md:translate-y-0'
@@ -79,39 +97,39 @@ export default function Header({ purchaseSurfaceEnabled }: HeaderProps) {
                 scrolled ? 'md:h-10' : 'md:h-40'
               }`}
             />
-          </button>
+          </Link>
 
-          {/* Desktop Navigation */}
+          {/* Desktop Navigation — Links back into the landing's feed
+              anchors; targets are landing-only since this header never
+              renders there. */}
           <div className="hidden md:flex items-center space-x-8">
-            <button
-              onClick={() => handleNavClick('#products')}
-              className="text-text-secondary hover:text-primary transition-colors"
-            >
+            <Link href="/#products" className={navLinkClass}>
               {t('about')}
-            </button>
-            <button
-              onClick={() => handleNavClick('#faq')}
-              className="text-text-secondary hover:text-primary transition-colors"
-            >
+            </Link>
+            <Link href="/#post-faq" className={navLinkClass}>
               {t('faq')}
-            </button>
-            <button
-              onClick={() => handleNavClick('#social-proof')}
-              className="text-text-secondary hover:text-primary transition-colors"
-            >
-              {t('contact')}
-            </button>
-            {/* Purchase-surface gate (ADR 00-004 / plan M0): the cart nav CTA
-                to /checkout only exists while PURCHASE_SURFACE_ENABLED is
-                'true'; suppressed entirely otherwise. */}
+            </Link>
+            {contactUrl && (
+              <a
+                href={contactUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={navLinkClass}
+              >
+                {t('contact')}
+              </a>
+            )}
+            {/* Purchase-surface gate (ADR 00-004 / plan M0): the cart nav
+                CTA to /checkout only exists while
+                PURCHASE_SURFACE_ENABLED is 'true'. */}
             {purchaseSurfaceEnabled && (
-              <button
+              <Link
+                href="/checkout"
                 data-testid="nav-cart"
-                onClick={() => handleNavClick('/checkout')}
-                className="text-text-secondary hover:text-primary transition-colors"
+                className={navLinkClass}
               >
                 {t('cart')}
-              </button>
+              </Link>
             )}
             <LanguageToggle />
           </div>
@@ -143,34 +161,42 @@ export default function Header({ purchaseSurfaceEnabled }: HeaderProps) {
         {isMenuOpen && (
           <div className="md:hidden absolute top-full left-0 right-0 bg-background border-b border-border">
             <div className="container py-2">
-              <button
-                onClick={() => handleNavClick('#products')}
-                className="block w-full text-left text-text-secondary hover:text-primary transition-colors py-3 min-h-12 text-base border-b border-border/40"
+              <Link
+                href="/#products"
+                onClick={() => setIsMenuOpen(false)}
+                className={mobileNavLinkClass}
               >
                 {t('about')}
-              </button>
-              <button
-                onClick={() => handleNavClick('#faq')}
-                className="block w-full text-left text-text-secondary hover:text-primary transition-colors py-3 min-h-12 text-base border-b border-border/40"
+              </Link>
+              <Link
+                href="/#post-faq"
+                onClick={() => setIsMenuOpen(false)}
+                className={mobileNavLinkClass}
               >
                 {t('faq')}
-              </button>
-              <button
-                onClick={() => handleNavClick('#social-proof')}
-                className="block w-full text-left text-text-secondary hover:text-primary transition-colors py-3 min-h-12 text-base border-b border-border/40"
-              >
-                {t('contact')}
-              </button>
+              </Link>
+              {contactUrl && (
+                <a
+                  href={contactUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setIsMenuOpen(false)}
+                  className={mobileNavLinkClass}
+                >
+                  {t('contact')}
+                </a>
+              )}
               {/* Purchase-surface gate (ADR 00-004 / plan M0): same
                   suppression as the desktop nav above. */}
               {purchaseSurfaceEnabled && (
-                <button
+                <Link
+                  href="/checkout"
                   data-testid="nav-cart"
-                  onClick={() => handleNavClick('/checkout')}
-                  className="block w-full text-left text-text-secondary hover:text-primary transition-colors py-3 min-h-12 text-base"
+                  onClick={() => setIsMenuOpen(false)}
+                  className={`${mobileNavLinkClass} border-b-0`}
                 >
                   {t('cart')}
-                </button>
+                </Link>
               )}
             </div>
           </div>

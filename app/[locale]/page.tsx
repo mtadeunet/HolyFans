@@ -1,46 +1,31 @@
-import Craftsmanship from '@/components/sections/craftsmanship';
-import FAQ from '@/components/sections/faq';
-import FinalCTA from '@/components/sections/final-cta';
-import Hero from '@/components/sections/hero';
-import ProductGallery from '@/components/sections/product-gallery';
-import SocialProof from '@/components/sections/social-proof';
+import FeedPosts from '@/components/feed/feed-posts';
+import FeedShell from '@/components/feed/feed-shell';
+import { isPurchaseSurfaceEnabled } from '@/lib/purchase-surface';
 import { getSiteConfig } from '@/lib/site-config-server';
 
+/**
+ * Implements ADR 03-002: Landing Page Composition — Three-Column Feed
+ * Shell with Simplified Purchase Surface - "The Locale landing roots
+ * and the purchase route are composed as a Feed Shell — a three-column
+ * layout consisting of a Nav Rail (left), a Feed Surface (center), and
+ * a Suggestions Rail (right)."
+ *
+ * The Locale landing root: renders the Feed Shell with the authored
+ * Post Card scroll as the Feed Surface's occupant, the Site Config
+ * section/chrome toggles, and the server-evaluated, fail-closed
+ * purchase-surface gate threaded through.
+ */
 export default async function HomePage() {
   const { sections, chrome } = await getSiteConfig();
+  const purchaseSurfaceEnabled = isPurchaseSurfaceEnabled();
 
   return (
-    <main className="min-h-screen">
-      {sections.hero && (
-        <section id="hero">
-          <Hero showPremiumFeaturesModal={chrome.premiumFeaturesModal} />
-        </section>
-      )}
-      {sections.socialProof && (
-        <section id="social-proof">
-          <SocialProof />
-        </section>
-      )}
-      {sections.products && (
-        <section id="products">
-          <ProductGallery />
-        </section>
-      )}
-      {sections.craftsmanship && (
-        <section id="craftsmanship">
-          <Craftsmanship />
-        </section>
-      )}
-      {sections.faq && (
-        <section id="faq">
-          <FAQ />
-        </section>
-      )}
-      {sections.finalCta && (
-        <section id="final-cta">
-          <FinalCTA />
-        </section>
-      )}
-    </main>
+    <FeedShell chrome={chrome} purchaseSurfaceEnabled={purchaseSurfaceEnabled}>
+      <FeedPosts
+        sections={sections}
+        chrome={chrome}
+        purchaseSurfaceEnabled={purchaseSurfaceEnabled}
+      />
+    </FeedShell>
   );
 }

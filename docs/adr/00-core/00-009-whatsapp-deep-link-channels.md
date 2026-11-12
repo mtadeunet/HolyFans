@@ -10,6 +10,7 @@ ADR 00-002 (Rendering and Hosting Model)
 ADR 00-005 (Internationalization)
 ADR 00-007 (Quality Tooling and CI)
 ADR 00-008 (Analytics and Consent)
+ADR 03-002 (Landing Page Composition)
 
 ## Context
 
@@ -101,8 +102,9 @@ widget service — the Storefront never sends, receives, or stores a message.
   observable only as aggregate engagement under Cookieless Analytics
   (ADR 00-008), and conversion from a chat to a purchase is unattributed.
 - The floating surface competes for mobile viewport space with other global
-  chrome (the mobile sticky purchase CTA); placement must never occlude
-  purchase actions — a presentation constraint, not a mechanism change.
+  chrome (the Feed Shell's consolidated bottom navigation band); placement
+  must never occlude navigation or purchase actions — a presentation
+  constraint, not a mechanism change.
 - Visitors without the vendor's application or account get only the vendor's
   own web fallback; no alternative contact channel is implied or duplicated.
 

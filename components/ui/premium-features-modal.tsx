@@ -54,15 +54,17 @@ export default function PremiumFeaturesModal({
     >
       <div
         id="modal-content"
-        className="bg-white rounded-2xl max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl w-full"
+        className="bg-surface rounded-2xl max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl w-full"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between z-10">
-          <h2 className="text-2xl font-serif text-primary">{t('title')}</h2>
+        <div className="sticky top-0 bg-surface border-b border-border p-6 flex items-center justify-between z-10">
+          <h2 className="text-2xl font-serif text-text-primary">
+            {t('title')}
+          </h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 transition-colors"
+            className="text-text-secondary hover:text-text-primary transition-colors"
             aria-label={tCommon('close')}
           >
             <svg
@@ -111,7 +113,7 @@ export default function PremiumFeaturesModal({
                       />
                     </svg>
                   </div>
-                  <h4 className="text-lg font-semibold text-primary mb-2">
+                  <h4 className="text-lg font-semibold text-text-primary mb-2">
                     {t('premium_materials.title')}
                   </h4>
                   <p className="text-sm text-text-secondary">
@@ -137,7 +139,7 @@ export default function PremiumFeaturesModal({
                       <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                     </svg>
                   </div>
-                  <h4 className="text-lg font-semibold text-primary mb-2">
+                  <h4 className="text-lg font-semibold text-text-primary mb-2">
                     {t('artistic_design.title')}
                   </h4>
                   <p className="text-sm text-text-secondary">
@@ -166,7 +168,7 @@ export default function PremiumFeaturesModal({
                       <path d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 1.293a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414L7.586 10 5.293 7.707a1 1 0 010-1.414zM11 12a1 1 0 100 2h3a1 1 0 100-2h-3z" />
                     </svg>
                   </div>
-                  <h4 className="text-lg font-semibold text-primary mb-2">
+                  <h4 className="text-lg font-semibold text-text-primary mb-2">
                     {t('embroidery.title')}
                   </h4>
                   <p className="text-sm text-text-secondary">
@@ -196,7 +198,7 @@ export default function PremiumFeaturesModal({
                       />
                     </svg>
                   </div>
-                  <h4 className="text-lg font-semibold text-primary mb-2">
+                  <h4 className="text-lg font-semibold text-text-primary mb-2">
                     {t('metal_details.title')}
                   </h4>
                   <p className="text-sm text-text-secondary">
@@ -223,7 +225,7 @@ export default function PremiumFeaturesModal({
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <h4 className="text-xl font-semibold text-primary mb-3">
+                  <h4 className="text-xl font-semibold text-text-primary mb-3">
                     {selectedFeature === 0 && t('premium_materials.title')}
                     {selectedFeature === 1 && t('artistic_design.title')}
                     {selectedFeature === 2 && t('embroidery.title')}

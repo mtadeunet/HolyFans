@@ -22,17 +22,14 @@ export default function NotFoundContent() {
   const t = useTranslations('not_found');
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="text-center">
-        <h1 className="text-9xl font-bold text-gray-900">404</h1>
-        <h2 className="text-2xl font-semibold text-gray-700 mt-4">
+        <h1 className="text-9xl font-bold text-text-primary">404</h1>
+        <h2 className="text-2xl font-semibold text-text-primary mt-4">
           {t('title')}
         </h2>
-        <p className="text-gray-600 mt-2 mb-8">{t('description')}</p>
-        <Link
-          href="/"
-          className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-        >
+        <p className="text-text-secondary mt-2 mb-8">{t('description')}</p>
+        <Link href="/" className="btn-primary inline-block">
           {t('go_home')}
         </Link>
       </div>

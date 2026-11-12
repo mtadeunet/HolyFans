@@ -35,7 +35,11 @@ PSP Hosted Checkout**:
 - **Product Data** lives in the repository as structured, versioned content
   (names, descriptions, EUR prices, Variants — including optional per-Variant
   Purchase Caps for small handmade runs — imagery references, and
-  Availability Flags). There is no CMS and no commerce-platform catalog.
+  Availability Flags). An item may carry an optional **Compare-At Price**: a
+  display-only regular price shown struck-through next to the effective
+  price — the charged amount remains the listed price, and the compare-at
+  value is never submitted to the checkout path or the PSP. There is no CMS
+  and no commerce-platform catalog.
 - **Cart** is a client-side Island: it lives in the shopper's browser, holds
   selected Variants and quantities clamped to their Purchase Caps, and
   persists across visits on the same device. There are no customer accounts.
@@ -75,7 +79,10 @@ PSP Hosted Checkout**:
   Product Data (small handmade runs); no automated stock counters at launch.
 - **Pricing and tax:** all prices are presented and charged in EUR, and the
   displayed price remains VAT-inclusive — the shopper always sees the
-  final total before payment, as required for EU consumer sales. Tax
+  final total before payment, as required for EU consumer sales. The
+  Compare-At Price, when present, follows the same VAT-inclusive display
+  convention but is presentation-only — it is never part of the charged
+  total. Tax
   computation is delegated to the PSP: the checkout Route Handler creates
   Checkout Sessions with automatic tax enabled and line items marked with
   inclusive tax behavior, so the PSP computes the VAT portion inside the
@@ -105,6 +112,9 @@ PSP Hosted Checkout**:
   the codebase.
 - The PSP's hosted payment page carries brand-consistent styling, keeping
   the premium experience coherent.
+- Promotional pricing ships entirely inside Product Data: the Compare-At
+  Price is display-only, so discounts are presented without touching the
+  checkout contract, server-side re-validation, or tax computation.
 
 **Negative / trade-offs:**
 - No automated inventory enforcement: a Variant can be oversold between
@@ -126,6 +136,9 @@ PSP Hosted Checkout**:
 - Automatic tax depends on an owner-maintained Stripe Tax registration in
   the PSP Dashboard; a missing or lapsed registration means no tax is
   computed — an operational prerequisite the codebase cannot enforce.
+- A Compare-At Price is a legal price-reduction claim under EU consumer
+  rules — the operator must keep it truthful (a genuine regular or prior
+  price); the mechanism cannot verify the claim.
 
 ## Alternatives Considered
 

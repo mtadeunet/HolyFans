@@ -2,18 +2,13 @@ import { Product, ProductVariant } from '@/types/product';
 
 export const PRODUCT: Product = {
   id: 'holyfans-nsr-001',
-  name: 'Nossa Senhora da Rosa T-Shirt',
+  name: 'Nossa Senhora da Rosa',
   description:
     'Premium t-shirt with Our Lady of the Rose design, featuring high-quality printing with embroidered and metal details.',
-  price: 89,
+  price: 90,
+  compareAtPrice: 120,
   currency: 'EUR',
   images: {
-    male: [
-      '/images/product-male-1.jpg',
-      '/images/product-male-2.jpg',
-      '/images/product-male-3.jpg',
-      '/images/product-male-4.jpg',
-    ],
     female: [
       '/images/product-female-1.jpg',
       '/images/product-female-2.jpg',
@@ -22,40 +17,42 @@ export const PRODUCT: Product = {
     ],
   },
   variants: {
-    male: {
-      id: 'nsr-male-m',
-      name: 'Male Fit',
-      size: 'M',
-      color: 'White',
-      fit: 'Regular fit, slightly longer torso',
-      images: [
-        '/images/product-male-1.jpg',
-        '/images/product-male-2.jpg',
-        '/images/product-male-3.jpg',
-        '/images/product-male-4.jpg',
-      ],
-      // Owner-editable Product Data (ADR 00-004): Availability Flag +
-      // Purchase Cap. Male fit is not yet in production — sold out.
-      available: false,
-      maxQuantity: 5,
-    },
-    female: {
-      id: 'nsr-female-m',
-      name: 'Female Fit',
-      size: 'M',
-      color: 'White',
-      fit: 'Slightly tapered waist, shorter torso',
-      images: [
-        '/images/product-female-1.jpg',
-        '/images/product-female-2.jpg',
-        '/images/product-female-3.jpg',
-        '/images/product-female-4.jpg',
-      ],
-      // Owner-editable Product Data (ADR 00-004): Availability Flag +
-      // Purchase Cap.
-      available: true,
-      maxQuantity: 5,
-    },
+    female: [
+      {
+        id: 'nsr-female-m',
+        name: 'Female Fit',
+        size: 'M',
+        color: 'White',
+        fit: 'Slightly tapered waist, shorter torso',
+        images: [
+          '/images/product-female-1.jpg',
+          '/images/product-female-2.jpg',
+          '/images/product-female-3.jpg',
+          '/images/product-female-4.jpg',
+        ],
+        // Owner-editable Product Data (ADR 00-004): Availability Flag +
+        // Purchase Cap.
+        available: true,
+        maxQuantity: 5,
+      },
+      {
+        id: 'nsr-female-l',
+        name: 'Female Fit',
+        size: 'L',
+        color: 'White',
+        fit: 'Slightly tapered waist, shorter torso',
+        images: [
+          '/images/product-female-1.jpg',
+          '/images/product-female-2.jpg',
+          '/images/product-female-3.jpg',
+          '/images/product-female-4.jpg',
+        ],
+        // Owner-editable Product Data (ADR 00-004): Availability Flag +
+        // Purchase Cap.
+        available: true,
+        maxQuantity: 5,
+      },
+    ],
   },
   features: [
     'Premium cotton material',
@@ -91,9 +88,27 @@ export const PRODUCT: Product = {
  *   Data does not carry it.
  */
 export function findVariant(variantId: string): ProductVariant | undefined {
-  return Object.values(PRODUCT.variants).find(
-    (variant) => variant.id === variantId
-  );
+  return Object.values(PRODUCT.variants)
+    .flat()
+    .find((variant) => variant.id === variantId);
+}
+
+/**
+ * Implements ADR 00-004: Commerce and Checkout - "sold-out state is
+ * expressed through Availability Flags in Product Data".
+ *
+ * A fit's representative Variant — the first available one, or the first
+ * entry when every Variant of the fit is flagged off (sold-out fits keep
+ * a representative for display-only surfaces like the Suggestions Rail,
+ * where they are shown but never offered as a purchasable path).
+ *
+ * @param variants - The Variant list of one fit in Product Data.
+ * @returns The representative `ProductVariant` for that fit.
+ */
+export function representativeVariant(
+  variants: ProductVariant[]
+): ProductVariant {
+  return variants.find((variant) => variant.available) ?? variants[0];
 }
 
 /**

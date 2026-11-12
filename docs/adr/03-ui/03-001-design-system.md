@@ -8,21 +8,24 @@ Proposed
 
 ADR 00-001 (Application Framework — Next.js)
 ADR 00-006 (Media and Asset Pipeline)
+ADR 03-002 (Landing Page Composition)
 
 ## Context
 
-HolyFans sells premium Christian clothing; the visual identity must
-communicate craft, reverence, and quality rather than mass-market e-commerce.
-A consistent design system is required so the small team can build a coherent,
-high-end UI without a dedicated designer on every decision. The working
-Storefront already carries a defined Design Token layer — a light, clean
-surface scheme with a navy-and-gold brand identity and serif-led typography —
-that the owner has been iterating on. Rather than re-seed a visual system from
-scratch, the design decision ratifies the implemented token layer as canonical
-and extends it where it is thin. Brand masters: the owner has supplied
-high-resolution raster logo marks (halo mark and wordmark), committed to the
-repo per ADR 00-006; a vector master is the ideal form for print/QR work but
-is not a blocker.
+HolyFans sells premium Christian clothing presented through a landing
+composition that mirrors a creator-subscription platform's feed visual
+language (ADR 03-002). The visual identity must carry that genre —
+light surfaces, a familiar interactive accent, comfortable long-scroll
+reading — while staying recognizably HolyFans through its marks and
+typography. A consistent design system is required so the small team
+can build a coherent UI without a dedicated designer on every
+decision. The Storefront carries a defined Design Token layer that the
+owner has been iterating on; rather than re-seed a visual system from
+scratch, the design decision ratifies the token layer as canonical and
+extends it where it is thin. Brand masters: the owner has supplied
+high-resolution raster logo marks (halo mark and wordmark), committed
+to the repo per ADR 00-006; a vector master is the ideal form for
+print/QR work but is not a blocker.
 
 ## Decision
 
@@ -34,39 +37,46 @@ the implemented Brand Palette as canonical**.
   typography, radius, and elevation. Component classes and shared primitives
   are built on those tokens; no values are hard-coded outside the token
   layer.
-- **Brand Palette (canonical, as implemented):**
-  - Deep navy `primary` — `#1e3a5f` (accents, headings, authority,
-    text-on-light surfaces).
-  - Gold `accent` — `#d4af37` (calls to action, highlights, premium
-    detailing).
-  - Clean light surfaces — white `background` `#ffffff`, near-white
-    `surface` `#f8fafc`, light `border` `#e2e8f0`.
-  - Text — primary `#1a202c`, secondary `#4a5568`.
-  - Product-design accents — rose `#e11d48`, sea blue `#1e3a8a`, gold
-    `#d4af37`/`#fbbf24` — reserved for garment artwork and design imagery,
-    not UI chrome.
-  - Semantic meaning: deep navy = trust, heaven, the Virgin's mantle; gold =
-    divine, sacred, premium craft. The navy/gold pairing is the identity's
-    core, carried on a clean light scheme that reads as premium retail
-    rather than mass-market.
-- **Typography direction:** a high-contrast **serif display face for
-  headings** — Transitional/Didone character, evoking religious-art gravitas
-  and editorial craft — paired with a clean, legible **humanist/geometric
-  sans for body and UI**; a **flowing script accent face** is used sparingly
-  for faith-themed flourishes only. Generous whitespace, a refined type
-  scale, and restrained ornamentation (fine rules, small caps, sacred-geometry
-  motifs where appropriate) carry the premium feel.
+- **Brand Palette (canonical):** a light-theme scheme mirroring the
+  creator-subscription platform's feed visual language:
+  - Near-white `background` — the page wash behind the feed and rails.
+  - White `surface` — card surfaces (Post Cards, rail cards, the
+    Simplified Purchase Surface).
+  - Bright blue `primary` — a sky-family blue carrying the interactive
+    accent: calls to action, links, active and highlighted states.
+  - Deepened blue `accent` — the hover/emphasis companion of the
+    primary blue.
+  - Text — near-black `text-primary`; light-gray `text-secondary` for
+    captions, metadata, and secondary copy.
+  - `border` — light gray, defining card edges and rail separators.
+  - Product-design accents — rose, sea blue, gold — reserved for
+    garment artwork and design imagery, not UI chrome.
+  - Semantic meaning: the bright blue accent carries the feed genre's
+    familiar link/affordance language; the clean light scheme keeps the
+    editorial feed legible over long scrolls. Brand recognizability is
+    carried by the marks and the serif display voice rather than by a
+    bespoke color pairing.
+- **Typography direction:** a clean, legible **humanist/geometric sans
+  is the default face** for body text and all UI chrome; a
+  high-contrast **serif display face** — Transitional/Didone character,
+  evoking religious-art gravitas and editorial craft — is retained
+  exclusively for the brand mark and headings, where it carries the
+  identity's editorial voice. No script or decorative accent face is
+  used. Generous whitespace and a refined type scale carry the
+  composed, editorial feel.
 - **Component approach:** a small set of bespoke UI primitives (buttons,
   cards, product sections, navigation, forms) built on the tokens — no
-  generic UI-kit look; the store must read as a custom premium brand, not a
-  template.
+  generic UI-kit look; the store must read as a custom brand executing
+  the feed visual language, not a template.
 - **Brand marks:** the owner-supplied raster logo masters are the canonical
   brand imagery for header/footer/favicon use; a vector master is the ideal
   form for print and QR scaling and should be adopted when supplied
   (desirable, not blocking).
-- **Accessibility:** palette use respects contrast requirements; the dark
-  navy/light surface pairings are the default text surfaces to keep premium
-  contrast legible.
+- **Accessibility:** palette use respects contrast requirements; the
+  near-black text on light surface pairings are the default text
+  surfaces to keep long-scroll feed content legible, and the bright
+  blue accent is paired with light surfaces that preserve readable
+  contrast for interactive elements.
 
 ## Consequences
 
@@ -75,33 +85,44 @@ the implemented Brand Palette as canonical**.
   rebranding/theming changes localized and safe.
 - Ratifying the implemented palette keeps docs and UI in lock-step — no
   greenfield re-skinning of a working, owner-iterated storefront.
-- Navy-and-gold on a light surface scheme delivers premium retail presence:
-  clean, reverent, and differentiated from template e-commerce.
+- The light scheme with a bright blue accent makes the Feed Shell
+  composition and its chrome read as one coherent genre — the palette
+  reinforces the composition instead of fighting it — while the
+  conventional accent color gives links and calls to action a familiar
+  affordance language.
+- Confining the serif display face to the brand mark and headings keeps
+  a distinctive editorial voice inside the genre's neutral, sans-led
+  reading experience.
 - Tailwind speeds development for a small team while tokens keep the output
   bespoke rather than generic.
-- No external UI library dependency means full control over the premium
-  look.
+- No external UI library dependency means full control over the visual
+  identity.
 
 **Negative / trade-offs:**
+- The bespoke premium color pairing is traded away — brand
+  recognizability now rests on the marks and the serif headings rather
+  than on palette; the light feed scheme risks reading as generic if
+  tokens drift toward the reference's exact values, so the accent
+  weight and type treatment must stay own-brand.
 - The light scheme diverges from the darker tones of the rendered QR
-  artifact; the identity pairing (navy/gold) is preserved but the artifact
-  is no longer the palette's literal seed.
+  artifact; the artifact is not the palette's seed.
 - A bespoke primitive set requires building components a UI kit would
   provide for free — more upfront design/build work.
 - Utility-first markup requires team discipline to keep components
   token-faithful rather than sliding into arbitrary values.
 - Raster-only logo masters limit print/QR scaling until a vector arrives.
-- The script accent face must stay sparing — overuse would cheapen the
-  premium tone it is meant to elevate.
 
 ## Alternatives Considered
 
+- **Deep navy + gold premium scheme** — Rejected in favor of the
+  feed-platform light aesthetic the composition now mirrors; the
+  bespoke pairing's distinctiveness is traded for genre coherence, and
+  recognizability moves to the marks and the serif headings.
 - **Re-derive the palette directly from the rendered QR artifact's darker
-  navy/cyan scheme** — Rejected: the implemented light premium scheme is
-  what the Storefront ships and the owner has iterated on; the navy/gold
-  identity semantics are preserved in the canonical tokens, and re-skinning
-  a working UI to match an artifact would churn design without a quality
-  gain.
+  scheme** — Rejected: the canonical scheme is the light feed-platform
+  palette the Storefront ships and the owner has iterated on;
+  re-skinning a working UI to match a print artifact would churn design
+  without a quality gain.
 - **Component/UI library (e.g., MUI, Chakra, pre-styled systems)** —
   Rejected: yields a generic app look at odds with a premium custom brand;
   theming a library to this level of bespoke identity costs more than it
@@ -110,6 +131,7 @@ the implemented Brand Palette as canonical**.
   built-in token/utility system; higher maintenance for a small team.
 - **CSS-in-JS runtime libraries** — Rejected: adds runtime cost and is
   unnecessary with a token-driven, largely static-rendered approach.
-- **Sans-led modern-minimal typography** — Rejected: insufficiently
-  distinguishes the premium, reverent brand character; the serif-led
-  direction is the differentiator.
+- **Fully sans typography (serif removed entirely)** — Rejected: the
+  serif display voice on the brand mark and headings is the identity's
+  editorial differentiator inside the genre's sans-led visual language;
+  removing it would erase the remaining brand character.

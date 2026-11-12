@@ -3,9 +3,9 @@ import { getMessages } from 'next-intl/server';
 import { getSiteConfig } from '@/lib/site-config-server';
 import { isPurchaseSurfaceEnabled } from '@/lib/purchase-surface';
 import { CartProvider } from '@/context/cart-context';
+import ChromeFrame from '@/components/layout/chrome-frame';
 import Header from '@/components/layout/header';
 import Footer from '@/components/layout/footer';
-import MobileStickyCta from '@/components/layout/mobile-sticky-cta';
 import WhatsAppBubble from '@/components/layout/whatsapp-bubble';
 import { Analytics } from '@vercel/analytics/next';
 
@@ -21,6 +21,19 @@ import { Analytics } from '@vercel/analytics/next';
  */
 export const dynamic = 'force-dynamic';
 
+/**
+ * Locale-scoped layout.
+ *
+ * Implements ADR 03-002: Landing Page Composition — Three-Column Feed
+ * Shell with Simplified Purchase Surface - the classic header/footer
+ * mounts move inside `ChromeFrame`, which suppresses them on the routes
+ * the Feed Shell composes (the Locale landing roots and the purchase
+ * route — the shell is the entire chrome there) while keeping them on
+ * every other route under the same Site Config chrome toggles. The
+ * former `MobileStickyCta` mount is removed — its role is absorbed by
+ * the shell's mobile bottom navigation band under the same
+ * `mobileStickyCta` chrome key.
+ */
 export default async function LocaleLayout({
   children,
 }: {
@@ -38,14 +51,16 @@ export default async function LocaleLayout({
   return (
     <NextIntlClientProvider messages={messages}>
       <CartProvider>
-        <div className="min-h-screen flex flex-col">
-          {siteConfig.chrome.header && (
-            <Header purchaseSurfaceEnabled={purchaseSurfaceEnabled} />
-          )}
+        <ChromeFrame
+          header={
+            siteConfig.chrome.header ? (
+              <Header purchaseSurfaceEnabled={purchaseSurfaceEnabled} />
+            ) : null
+          }
+          footer={siteConfig.chrome.footer ? <Footer /> : null}
+        >
           <main className="flex-1">{children}</main>
-          {siteConfig.chrome.footer && <Footer />}
-        </div>
-        {siteConfig.chrome.mobileStickyCta && <MobileStickyCta />}
+        </ChromeFrame>
         {/* Inbound Contact Surface (ADR 00-009): toggleable through Site
             Config like other global chrome; also fails closed internally
             when no Store Messaging Number is configured. */}

@@ -87,7 +87,7 @@ export default async function CheckoutSuccessPage({
       {/* Cart cleared only on a confirmed Session outcome — a direct
           visit rendering `generic` must not wipe the stored Cart. */}
       {(state === 'paid' || state === 'pending') && <ClearCartOnMount />}
-      <section className="py-16 md:py-24 lg:py-32 bg-surface">
+      <section className="py-16 md:py-24 lg:py-32 bg-background">
         <div className="container">
           <div className="max-w-2xl mx-auto text-center space-y-8">
             <div
@@ -121,10 +121,10 @@ export default async function CheckoutSuccessPage({
                 </svg>
               )}
             </div>
-            <h1 className="text-3xl md:text-4xl font-serif text-primary">
+            <h1 className="text-3xl md:text-4xl font-serif text-text-primary">
               {t(`${state}.title`)}
             </h1>
-            <div className="bg-background rounded-xl p-6 border-2 border-accent/20">
+            <div className="bg-surface rounded-xl p-6 border-2 border-accent/20">
               <p className="text-text-secondary">{t(`${state}.description`)}</p>
             </div>
             <Link href="/" className="btn-primary inline-block">

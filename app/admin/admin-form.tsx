@@ -10,25 +10,35 @@ import {
 } from '@/lib/site-config';
 import { saveSiteConfig, type SaveResult } from './actions';
 
+// Implements ADR 03-002: Landing Page Composition — Three-Column Feed
+// Shell with Simplified Purchase Surface - "Admin Console labels are
+// updated to feed vocabulary"; toggle keys are unchanged so stored
+// Site Config documents keep working without migration.
 const SECTION_LABELS: Record<SectionKey, string> = {
-  hero: 'Hero',
-  socialProof: 'Social Proof',
-  products: 'Product Gallery',
-  craftsmanship: 'Craftsmanship',
-  faq: 'FAQ',
-  finalCta: 'Final CTA',
+  hero: 'Hero Post',
+  socialProof: 'Social Proof Post',
+  products: 'Product Posts',
+  craftsmanship: 'Craftsmanship Post',
+  faq: 'FAQ Post',
+  finalCta: 'Closing CTA Post',
 };
 
 const CHROME_LABELS: Record<ChromeKey, { label: string; hint?: string }> = {
-  header: { label: 'Header', hint: 'Top navigation bar' },
-  footer: { label: 'Footer', hint: 'Site-wide footer' },
+  header: {
+    label: 'Header',
+    hint: 'Post-checkout, auxiliary, and legal pages (the landing and purchase pages use the feed layout)',
+  },
+  footer: {
+    label: 'Footer',
+    hint: 'Post-checkout, auxiliary, and legal pages (the landing and purchase pages use the feed layout)',
+  },
   mobileStickyCta: {
-    label: 'Mobile Sticky CTA',
-    hint: 'Bottom bar shown on small screens',
+    label: 'Mobile Bottom Nav',
+    hint: 'Bottom navigation band on small screens (landing and purchase pages)',
   },
   premiumFeaturesModal: {
     label: 'Premium Features Modal',
-    hint: 'Hides the "Learn more" button and modal in the hero',
+    hint: 'Hides the "Learn more" modal trigger in the hero post',
   },
   whatsappBubble: {
     label: 'WhatsApp Bubble',
@@ -79,9 +89,11 @@ export default function AdminForm({ initial }: { initial: SiteConfig }) {
   return (
     <form onSubmit={onSubmit} className="space-y-8">
       <section className="rounded-xl border border-border bg-surface p-6">
-        <h2 className="mb-1 text-xl font-semibold text-primary">Sections</h2>
+        <h2 className="mb-1 text-xl font-semibold text-text-primary">
+          Sections
+        </h2>
         <p className="mb-4 text-sm text-text-secondary">
-          Homepage blocks rendered in order.
+          Landing feed units, rendered in feed order.
         </p>
         <ul className="space-y-2">
           {SECTION_KEYS.map((key) => (
@@ -91,9 +103,9 @@ export default function AdminForm({ initial }: { initial: SiteConfig }) {
                   type="checkbox"
                   checked={config.sections[key]}
                   onChange={() => toggleSection(key)}
-                  className="h-5 w-5 accent-accent"
+                  className="h-5 w-5 accent-primary"
                 />
-                <span className="font-medium text-primary">
+                <span className="font-medium text-text-primary">
                   {SECTION_LABELS[key]}
                 </span>
                 <code className="ml-auto text-xs text-text-secondary">
@@ -106,7 +118,7 @@ export default function AdminForm({ initial }: { initial: SiteConfig }) {
 
         <div className="mt-4 rounded-lg border border-border bg-background px-4 py-3">
           <label className="block">
-            <span className="mb-1 block text-sm font-medium text-primary">
+            <span className="mb-1 block text-sm font-medium text-text-primary">
               QR Redirect URL
             </span>
             {/* Implements ADR 00-007: Quality Tooling and CI - "tracked
@@ -117,7 +129,7 @@ export default function AdminForm({ initial }: { initial: SiteConfig }) {
               value={config.sections.qrcoderedirect}
               onChange={(event) => updateQrCodeRedirect(event.target.value)}
               placeholder="https://example.com/your-destination"
-              className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-primary outline-none ring-accent/30 transition focus:border-accent focus:ring"
+              className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text-primary outline-none ring-primary/30 transition focus:border-primary focus:ring"
             />
             <span className="mt-1 block text-xs text-text-secondary">
               Used by the <code>/qrcoderedirect</code> endpoint.
@@ -127,9 +139,9 @@ export default function AdminForm({ initial }: { initial: SiteConfig }) {
       </section>
 
       <section className="rounded-xl border border-border bg-surface p-6">
-        <h2 className="mb-1 text-xl font-semibold text-primary">Chrome</h2>
+        <h2 className="mb-1 text-xl font-semibold text-text-primary">Chrome</h2>
         <p className="mb-4 text-sm text-text-secondary">
-          Global UI pieces shown on every page.
+          Global UI pieces; header and footer apply off the landing.
         </p>
         <ul className="space-y-2">
           {CHROME_KEYS.map((key) => (
@@ -139,10 +151,10 @@ export default function AdminForm({ initial }: { initial: SiteConfig }) {
                   type="checkbox"
                   checked={config.chrome[key]}
                   onChange={() => toggleChrome(key)}
-                  className="mt-0.5 h-5 w-5 accent-accent"
+                  className="mt-0.5 h-5 w-5 accent-primary"
                 />
                 <div className="flex-1">
-                  <span className="block font-medium text-primary">
+                  <span className="block font-medium text-text-primary">
                     {CHROME_LABELS[key].label}
                   </span>
                   {CHROME_LABELS[key].hint && (
@@ -162,7 +174,7 @@ export default function AdminForm({ initial }: { initial: SiteConfig }) {
         <button
           type="submit"
           disabled={isPending}
-          className="rounded-lg bg-accent px-6 py-3 font-semibold text-white shadow transition-opacity hover:opacity-90 disabled:opacity-60"
+          className="btn-primary px-6 py-3 shadow disabled:opacity-60"
         >
           {isPending ? 'Saving…' : 'Save changes'}
         </button>

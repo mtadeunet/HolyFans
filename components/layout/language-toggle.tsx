@@ -17,7 +17,7 @@ export default function LanguageToggle() {
   return (
     <button
       onClick={toggleLanguage}
-      className="flex items-center space-x-2 px-3 py-1.5 rounded-lg border border-border hover:bg-surface transition-colors"
+      className="flex items-center space-x-2 px-3 py-1.5 rounded-lg border border-border hover:bg-primary/10 transition-colors"
       aria-label={t('toggle_language')}
     >
       <span
@@ -27,7 +27,7 @@ export default function LanguageToggle() {
       </span>
       <div className="w-4 h-4 flex items-center justify-center">
         <div
-          className={`w-2 h-2 rounded-full transition-colors ${locale === 'pt' ? 'bg-accent' : 'bg-border'}`}
+          className={`w-2 h-2 rounded-full transition-colors ${locale === 'pt' ? 'bg-primary' : 'bg-border'}`}
         ></div>
       </div>
       <span

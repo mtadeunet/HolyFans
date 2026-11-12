@@ -8,20 +8,60 @@
  * and "refuses checkout on any Cart/Product Data divergence". These tests
  * pin the divergence contract the handler returns to the shopper.
  */
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import type { ProductVariant } from '@/types/product';
 import { PRODUCT } from '@/lib/constants';
 import { MAX_CART_LINES, validateCart } from '@/lib/checkout-validation';
 
-const AVAILABLE_ID = PRODUCT.variants.female.id;
-const SOLD_OUT_ID = PRODUCT.variants.male.id;
-const CAP = PRODUCT.variants.female.maxQuantity;
+/**
+ * Synthetic sold-out Variant id. Product Data currently carries only
+ * purchasable Variants, so the `sold_out` drift branch is exercised
+ * through a `findVariant` seam that resolves this id to an unavailable
+ * Variant — the same lookup the Route Handler performs for a Cart line
+ * stored before a Variant's Availability Flag flipped.
+ */
+const SOLD_OUT_ID = 'nsr-soldout-mock';
+
+vi.mock('@/lib/constants', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/constants')>();
+  const soldOutVariant: ProductVariant = {
+    ...actual.PRODUCT.variants.female[0],
+    id: 'nsr-soldout-mock',
+    available: false,
+  };
+  return {
+    ...actual,
+    findVariant: (variantId: string): ProductVariant | undefined =>
+      variantId === soldOutVariant.id
+        ? soldOutVariant
+        : actual.findVariant(variantId),
+  };
+});
+
+const AVAILABLE_ID = PRODUCT.variants.female[0].id;
+const AVAILABLE_L_ID = PRODUCT.variants.female[1].id;
+const CAP = PRODUCT.variants.female[0].maxQuantity;
 
 describe('validateCart', () => {
   it('accepts a valid cart and returns normalized lines', () => {
     const result = validateCart([{ variantId: AVAILABLE_ID, quantity: 2 }]);
     expect(result).toEqual({
       ok: true,
-      lines: [{ variant: PRODUCT.variants.female, quantity: 2 }],
+      lines: [{ variant: PRODUCT.variants.female[0], quantity: 2 }],
+    });
+  });
+
+  it('accepts every available size Variant of a fit', () => {
+    const result = validateCart([
+      { variantId: AVAILABLE_ID, quantity: 1 },
+      { variantId: AVAILABLE_L_ID, quantity: 3 },
+    ]);
+    expect(result).toEqual({
+      ok: true,
+      lines: [
+        { variant: PRODUCT.variants.female[0], quantity: 1 },
+        { variant: PRODUCT.variants.female[1], quantity: 3 },
+      ],
     });
   });
 
@@ -101,7 +141,7 @@ describe('validateCart', () => {
     ]);
     expect(result).toEqual({
       ok: true,
-      lines: [{ variant: PRODUCT.variants.female, quantity: 4 }],
+      lines: [{ variant: PRODUCT.variants.female[0], quantity: 4 }],
     });
   });
 

@@ -49,7 +49,6 @@ const requestLog = new Map<string, number[]>();
  */
 const STRIPE_PRICE_IDS: Record<string, string | undefined> = {
   'nsr-female-m': process.env.STRIPE_PRICE_ID_FEMALE,
-  'nsr-male-m': process.env.STRIPE_PRICE_ID_MALE,
 };
 
 /**
@@ -168,7 +167,7 @@ function integrationIdentifier(): string {
  * Creates a Stripe Checkout Session from the server-side re-validated
  * Cart and returns the Hosted Checkout URL.
  *
- * Error contract (consumed by `components/sections/purchase.tsx`):
+ * Error contract (consumed by `components/sections/buy-now.tsx`):
  * - `404 {error: 'checkout_unavailable'}` — purchase-surface gate closed
  *   (fail-closed, same as the checkout pages).
  * - `400 {error: 'invalid_request'}` — malformed/oversized body.
@@ -283,7 +282,7 @@ export async function POST(request: NextRequest) {
               unit_amount: Math.round(PRODUCT.price * 100),
               tax_behavior: 'inclusive',
               product_data: {
-                name: `${PRODUCT.name} — ${variant.name}`,
+                name: `${PRODUCT.name} — ${variant.name} (${variant.size})`,
                 images: variant.images[0]
                   ? [`${origin}${variant.images[0]}`]
                   : undefined,

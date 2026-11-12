@@ -34,12 +34,12 @@ export default async function CheckoutCancelPage({
   return (
     <main className="min-h-screen">
       <TestModeBanner />
-      <section className="py-16 md:py-24 lg:py-32 bg-surface">
+      <section className="py-16 md:py-24 lg:py-32 bg-background">
         <div className="container">
           <div className="max-w-2xl mx-auto text-center space-y-8">
-            <div className="w-20 h-20 bg-accent/20 rounded-full flex items-center justify-center mx-auto">
+            <div className="w-20 h-20 bg-border rounded-full flex items-center justify-center mx-auto">
               <svg
-                className="w-10 h-10 text-accent"
+                className="w-10 h-10 text-text-secondary"
                 fill="currentColor"
                 viewBox="0 0 20 20"
               >
@@ -50,10 +50,10 @@ export default async function CheckoutCancelPage({
                 />
               </svg>
             </div>
-            <h1 className="text-3xl md:text-4xl font-serif text-primary">
+            <h1 className="text-3xl md:text-4xl font-serif text-text-primary">
               {t('title')}
             </h1>
-            <div className="bg-background rounded-xl p-6 border-2 border-accent/20">
+            <div className="bg-surface rounded-xl p-6 border-2 border-accent/20">
               <p className="text-text-secondary">{t('description')}</p>
             </div>
             <Link

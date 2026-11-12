@@ -3,14 +3,30 @@ export interface Product {
   name: string;
   description: string;
   price: number;
+  /**
+   * Implements ADR 00-004: Commerce and Checkout - Product Data carries
+   * an optional promotional compare-at price, display-only.
+   *
+   * The pre-promotion EUR price shown struck-through next to `price`;
+   * never used for charging — the checkout Route Handler re-validates
+   * amounts from `price` alone.
+   */
+  compareAtPrice?: number;
   currency: string;
   images: {
-    male: string[];
     female: string[];
   };
+  /**
+   * Implements ADR 00-004: Commerce and Checkout - Product Data carries
+   * "Variants — including optional per-Variant Purchase Caps ... and
+   * Availability Flags".
+   *
+   * Variants grouped per fit: each fit key holds the purchasable
+   * size/finish Variants of that fit as a list, so a fit can carry any
+   * number of size Variants without a shape change.
+   */
   variants: {
-    male: ProductVariant;
-    female: ProductVariant;
+    female: ProductVariant[];
   };
   features: string[];
   materials: string[];

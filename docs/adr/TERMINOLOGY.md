@@ -11,7 +11,11 @@ user-facing documentation.
 - **Product Catalog** — the complete set of sellable items offered by the
   Storefront.
 - **Product Data** — the structured, versioned description of each catalog item:
-  name, description, price in EUR, imagery, Variants, and its Availability Flag.
+  name, description, price in EUR, an optional Compare-At Price, imagery,
+  Variants, and its Availability Flag.
+- **Compare-At Price** — an optional, display-only regular price carried in
+  Product Data and shown struck-through next to the effective price; it is
+  never charged and never enters the checkout path (ADR 00-004).
 - **Variant** — a purchasable configuration of a product (e.g., a fit or size
   option), sharing the product's base price unless overridden.
 - **Purchase Cap** — an optional per-Variant limit on the quantity orderable in
@@ -46,6 +50,39 @@ user-facing documentation.
   that lets a visitor compose a WhatsApp message containing the Storefront's
   canonical URL on the Store Domain for their own contacts; ungated and
   configuration-free (ADR 00-009).
+
+## UI Composition Terms
+
+- **Feed Shell** — the three-column composition of the browse-and-
+  purchase flow: Nav Rail, Feed Surface, and Suggestions Rail; it
+  replaces the stacked marketing sections and the classic header/footer
+  chrome on the Locale landing roots and the purchase route (ADR
+  03-002).
+- **Nav Rail** — the Feed Shell's left column: the brand mark, a
+  store-adapted list of icon-and-label navigation entries, language
+  switching, and a prominent purchase call-to-action at its foot
+  (ADR 03-002).
+- **Feed Surface** — the Feed Shell's center column and primary content
+  region: on the Locale landing roots a vertical scroll of Post Cards;
+  on the purchase route the single centered panel carrying the
+  Simplified Purchase Surface (ADR 03-002).
+- **Post Card** — the repeating content unit of the landing's feed: a
+  brand header (avatar, name, decorative handle), localized caption
+  copy, a Media Slot, and a Decorative Interaction Row (ADR 03-002).
+- **Media Slot** — the Post Card's media region; every Media Slot links
+  to the Simplified Purchase Surface within the same Locale (ADR 03-002).
+- **Decorative Interaction Row** — the social-style affordance row on a
+  Post Card (like, comment, and bookmark glyphs plus a like count);
+  presentational only — ephemeral client-local state at most, never
+  persisted, transmitted, or measured (ADR 03-002).
+- **Suggestions Rail** — the Feed Shell's right column: product and
+  Variant suggestion cards, a discovery call-to-action, and the legal
+  links at its foot; present only on wider viewports (ADR 03-002).
+- **Simplified Purchase Surface** — the reduced checkout surface:
+  Variant selection, quantity, the VAT-inclusive EUR price, and a single
+  purchase action into the existing checkout path; no cart-review
+  presentation; rendered inside the Feed Surface on the purchase route
+  (ADR 03-002; commerce contract per ADR 00-004).
 
 ## Technical Terms
 
@@ -85,9 +122,11 @@ user-facing documentation.
   scale step, radius, elevation) that forms the single source of truth for the
   visual system.
 - **Brand Palette** — the canonical set of brand colors defined by the
-  implemented Design Tokens: deep navy primary (`#1e3a5f`), gold accent
-  (`#d4af37`), near-white surface (`#f8fafc`), dark primary text (`#1a202c`),
-  secondary text (`#4a5568`), light borders (`#e2e8f0`), plus product-design
+  implemented Design Tokens: near-white page `background` (`#fafafa`),
+  white card `surface` (`#ffffff`), bright blue `primary` accent
+  (`#0369a1`) with its deepened emphasis variant `accent` (`#075985`),
+  near-black `text-primary` (`#111827`), light-gray `text-secondary`
+  (`#6b7280`), light-gray `border` (`#e5e7eb`), plus product-design
   accent colors reserved for garment artwork rather than UI chrome.
 - **Cookieless Analytics** — visitor measurement that sets no cookies and
   collects no personal data, requiring no consent banner.
