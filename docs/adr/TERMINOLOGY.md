@@ -166,6 +166,13 @@ user-facing documentation.
 - **Primary Locale** — the default Locale (`pt`). Both Locales are served
   under their own URL prefix (`/pt/`, `/en/`); the site root resolves the
   visitor's Locale by browser-language detection, defaulting to `pt`.
+- **Primary Platform** — mobile: the small-viewport, touch-first form is
+  the canonical baseline the Storefront is designed, built, and verified
+  for first, then scaled up to wider viewports. Desktop remains fully
+  supported — every route and the complete purchase and conversion path
+  work on it — and any capability or content region present on only one
+  platform is an explicit, ADR-recorded trade-off, the Suggestions Rail's
+  wider-viewport-only presence being the standing instance (ADR 00-012).
 - **QR Redirect Route** — the permanent route `/qrcoderedirect` on
   `<store-domain>` that printed QR codes encode; it must always resolve to a
   working destination.

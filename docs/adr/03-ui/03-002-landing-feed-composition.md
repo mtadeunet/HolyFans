@@ -16,6 +16,7 @@ ADR 00-008 (Analytics and Consent)
 ADR 00-009 (WhatsApp Deep-Link Channels)
 ADR 00-010 (Pre-order and Stock Notification)
 ADR 00-011 (Page Model and Product Routes)
+ADR 00-012 (Platform Posture)
 ADR 03-001 (Design System and Visual Identity)
 
 ## Context
