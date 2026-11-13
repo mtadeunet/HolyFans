@@ -1,0 +1,85 @@
+{
+  "shipping": { "freeShippingThresholdCents": 10000 },
+  "promotion": {
+    "campaigns": [
+      {
+        "id": "promo-free-shipping",
+        "type": "discount",
+        "priority": 30,
+        "enabled": true,
+        "startDate": null,
+        "endDate": null,
+        "theme": "dark",
+        "ctaUrl": null,
+        "promoCode": null,
+        "conditions": { "belowFreeShipping": true },
+        "copy": {
+          "pt": {
+            "label": "FALTAM {remaining} PARA ENVIO GRÁTIS",
+            "headline": "Só faltam {remaining} para envio grátis.",
+            "description": "Adicione mais uma peça e o envio fica por nossa conta.",
+            "ctaLabel": "Continuar"
+          },
+          "en": {
+            "label": "{remaining} TO FREE SHIPPING",
+            "headline": "Only {remaining} to free shipping.",
+            "description": "Add one more piece and shipping is on us.",
+            "ctaLabel": "Keep going"
+          }
+        }
+      },
+      {
+        "id": "promo-lead",
+        "type": "editorial",
+        "priority": 20,
+        "enabled": true,
+        "startDate": null,
+        "endDate": null,
+        "theme": "dark",
+        "ctaUrl": "/#products",
+        "promoCode": null,
+        "conditions": null,
+        "copy": {
+          "pt": {
+            "label": "EDIÇÃO DE TESTE",
+            "headline": "A campanha principal, só para si.",
+            "description": "Copy de teste — uma edição limitada, feita com cuidado do primeiro fio ao último acabamento.",
+            "ctaLabel": "Descobrir"
+          },
+          "en": {
+            "label": "TEST EDITION",
+            "headline": "The lead campaign, just for you.",
+            "description": "Test copy — a limited edition, made with care from the first thread to the final finish.",
+            "ctaLabel": "Discover"
+          }
+        }
+      },
+      {
+        "id": "promo-runner-up",
+        "type": "seasonal",
+        "priority": 10,
+        "enabled": true,
+        "startDate": null,
+        "endDate": null,
+        "theme": "soft",
+        "ctaUrl": null,
+        "promoCode": null,
+        "conditions": null,
+        "copy": {
+          "pt": {
+            "label": "SEGUNDA CAMPANHA",
+            "headline": "A campanha seguinte, depois da primeira.",
+            "description": "",
+            "ctaLabel": ""
+          },
+          "en": {
+            "label": "RUNNER-UP CAMPAIGN",
+            "headline": "The next campaign, after the first.",
+            "description": "",
+            "ctaLabel": ""
+          }
+        }
+      }
+    ]
+  }
+}

@@ -1,4 +1,10 @@
 import { VARIANTS, type VariantKey } from '@/lib/constants';
+import {
+  DEFAULT_CAMPAIGNS,
+  normalizeCampaigns,
+  type PromotionCampaign,
+} from './promotions';
+import { FREE_SHIPPING_THRESHOLD_CENTS } from './shipping';
 
 export const SITE_CONFIG_KEY = 'siteConfig';
 
@@ -20,12 +26,17 @@ export type SectionKey =
 // Vendor Deep Links for Customer Messaging - the Inbound Contact Surface
 // is "operator-toggleable through Site Config and the Admin Console like
 // other global chrome" via the `whatsappBubble` key below.
+//
+// Implements ADR 03-003: Promotion Bar - the Promotion Bar mount is
+// "operator-toggleable through Site Config like other global chrome" via
+// the `promotionBar` key below.
 export type ChromeKey =
   | 'header'
   | 'footer'
   | 'mobileStickyCta'
   | 'premiumFeaturesModal'
-  | 'whatsappBubble';
+  | 'whatsappBubble'
+  | 'promotionBar';
 
 export type SiteSections = Record<SectionKey, boolean> & {
   qrcoderedirect: string;
@@ -50,6 +61,23 @@ export type SiteConfig = {
   sections: SiteSections;
   chrome: Record<ChromeKey, boolean>;
   stock: Record<StockKey, boolean>;
+  /**
+   * Implements ADR 03-003: Promotion Bar - "the Promotion Campaign list
+   * is operator-editable Site Config data, normalized like every other
+   * Site Config group": the campaigns the Promotion Bar selects from,
+   * validated by `normalizeCampaigns` — malformed entries drop out,
+   * missing `promotion` documents fall back to `DEFAULT_CAMPAIGNS`.
+   */
+  promotion: { campaigns: PromotionCampaign[] };
+  /**
+   * Implements ADR 03-003: Promotion Bar — the free-shipping
+   * threshold is operator-editable Site Config data, normalized like
+   * every other Site Config group; it is the single value the checkout
+   * shipping swap and the Promotion Bar's `belowFreeShipping`
+   * condition key on, so the bar's `{remaining}` promise is enforced
+   * identically at checkout.
+   */
+  shipping: { freeShippingThresholdCents: number };
 };
 
 export const DEFAULT_SITE_CONFIG: SiteConfig = {
@@ -68,6 +96,9 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
     mobileStickyCta: true,
     premiumFeaturesModal: true,
     whatsappBubble: true,
+    // Implements ADR 03-003: Site Config reads fail open to defaults,
+    // and the always-on editorial fallback campaign ships enabled.
+    promotionBar: true,
   },
   // Implements ADR 00-010: "Each defaults off (items purchasable)" —
   // Site Config reads fail open to defaults, and failing open to the
@@ -76,6 +107,11 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
   stock: Object.fromEntries(
     VARIANTS.map((variant) => [variant.id, false])
   ) as Record<StockKey, boolean>,
+  promotion: { campaigns: DEFAULT_CAMPAIGNS },
+  // Implements ADR 03-003: the threshold's default is the constant in
+  // `lib/shipping.ts`; the Admin Console edits the live value through
+  // the Shipping section.
+  shipping: { freeShippingThresholdCents: FREE_SHIPPING_THRESHOLD_CENTS },
 };
 
 export const SECTION_KEYS: SectionKey[] = [
@@ -93,6 +129,7 @@ export const CHROME_KEYS: ChromeKey[] = [
   'mobileStickyCta',
   'premiumFeaturesModal',
   'whatsappBubble',
+  'promotionBar',
 ];
 
 /**
@@ -114,6 +151,8 @@ export function normalizeSiteConfig(raw: unknown): SiteConfig {
     sections: { ...DEFAULT_SITE_CONFIG.sections },
     chrome: { ...DEFAULT_SITE_CONFIG.chrome },
     stock: { ...DEFAULT_SITE_CONFIG.stock },
+    promotion: { campaigns: [...DEFAULT_CAMPAIGNS] },
+    shipping: { ...DEFAULT_SITE_CONFIG.shipping },
   };
   if (!raw || typeof raw !== 'object') return out;
   const source = raw as Partial<SiteConfig>;
@@ -139,6 +178,36 @@ export function normalizeSiteConfig(raw: unknown): SiteConfig {
     for (const key of STOCK_KEYS) {
       const value = (source.stock as Record<string, unknown>)[key];
       if (typeof value === 'boolean') out.stock[key] = value;
+    }
+  }
+  // Implements ADR 03-003: Promotion Bar — campaigns normalize through
+  // the same posture: applied only when the stored document carries a
+  // `promotion.campaigns` array (missing → defaults, unknown keys
+  // ignored); an explicit empty array stays empty so the operator can
+  // deliberately run no campaigns.
+  if (source.promotion && typeof source.promotion === 'object') {
+    const campaigns = (source.promotion as Record<string, unknown>)[
+      'campaigns'
+    ];
+    if (Array.isArray(campaigns)) {
+      out.promotion.campaigns = normalizeCampaigns(campaigns);
+    }
+  }
+  // Implements ADR 03-003: Promotion Bar — the shipping group
+  // normalizes with the same posture: applied only when the stored
+  // document carries `shipping` (missing → defaults, unknown keys
+  // ignored); a finite non-negative `freeShippingThresholdCents` is
+  // rounded to whole cents, anything else falls back to the default.
+  if (source.shipping && typeof source.shipping === 'object') {
+    const threshold = (source.shipping as Record<string, unknown>)[
+      'freeShippingThresholdCents'
+    ];
+    if (
+      typeof threshold === 'number' &&
+      Number.isFinite(threshold) &&
+      threshold >= 0
+    ) {
+      out.shipping.freeShippingThresholdCents = Math.round(threshold);
     }
   }
   return out;

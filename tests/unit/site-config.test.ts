@@ -129,6 +129,77 @@ describe('normalizeSiteConfig', () => {
     );
   });
 
+  // Implements ADR 03-003: Promotion Bar — the shipping group merges
+  // like every other Site Config group: a finite non-negative
+  // `freeShippingThresholdCents` rounds to whole cents, garbage and a
+  // missing group fall back to the default, unknown keys are ignored.
+  it('normalizes shipping.freeShippingThresholdCents and falls back on garbage', () => {
+    expect(
+      normalizeSiteConfig({
+        shipping: { freeShippingThresholdCents: 7500 },
+      }).shipping.freeShippingThresholdCents
+    ).toBe(7500);
+    // Rounded to whole cents.
+    expect(
+      normalizeSiteConfig({
+        shipping: { freeShippingThresholdCents: 100.6 },
+      }).shipping.freeShippingThresholdCents
+    ).toBe(101);
+
+    for (const bad of [-1, '100', Number.NaN, Number.POSITIVE_INFINITY, null]) {
+      expect(
+        normalizeSiteConfig({
+          shipping: { freeShippingThresholdCents: bad },
+        }).shipping.freeShippingThresholdCents
+      ).toBe(DEFAULT_SITE_CONFIG.shipping.freeShippingThresholdCents);
+    }
+
+    // Missing group → defaults; unknown keys ignored.
+    const config = normalizeSiteConfig({ shipping: { unknown: 5 } });
+    expect(config.shipping).toEqual(DEFAULT_SITE_CONFIG.shipping);
+    expect('unknown' in config.shipping).toBe(false);
+  });
+
+  // Implements ADR 03-003: Promotion Bar — the promotion group merges
+  // like every other Site Config group: a missing group falls back to
+  // the default campaigns, an explicit empty list is the operator's
+  // deliberate no-campaigns posture, malformed entries drop out, and
+  // unknown keys are ignored.
+  it('normalizes the promotion group merge', () => {
+    // Missing group → default fallback campaigns.
+    expect(normalizeSiteConfig({}).promotion.campaigns).toEqual(
+      DEFAULT_SITE_CONFIG.promotion.campaigns
+    );
+    // Explicit [] is honored — the operator turned every campaign off.
+    expect(
+      normalizeSiteConfig({ promotion: { campaigns: [] } }).promotion.campaigns
+    ).toEqual([]);
+    // Malformed entries drop out individually; the valid one survives.
+    const [campaign] = normalizeSiteConfig({
+      promotion: {
+        campaigns: [
+          { id: 'broken' },
+          {
+            id: 'ok',
+            type: 'editorial',
+            theme: 'light',
+            copy: {
+              pt: { label: 'L', headline: 'H' },
+              en: { label: 'L', headline: 'H' },
+            },
+          },
+        ],
+      },
+    }).promotion.campaigns;
+    expect(campaign.id).toBe('ok');
+    // Unknown keys on the group are ignored.
+    const config = normalizeSiteConfig({ promotion: { unknown: 1 } });
+    expect(config.promotion.campaigns).toEqual(
+      DEFAULT_SITE_CONFIG.promotion.campaigns
+    );
+    expect('unknown' in config.promotion).toBe(false);
+  });
+
   it('does not mutate the defaults object', () => {
     const before: SiteConfig = structuredClone(DEFAULT_SITE_CONFIG);
     normalizeSiteConfig({ sections: { hero: false } });

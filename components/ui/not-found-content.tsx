@@ -21,8 +21,12 @@ import Link from 'next/link';
 export default function NotFoundContent() {
   const t = useTranslations('not_found');
 
+  // Implements ADR 03-003: inside the Locale tree the sticky Header
+  // occupies flow height (h-16/md:h-20) — the centered body sizes to
+  // the remaining viewport so it stays optically centered; the root
+  // boundary has no header and simply centers slightly high.
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="min-h-[calc(100vh-4rem)] md:min-h-[calc(100vh-5rem)] flex items-center justify-center bg-background">
       <div className="text-center">
         <h1 className="text-9xl font-bold text-text-primary">404</h1>
         <h2 className="text-2xl font-semibold text-text-primary mt-4">

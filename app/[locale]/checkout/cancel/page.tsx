@@ -34,7 +34,11 @@ export default async function CheckoutCancelPage({
   return (
     <main className="min-h-screen">
       <TestModeBanner />
-      <section className="py-16 md:py-24 lg:py-32 bg-background">
+      {/* Implements ADR 03-003: the classic Header is `sticky` and now
+          occupies flow height (h-16/md:h-20) it previously overlaid —
+          the leading padding subtracts it so the rendered top spacing
+          stays identical to the fixed-header era. */}
+      <section className="pb-16 pt-0 md:pb-24 md:pt-4 lg:pb-32 lg:pt-12 bg-background">
         <div className="container">
           <div className="max-w-2xl mx-auto text-center space-y-8">
             <div className="w-20 h-20 bg-border rounded-full flex items-center justify-center mx-auto">

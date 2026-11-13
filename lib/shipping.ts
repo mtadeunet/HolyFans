@@ -66,6 +66,26 @@ export interface ShippingOptionConfig {
 }
 
 /**
+ * Implements ADR 00-004: Commerce and Checkout - "total cost is shown
+ * before payment" — and ADR 03-003: Promotion Bar - the threshold both
+ * the checkout shipping swap and the Promotion Bar's `belowFreeShipping`
+ * condition key on.
+ *
+ * DEFAULT complimentary-shipping threshold in euro cents. The live
+ * value is `siteConfig.shipping.freeShippingThresholdCents` —
+ * operator-editable through the Admin Console; this constant is only
+ * the fallback a missing `shipping` group normalizes to, and
+ * checkout/campaign code must prefer the Site Config value. When the
+ * server-validated Cart subtotal reaches it, the checkout Route
+ * Handler swaps both shipping options for complimentary (amount-0)
+ * options, and a Promotion Campaign with `belowFreeShipping` can target
+ * shoppers still below it. Compared against the subtotal only — the
+ * amount comes from Product Data, never the client. `0` disables the
+ * swap entirely.
+ */
+export const FREE_SHIPPING_THRESHOLD_CENTS = 10000; // €100 — owner-confirmed default
+
+/**
  * OWNER-SUPPLIED PLACEHOLDER RATES — replace with real carrier pricing.
  * Two flat options covering the allowed-country set (see the module
  * comment for the per-country-rate limitation).
@@ -82,6 +102,30 @@ export const SHIPPING_OPTIONS: readonly ShippingOptionConfig[] = [
     id: 'eu-standard',
     displayName: 'Europe — Standard',
     amountCents: 990, // PLACEHOLDER — owner to confirm
+    minBusinessDays: 3,
+    maxBusinessDays: 7,
+  },
+];
+
+/**
+ * The complimentary shipping rates offered once a server-validated
+ * subtotal meets the configured free-shipping threshold
+ * (`siteConfig.shipping.freeShippingThresholdCents`, ADR 03-003) — a
+ * data constant mirroring `SHIPPING_OPTIONS` rather than a derived
+ * rename, so the labels never drift from the owner-editable pair.
+ */
+export const COMPLIMENTARY_SHIPPING_OPTIONS: readonly ShippingOptionConfig[] = [
+  {
+    id: 'pt-complimentary',
+    displayName: 'Portugal — Complimentary',
+    amountCents: 0,
+    minBusinessDays: 2,
+    maxBusinessDays: 4,
+  },
+  {
+    id: 'eu-complimentary',
+    displayName: 'Europe — Complimentary',
+    amountCents: 0,
     minBusinessDays: 3,
     maxBusinessDays: 7,
   },

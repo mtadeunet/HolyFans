@@ -63,7 +63,7 @@ export default function Header({ purchaseSurfaceEnabled }: HeaderProps) {
     'block w-full text-left text-text-secondary hover:text-primary transition-colors py-3 min-h-12 text-base border-b border-border/40';
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
+    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
       <div className="container">
         <nav className="relative flex items-center justify-between h-16 md:h-20">
           {/* Logo */}

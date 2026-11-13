@@ -4,6 +4,11 @@ import { usePathname } from '@/lib/navigation';
 import type { ReactNode } from 'react';
 
 interface ChromeFrameProps {
+  /** Promotion Bar mount (ADR 03-003, already gated by the
+   *  `promotionBar` chrome toggle in the layout); rendered as the first
+   *  element on EVERY route — shell routes included, since the bar sits
+   *  above both chrome systems. */
+  promotion: ReactNode;
   /** Classic site header mount (already gated by the `header` chrome
    *  toggle in the layout); rendered only off the shell routes. */
   header: ReactNode;
@@ -23,6 +28,11 @@ interface ChromeFrameProps {
  * keeps the classic header/footer chrome, still governed by the
  * existing Site Config chrome toggles."
  *
+ * Implements ADR 03-003: Promotion Bar — the bar "renders above all
+ * other chrome on every route": the `promotion` mount is the first
+ * child of the frame and is deliberately NOT suppressed on shell
+ * routes — unlike header/footer it belongs to neither chrome system.
+ *
  * The single decision point for which chrome system renders: the
  * locale-stripped `usePathname()` from `lib/navigation.ts` returns `/`
  * on each Locale landing root and `/checkout` on the purchase route —
@@ -35,6 +45,7 @@ interface ChromeFrameProps {
 const SHELL_ROUTES = new Set(['/', '/checkout']);
 
 export default function ChromeFrame({
+  promotion,
   header,
   footer,
   children,
@@ -44,6 +55,7 @@ export default function ChromeFrame({
 
   return (
     <div className="flex min-h-screen flex-col">
+      {promotion}
       {!isShellRoute && header}
       {children}
       {!isShellRoute && footer}

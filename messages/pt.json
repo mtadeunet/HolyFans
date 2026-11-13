@@ -229,5 +229,13 @@
       "discover_cta": "Comprar agora",
       "sold_out": "Em Breve"
     }
+  },
+  "promotion": {
+    "aria_label": "Promoção",
+    "discover": "Descobrir",
+    "expand": "Ver oferta",
+    "collapse": "Ocultar oferta",
+    "dismiss": "Ignorar promoção",
+    "close": "Fechar"
   }
 }

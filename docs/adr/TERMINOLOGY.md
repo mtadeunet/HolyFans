@@ -197,6 +197,17 @@ user-facing documentation.
   accent colors reserved for garment artwork rather than UI chrome.
 - **Cookieless Analytics** — visitor measurement that sets no cookies and
   collects no personal data, requiring no consent banner.
+- **Promotion Bar** — the editorial, operator-run promotion strip mounted
+  above all other chrome on every Locale route: a thin collapsed row that
+  expands in-flow into a richer promotional block (ADR 03-003).
+- **Promotion Campaign** — one unit of promotional content stored in Site
+  Config (`promotion.campaigns`): per-Locale copy, theme, priority,
+  schedule, CTA, and eligibility conditions, editable through the Admin
+  Console (ADR 03-003).
+- **Smart Offer Switcher** — the Promotion Bar's client-side campaign
+  selection pipeline: enabled → schedule → surface → visitor → Cart
+  conditions → dismissal → Purchase-Surface Gate → highest priority →
+  fallback campaign (ADR 03-003).
 - **Store Domain** — the store's canonical domain, referred to in tracked
   documents only as `<store-domain>` (identifier hygiene rule).
 

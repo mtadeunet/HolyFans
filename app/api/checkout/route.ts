@@ -10,7 +10,12 @@ import {
 } from '@/lib/checkout-validation';
 import { locales, type Locale } from '@/lib/i18n';
 import { isPurchaseSurfaceEnabled } from '@/lib/purchase-surface';
-import { SHIPPING_COUNTRIES, SHIPPING_OPTIONS } from '@/lib/shipping';
+import {
+  COMPLIMENTARY_SHIPPING_OPTIONS,
+  SHIPPING_COUNTRIES,
+  SHIPPING_OPTIONS,
+} from '@/lib/shipping';
+import { getSiteConfig } from '@/lib/site-config-server';
 import { getStripeClient } from '@/lib/stripe';
 
 /**
@@ -207,6 +212,35 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const siteConfig = await getSiteConfig();
+
+  /**
+   * Implements ADR 00-004: Commerce and Checkout - amounts derive only
+   * from server-side Product Data — and ADR 03-003: Promotion Bar -
+   * "the checkout swap": a server-validated subtotal at/above
+   * `siteConfig.shipping.freeShippingThresholdCents` upgrades both
+   * shipping options to the complimentary pair (amount 0, same
+   * delivery estimates) — the fulfillment of the `belowFreeShipping`
+   * offer the Promotion Bar advertises off the same Site Config value.
+   * A threshold of `0` disables the swap.
+   *
+   * The subtotal derives from Product Data `PRODUCT.price` — under the
+   * current single-price catalog this equals the charged total; if a
+   * Variant ever resolves to a Stripe Price ID carrying a different
+   * amount, this comparison must key on the priced total instead.
+   */
+  const unitCents = Math.round(PRODUCT.price * 100);
+  const subtotalCents = validation.lines.reduce(
+    (sum, { quantity }) => sum + unitCents * quantity,
+    0
+  );
+  const complimentary =
+    siteConfig.shipping.freeShippingThresholdCents > 0 &&
+    subtotalCents >= siteConfig.shipping.freeShippingThresholdCents;
+  const shippingOptions = complimentary
+    ? COMPLIMENTARY_SHIPPING_OPTIONS
+    : SHIPPING_OPTIONS;
+
   // Absolute URLs are built from the configured Site base URL
   // (`NEXT_PUBLIC_BASE_URL`, localhost fallback) — never the
   // client-controlled Host header in `request.nextUrl.origin`.
@@ -242,7 +276,7 @@ export async function POST(request: NextRequest) {
             quantity,
             price_data: {
               currency: 'eur',
-              unit_amount: Math.round(PRODUCT.price * 100),
+              unit_amount: unitCents,
               tax_behavior: 'inclusive',
               product_data: {
                 name: `${PRODUCT.name} — ${variant.name} (${variant.size})`,
@@ -260,7 +294,7 @@ export async function POST(request: NextRequest) {
           country as Stripe.Checkout.SessionCreateParams.ShippingAddressCollection.AllowedCountry
       ),
     },
-    shipping_options: SHIPPING_OPTIONS.map((option) => ({
+    shipping_options: shippingOptions.map((option) => ({
       shipping_rate_data: {
         display_name: option.displayName,
         type: 'fixed_amount',

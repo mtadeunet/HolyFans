@@ -78,7 +78,10 @@ The Storefront runs a **hybrid model on the Vercel Hosting Platform**:
     operator's clear action, the clear half of that path
     (ADR 00-010);
   - the single checkout Route Handler on the **Node runtime** (required by
-    the PSP SDK), which creates Checkout Sessions (ADR 00-004);
+    the PSP SDK), which creates Checkout Sessions (ADR 00-004) and reads
+    Site Config at request time for the free-shipping threshold it
+    enforces (ADR 03-003) — the same enumerated Site Config channel the
+    Locale layout already uses;
   - the **post-checkout session-status read**: the localized
     post-checkout success page renders per request on the Node runtime
     and performs a single read-only retrieval of the just-created

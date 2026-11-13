@@ -7,6 +7,7 @@ import ChromeFrame from '@/components/layout/chrome-frame';
 import Header from '@/components/layout/header';
 import Footer from '@/components/layout/footer';
 import WhatsAppBubble from '@/components/layout/whatsapp-bubble';
+import PromotionBar from '@/components/layout/promotion-bar';
 import { Analytics } from '@vercel/analytics/next';
 
 /**
@@ -52,6 +53,17 @@ export default async function LocaleLayout({
     <NextIntlClientProvider messages={messages}>
       <CartProvider>
         <ChromeFrame
+          promotion={
+            siteConfig.chrome.promotionBar ? (
+              <PromotionBar
+                campaigns={siteConfig.promotion.campaigns}
+                freeShippingThresholdCents={
+                  siteConfig.shipping.freeShippingThresholdCents
+                }
+                purchaseSurfaceEnabled={purchaseSurfaceEnabled}
+              />
+            ) : null
+          }
           header={
             siteConfig.chrome.header ? (
               <Header purchaseSurfaceEnabled={purchaseSurfaceEnabled} />

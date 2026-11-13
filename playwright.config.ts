@@ -24,13 +24,25 @@
  *   `SITE_CONFIG_LOCAL_PATH` pointing at the out-of-stock fixture, so
  *   the default Variant's Stock Flag (ADR 00-010) is on for
  *   `pre-order.spec.ts`.
+ * - port 3103 — the same server with `PURCHASE_SURFACE_ENABLED=true` and
+ *   `SITE_CONFIG_LOCAL_PATH` pointing at the promotions fixture, so
+ *   `promotion-bar.spec.ts` exercises fixture campaigns: a lead
+ *   campaign, a runner-up for per-campaign dismissal, and a
+ *   `belowFreeShipping` campaign for `{remaining}` interpolation
+ *   (ADR 03-003).
+ * - port 3104 — the same server with `PURCHASE_SURFACE_ENABLED=true` and
+ *   `SITE_CONFIG_LOCAL_PATH` pointing at the no-promotion-bar fixture
+ *   (`chrome.promotionBar: false`), so the spec verifies the chrome
+ *   toggle unmounts the bar even though an always-on default campaign
+ *   remains eligible.
  *
  * The per-server config-file paths keep these postures isolated: Site
  * Config is a request-time read and the other servers share the
  * default local stand-in.
  *
  * All ports are overridable via `PLAYWRIGHT_GATED_PORT` /
- * `PLAYWRIGHT_ENABLED_PORT` / `PLAYWRIGHT_PRE_ORDER_PORT` so the suite
+ * `PLAYWRIGHT_ENABLED_PORT` / `PLAYWRIGHT_PRE_ORDER_PORT` /
+ * `PLAYWRIGHT_PROMO_PORT` / `PLAYWRIGHT_PROMO_OFF_PORT` so the suite
  * can still run when the defaults
  * are already occupied on a developer machine (with
  * `reuseExistingServer`, a foreign service on the port would otherwise be
@@ -41,9 +53,13 @@ import { defineConfig } from '@playwright/test';
 const GATED_PORT = Number(process.env.PLAYWRIGHT_GATED_PORT ?? 3100);
 const ENABLED_PORT = Number(process.env.PLAYWRIGHT_ENABLED_PORT ?? 3101);
 const PRE_ORDER_PORT = Number(process.env.PLAYWRIGHT_PRE_ORDER_PORT ?? 3102);
+const PROMO_PORT = Number(process.env.PLAYWRIGHT_PROMO_PORT ?? 3103);
+const PROMO_OFF_PORT = Number(process.env.PLAYWRIGHT_PROMO_OFF_PORT ?? 3104);
 const gatedBaseURL = `http://127.0.0.1:${GATED_PORT}`;
 const enabledBaseURL = `http://127.0.0.1:${ENABLED_PORT}`;
 const preOrderBaseURL = `http://127.0.0.1:${PRE_ORDER_PORT}`;
+const promoBaseURL = `http://127.0.0.1:${PROMO_PORT}`;
+const promoOffBaseURL = `http://127.0.0.1:${PROMO_OFF_PORT}`;
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -66,6 +82,16 @@ export default defineConfig({
       name: 'pre-order',
       use: { baseURL: preOrderBaseURL },
       testMatch: /pre-order\.spec\.ts/,
+    },
+    {
+      name: 'promotions',
+      use: { baseURL: promoBaseURL },
+      testMatch: /promotion-bar\.spec\.ts/,
+    },
+    {
+      name: 'promotions-off',
+      use: { baseURL: promoOffBaseURL },
+      testMatch: /promotion-bar\.spec\.ts/,
     },
   ],
   webServer: [
@@ -96,6 +122,32 @@ export default defineConfig({
       env: {
         PURCHASE_SURFACE_ENABLED: 'true',
         SITE_CONFIG_LOCAL_PATH: 'tests/fixtures/site-config-out-of-stock.json',
+      },
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+    },
+    {
+      command: `npx next start -p ${PROMO_PORT}`,
+      url: promoBaseURL,
+      // Gate open + the promotions fixture: the Promotion Bar selects
+      // among the fixture campaigns — lead by default, runner-up after
+      // dismissal, free-shipping under a seeded below-threshold Cart.
+      env: {
+        PURCHASE_SURFACE_ENABLED: 'true',
+        SITE_CONFIG_LOCAL_PATH: 'tests/fixtures/site-config-promotions.json',
+      },
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+    },
+    {
+      command: `npx next start -p ${PROMO_OFF_PORT}`,
+      url: promoOffBaseURL,
+      // Gate open + the `promotionBar` chrome toggle off: the bar never
+      // mounts even though the default campaign stays eligible.
+      env: {
+        PURCHASE_SURFACE_ENABLED: 'true',
+        SITE_CONFIG_LOCAL_PATH:
+          'tests/fixtures/site-config-no-promotion-bar.json',
       },
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
