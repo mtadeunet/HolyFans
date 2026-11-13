@@ -559,7 +559,9 @@ Surface moves here from the retired product gallery.
     placeholder), name, EUR price (VAT-inclusive display unchanged),
     fit selector (the two-card Variant pattern, Availability Flag
     honored — sold-out Variant unselectable with the "coming soon"
-    treatment), quantity stepper clamped to `[1, maxQuantity]` per the
+    treatment — superseded 2026-11-13 by ADR 00-010: sold-out
+    Variants remain selectable to scope the Pre-order capture),
+    quantity stepper clamped to `[1, maxQuantity]` per the
     Variant's Purchase Cap, and one primary submit.
   - State: `selectedVariant`, `quantity`, `isProcessing`, `failure`
     (same `CheckoutFailure` union: `drift` | `unavailable`); per-mount
@@ -643,7 +645,9 @@ Surface moves here from the retired product gallery.
   so no prerender constraint — add a Suspense boundary only if the
   build demands it) to preselect the named Variant when it exists and
   is available; absent/invalid/sold-out falls back to the existing
-  hydrated-Cart preselection. `[ADR 03-002]` `[ADR 00-004]`
+  hydrated-Cart preselection (the sold-out clause superseded
+  2026-11-13 by ADR 00-010: a `?fit=` naming a sold-out Variant
+  selects it for the Pre-order capture). `[ADR 03-002]` `[ADR 00-004]`
 - **Compare-At Price display:** when Product Data carries a Compare-At
   Price, the Simplified Purchase Surface and the Suggestions Rail cards
   render it struck-through next to the effective price — display-only,
@@ -696,6 +700,8 @@ Surface moves here from the retired product gallery.
     `/en/checkout`; suggestion-card links on the purchase route carry
     `?fit=<variantId>`; `?fit=<available>` preselects that Variant,
     `?fit=<sold-out-or-unknown>` falls back to the default selection.
+    (superseded 2026-11-13 — ADR 00-010: `?fit=<sold-out>` selects the
+    Variant for the Pre-order capture; only unknown ids fall back)
 
 ### Dependencies
 
@@ -722,7 +728,9 @@ Surface moves here from the retired product gallery.
      header/footer.
   3. `/en/checkout/success` and `/en/checkout/cancel` keep classic
      header/footer chrome.
-  4. Sold-out Variant unselectable; quantity clamps at the Purchase Cap.
+  4. Sold-out Variant unselectable (superseded 2026-11-13 — ADR 00-010:
+     sold-out Variants stay selectable for the Pre-order capture);
+     quantity clamps at the Purchase Cap.
   5. Submit → `POST /api/checkout` → browser lands on the PSP Hosted
      Checkout (test keys); cancel returns to `/{locale}/checkout/cancel`
      with the Cart (single line) preserved.
@@ -812,6 +820,8 @@ Surface moves here from the retired product gallery.
 - [ ] `/checkout/success` and `/checkout/cancel` keep classic chrome
 - [ ] Shell nav entries on `/checkout` resolve to `/{locale}#…` landing units
 - [ ] `?fit=` preselection works for available Variants; sold-out never linked
+  (superseded 2026-11-13 — ADR 00-010: `?fit=<sold-out>` preselects too,
+  scoping the Pre-order capture; sold-out suggestion cards stay unlinked)
 - [ ] WhatsApp bubble clears the bottom band on the purchase route
 
 ---

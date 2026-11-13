@@ -24,8 +24,8 @@ user-facing documentation.
   a single Checkout Session, used for small handmade runs.
 - **Availability Flag** — a per-product or per-Variant indicator in Product Data
   marking an item as purchasable or sold out. Managed manually. Composes
-  with the operator Stock Flag to decide the Simplified Purchase
-  Surface's state (ADR 00-010); the catalog currently carries
+  with the operator's per-Variant Stock Flags to decide the Simplified
+  Purchase Surface's state (ADR 00-010); the catalog currently carries
   per-Variant flags only.
 - **Cart** — the shopper-held collection of selected Variants and quantities,
   maintained entirely on the shopper's device.
@@ -38,13 +38,16 @@ user-facing documentation.
 - **Fulfillment** — the manual process of receiving order notifications,
   producing/sourcing the item, and shipping it to the customer.
 - **Site Config** — the operator-controlled configuration record holding
-  Storefront section visibility, chrome visibility, the Stock Flag, and
-  the QR Redirect Route destination. Stored in Edge Config and editable
-  via the Admin Console.
+  Storefront section visibility, chrome visibility, the per-Variant
+  Stock Flags, and the QR Redirect Route destination. Stored in Edge Config
+  and editable via the Admin Console.
 - **Admin Console** — the password-gated `/admin` surface used by the operator
-  to read and write Site Config and to inspect the like store's
+  to read and write Site Config, to inspect the like store's
   aggregate state — per-post totals, per-post last-like timestamps,
-  and store health (ADR 00-002, ADR 00-008).
+  and store health — and to read and purge the Stock Notification
+  List: a per-Variant view of the captured consented emails and their
+  consent records plus the per-Variant clear action (ADR 00-002,
+  ADR 00-008, ADR 00-010).
 - **Store Messaging Number** — the operator-supplied WhatsApp contact number
   the Inbound Contact Surface opens a chat to; provided via Hosting Platform
   environment configuration and never committed to tracked files (identifier
@@ -58,10 +61,11 @@ user-facing documentation.
   that lets a visitor compose a WhatsApp message containing the Storefront's
   canonical URL on the Store Domain for their own contacts; ungated and
   configuration-free (ADR 00-009).
-- **Stock Flag** — the operator-controlled Site Config toggle that forces
-  the entire Simplified Purchase Surface into the Pre-order state,
-  independent of the per-Variant Availability Flags; flips without a
-  rebuild through the Admin Console / Edge Config (ADR 00-010).
+- **Stock Flag** — an operator-controlled Site Config toggle, one per
+  Variant in Product Data, that forces that Variant into the
+  Pre-order state on the Simplified Purchase Surface, independent of
+  the Availability Flags; flips without a rebuild through
+  the Admin Console / Edge Config (ADR 00-010).
 - **Pre-order** — the Simplified Purchase Surface's non-purchasable
   presentation: a sold-out message plus a notify-me control that captures
   a consented visitor email into the Stock Notification List. An

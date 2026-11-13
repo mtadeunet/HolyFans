@@ -1,3 +1,5 @@
+import { VARIANTS, type VariantKey } from '@/lib/constants';
+
 export const SITE_CONFIG_KEY = 'siteConfig';
 
 /**
@@ -29,9 +31,25 @@ export type SiteSections = Record<SectionKey, boolean> & {
   qrcoderedirect: string;
 };
 
+/**
+ * Implements ADR 00-010: Pre-order and Stock Notification — "Each Stock
+ * Flag is an operator toggle in Site Config — one per Variant in
+ * Product Data — the same mechanism as the section and chrome
+ * toggles". Each key is a Variant id of `PRODUCT.variants`
+ * (`'nsr-female-m'` and siblings today — the domain derives from
+ * Product Data so a new Variant gets its flag, its Admin Console
+ * toggle, and its normalization automatically): `true` forces that
+ * Variant into the Pre-order state; `false` — the default — leaves
+ * purchasability to the Product Data Availability Flags. The flag is
+ * presentation-level only: server-side Cart re-validation against
+ * Availability Flags remains the hard purchase backstop.
+ */
+export type StockKey = VariantKey;
+
 export type SiteConfig = {
   sections: SiteSections;
   chrome: Record<ChromeKey, boolean>;
+  stock: Record<StockKey, boolean>;
 };
 
 export const DEFAULT_SITE_CONFIG: SiteConfig = {
@@ -51,6 +69,13 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
     premiumFeaturesModal: true,
     whatsappBubble: true,
   },
+  // Implements ADR 00-010: "Each defaults off (items purchasable)" —
+  // Site Config reads fail open to defaults, and failing open to the
+  // purchasable presentation is the bounded direction. One entry per
+  // Variant in Product Data, derived like `STOCK_KEYS`.
+  stock: Object.fromEntries(
+    VARIANTS.map((variant) => [variant.id, false])
+  ) as Record<StockKey, boolean>,
 };
 
 export const SECTION_KEYS: SectionKey[] = [
@@ -71,6 +96,16 @@ export const CHROME_KEYS: ChromeKey[] = [
 ];
 
 /**
+ * Implements ADR 00-010: Pre-order and Stock Notification — "a Stock
+ * Flag **per Variant** in Site Config". The per-Variant Stock Flag
+ * keys are the Variant ids of Product Data itself: every consumer of
+ * `STOCK_KEYS` (normalization, the Admin Console form, the save
+ * action) enumerates the catalog's Variants, so a Variant entering
+ * the catalog appears everywhere without a code change.
+ */
+export const STOCK_KEYS: StockKey[] = VARIANTS.map((variant) => variant.id);
+
+/**
  * Merge a partial/unknown config shape on top of defaults so missing keys
  * fall back to `true` and unknown keys are ignored.
  */
@@ -78,6 +113,7 @@ export function normalizeSiteConfig(raw: unknown): SiteConfig {
   const out: SiteConfig = {
     sections: { ...DEFAULT_SITE_CONFIG.sections },
     chrome: { ...DEFAULT_SITE_CONFIG.chrome },
+    stock: { ...DEFAULT_SITE_CONFIG.stock },
   };
   if (!raw || typeof raw !== 'object') return out;
   const source = raw as Partial<SiteConfig>;
@@ -97,6 +133,12 @@ export function normalizeSiteConfig(raw: unknown): SiteConfig {
     for (const key of CHROME_KEYS) {
       const value = (source.chrome as Record<string, unknown>)[key];
       if (typeof value === 'boolean') out.chrome[key] = value;
+    }
+  }
+  if (source.stock && typeof source.stock === 'object') {
+    for (const key of STOCK_KEYS) {
+      const value = (source.stock as Record<string, unknown>)[key];
+      if (typeof value === 'boolean') out.stock[key] = value;
     }
   }
   return out;

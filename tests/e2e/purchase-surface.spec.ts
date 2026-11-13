@@ -25,6 +25,23 @@ test.describe('purchase-surface gate (flag unset)', () => {
     });
   }
 
+  // Implements ADR 00-010 - the stock-notification Route Handler
+  // "shares the checkout handler's gated posture: while the
+  // Purchase-Surface Gate (ADR 00-004) is closed, the endpoint answers
+  // unavailable".
+  test('/api/stock-notification answers unavailable while the gate is closed', async ({
+    request,
+  }) => {
+    const response = await request.post('/api/stock-notification', {
+      data: {
+        email: 'shopper@example.com',
+        locale: 'pt',
+        variantId: 'nsr-female-m',
+      },
+    });
+    expect(response.status()).toBe(404);
+  });
+
   for (const path of ['/pt', '/en']) {
     test(`no purchase CTA to /checkout is rendered on ${path}`, async ({
       page,

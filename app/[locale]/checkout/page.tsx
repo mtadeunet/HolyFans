@@ -40,12 +40,20 @@ export default async function CheckoutPage() {
     notFound();
   }
 
-  const { chrome } = await getSiteConfig();
+  const { chrome, stock } = await getSiteConfig();
 
   return (
-    <FeedShell chrome={chrome} purchaseSurfaceEnabled returnToFeed>
+    <FeedShell
+      chrome={chrome}
+      purchaseSurfaceEnabled
+      returnToFeed
+      stockFlags={stock}
+    >
       <TestModeBanner />
-      <BuyNow />
+      {/* Implements ADR 00-010: a Variant's Stock Flag resolves that
+          Variant non-purchasable, so its selection presents the
+          Pre-order state in place of the purchase action. */}
+      <BuyNow stockFlags={stock} />
     </FeedShell>
   );
 }

@@ -1,12 +1,16 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { FITS, PRODUCT, representativeVariant } from '@/lib/constants';
+import type { ProductVariant } from '@/types/product';
 import {
   CHROME_KEYS,
   SECTION_KEYS,
+  STOCK_KEYS,
   type ChromeKey,
   type SectionKey,
   type SiteConfig,
+  type StockKey,
 } from '@/lib/site-config';
 import { saveSiteConfig, type SaveResult } from './actions';
 
@@ -46,22 +50,103 @@ const CHROME_LABELS: Record<ChromeKey, { label: string; hint?: string }> = {
   },
 };
 
+// Implements ADR 00-010: Pre-order and Stock Notification — "a Stock
+// Flag **per Variant** in Site Config": one toggle per Variant in
+// Product Data, labelled from the Variant's own data (its name and
+// size) so a Variant entering the catalog gets its labelled toggle
+// without a code change. What the flag does is variant-invariant, so
+// it is explained once in the Stock section's header text rather than
+// repeated per row.
+function stockLabel(variant: ProductVariant): string {
+  return `${variant.name} — ${variant.size} — out of stock`;
+}
+
+/**
+ * The boolean-flag groups of Site Config, mapped to each group's
+ * toggle-key domain. `sections` also carries the string
+ * `qrcoderedirect`, so the flag keys are declared per group rather
+ * than derived from the group shapes.
+ */
+interface FlagKeys {
+  sections: SectionKey;
+  chrome: ChromeKey;
+  stock: StockKey;
+}
+type FlagGroup = keyof FlagKeys;
+
+interface ToggleRowProps {
+  /** The flag's current value. */
+  checked: boolean;
+  /** Flip handler for the flag. */
+  onToggle: () => void;
+  /** The row's display label. */
+  label: string;
+  /** Optional secondary description line. */
+  hint?: string;
+  /** The raw Site Config key, rendered as the trailing tag. */
+  tag: string;
+}
+
+/**
+ * One Site Config toggle row — a labelled checkbox with an optional
+ * hint line and the raw key as the trailing tag. Shared by the
+ * Sections, Chrome, and Stock groups so the row markup lives in one
+ * place.
+ *
+ * @param checked - The flag's current value.
+ * @param onToggle - Flip handler for the flag.
+ * @param label - The row's display label.
+ * @param hint - Optional secondary description line.
+ * @param tag - The raw Site Config key rendered as the trailing tag.
+ * @returns The toggle row element.
+ */
+function ToggleRow({
+  checked,
+  onToggle,
+  label,
+  hint,
+  tag,
+}: ToggleRowProps): React.JSX.Element {
+  return (
+    <li>
+      <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-background px-4 py-3 transition-colors hover:border-accent/40">
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={onToggle}
+          className="mt-0.5 h-5 w-5 accent-primary"
+        />
+        <div className="flex-1">
+          <span className="block font-medium text-text-primary">{label}</span>
+          {hint && (
+            <span className="block text-xs text-text-secondary">{hint}</span>
+          )}
+        </div>
+        <code className="text-xs text-text-secondary">{tag}</code>
+      </label>
+    </li>
+  );
+}
+
 export default function AdminForm({ initial }: { initial: SiteConfig }) {
   const [config, setConfig] = useState<SiteConfig>(initial);
   const [isPending, startTransition] = useTransition();
   const [status, setStatus] = useState<SaveResult | null>(null);
 
-  const toggleSection = (key: SectionKey) =>
-    setConfig((prev) => ({
-      ...prev,
-      sections: { ...prev.sections, [key]: !prev.sections[key] },
-    }));
-
-  const toggleChrome = (key: ChromeKey) =>
-    setConfig((prev) => ({
-      ...prev,
-      chrome: { ...prev.chrome, [key]: !prev.chrome[key] },
-    }));
+  /**
+   * Flip one boolean flag inside a Site Config group. `key` is
+   * constrained to the group's declared flag keys, so `sections`'s
+   * string `qrcoderedirect` field can never be reached — the boolean
+   * view of the group below stays honest.
+   *
+   * @param group - The Site Config flag group owning the key.
+   * @param key - The flag key within that group.
+   */
+  const toggleFlag = <G extends FlagGroup>(group: G, key: FlagKeys[G]): void =>
+    setConfig((prev) => {
+      const flags = prev[group] as Record<FlagKeys[G], boolean>;
+      return { ...prev, [group]: { ...flags, [key]: !flags[key] } };
+    });
 
   const updateQrCodeRedirect = (value: string) =>
     setConfig((prev) => ({
@@ -72,11 +157,18 @@ export default function AdminForm({ initial }: { initial: SiteConfig }) {
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData();
-    for (const key of SECTION_KEYS) {
-      if (config.sections[key]) formData.set(`sections.${key}`, 'on');
-    }
-    for (const key of CHROME_KEYS) {
-      if (config.chrome[key]) formData.set(`chrome.${key}`, 'on');
+    // One pass over every flag group: each checked flag submits its
+    // `<group>.<key>` entry as `'on'`. `qrcoderedirect` is not a flag —
+    // it's written explicitly below. Same boolean view as `toggleFlag`.
+    for (const [group, keys] of [
+      ['sections', SECTION_KEYS],
+      ['chrome', CHROME_KEYS],
+      ['stock', STOCK_KEYS],
+    ] as const) {
+      const flags = config[group] as Record<string, boolean>;
+      for (const key of keys) {
+        if (flags[key]) formData.set(`${group}.${key}`, 'on');
+      }
     }
     formData.set('sections.qrcoderedirect', config.sections.qrcoderedirect);
     setStatus(null);
@@ -97,22 +189,13 @@ export default function AdminForm({ initial }: { initial: SiteConfig }) {
         </p>
         <ul className="space-y-2">
           {SECTION_KEYS.map((key) => (
-            <li key={key}>
-              <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-background px-4 py-3 transition-colors hover:border-accent/40">
-                <input
-                  type="checkbox"
-                  checked={config.sections[key]}
-                  onChange={() => toggleSection(key)}
-                  className="h-5 w-5 accent-primary"
-                />
-                <span className="font-medium text-text-primary">
-                  {SECTION_LABELS[key]}
-                </span>
-                <code className="ml-auto text-xs text-text-secondary">
-                  {key}
-                </code>
-              </label>
-            </li>
+            <ToggleRow
+              key={key}
+              checked={config.sections[key]}
+              onToggle={() => toggleFlag('sections', key)}
+              label={SECTION_LABELS[key]}
+              tag={key}
+            />
           ))}
         </ul>
 
@@ -145,29 +228,52 @@ export default function AdminForm({ initial }: { initial: SiteConfig }) {
         </p>
         <ul className="space-y-2">
           {CHROME_KEYS.map((key) => (
-            <li key={key}>
-              <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-background px-4 py-3 transition-colors hover:border-accent/40">
-                <input
-                  type="checkbox"
-                  checked={config.chrome[key]}
-                  onChange={() => toggleChrome(key)}
-                  className="mt-0.5 h-5 w-5 accent-primary"
-                />
-                <div className="flex-1">
-                  <span className="block font-medium text-text-primary">
-                    {CHROME_LABELS[key].label}
-                  </span>
-                  {CHROME_LABELS[key].hint && (
-                    <span className="block text-xs text-text-secondary">
-                      {CHROME_LABELS[key].hint}
-                    </span>
-                  )}
-                </div>
-                <code className="text-xs text-text-secondary">{key}</code>
-              </label>
-            </li>
+            <ToggleRow
+              key={key}
+              checked={config.chrome[key]}
+              onToggle={() => toggleFlag('chrome', key)}
+              label={CHROME_LABELS[key].label}
+              hint={CHROME_LABELS[key].hint}
+              tag={key}
+            />
           ))}
         </ul>
+      </section>
+
+      <section className="rounded-xl border border-border bg-surface p-6">
+        <h2 className="mb-1 text-xl font-semibold text-text-primary">Stock</h2>
+        <p className="mb-4 text-sm text-text-secondary">
+          Per-variant stock posture — one toggle per sellable variant,
+          independent of Product Data availability. On: the variant shows the
+          Pre-order state with the notify-me email capture. Off: its
+          Availability Flag in Product Data decides.
+        </p>
+        {/* Implements ADR 00-010: one Stock Flag per Variant — the rows
+            enumerate every Variant of every fit in Product Data,
+            grouped under a fit subheading only once the catalog
+            carries more than one fit. */}
+        <div className="space-y-4">
+          {FITS.map((fit) => (
+            <div key={fit}>
+              {FITS.length > 1 && (
+                <h3 className="mb-2 text-sm font-semibold text-text-secondary">
+                  {representativeVariant(PRODUCT.variants[fit]).name}
+                </h3>
+              )}
+              <ul className="space-y-2">
+                {PRODUCT.variants[fit].map((variant) => (
+                  <ToggleRow
+                    key={variant.id}
+                    checked={config.stock[variant.id]}
+                    onToggle={() => toggleFlag('stock', variant.id)}
+                    label={stockLabel(variant)}
+                    tag={variant.id}
+                  />
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
       </section>
 
       <div className="flex items-center gap-4">

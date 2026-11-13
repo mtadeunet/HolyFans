@@ -25,7 +25,8 @@ highest-intent moment and the operator learns nothing about the demand
 that was lost. The owner wants the surface to handle out-of-stock in
 place: keep the product visible, offer the visitor a way to be told
 when stock returns, and give the operator a redeploy-free way to put
-the whole catalog into that state.
+each sellable item into that state independently — a sold-out Variant
+must not drag the still-available Variants into it.
 
 The architecture constrains the shape of the solution. ADR 00-002
 confines request-time compute to an enumerated dynamic surface — the
@@ -47,8 +48,8 @@ When an item cannot be purchased, the Simplified Purchase Surface
 presents a **Pre-order** state in place — a sold-out presentation plus
 a consented email capture into an operator-held **Stock Notification
 List** — instead of hiding the item. Operator control is a **Stock
-Flag** in Site Config composing with the Availability Flags
-in Product Data. Capture flows through one new hardened
+Flag per Variant** in Site Config composing with the Availability
+Flags in Product Data. Capture flows through one new hardened
 stock-notification Route Handler into the managed Redis store; the
 notification email send is a deferred dependency.
 
@@ -62,30 +63,47 @@ notification email send is a deferred dependency.
   reservation, and no inventory commitment; the Cart and the checkout
   contract of ADR 00-004 are untouched.
 - **Purchasability composition.** A Variant is purchasable exactly when
-  every Availability Flag applying to it in Product Data is on AND the
-  Stock Flag in Site Config is off. The catalog currently carries
+  every Availability Flag applying to it in Product Data is on AND its
+  own Stock Flag in Site Config is off. The catalog currently carries
   per-Variant Availability Flags only; a per-product flag, if ever
-  introduced, composes the same way — conjunctively. The Stock Flag
-  therefore forces the entire surface into the Pre-order state — every
-  Variant resolves non-purchasable — while an Availability Flag off at
-  any level independently triggers the Pre-order state for the items it
-  covers.
+  introduced, composes the same way — conjunctively. A Variant's Stock
+  Flag therefore forces that Variant into the Pre-order state while
+  sibling Variants stay purchasable — the surface can mix purchasable
+  and Pre-order selections across sizes and fits, and flagging every
+  Variant reproduces a whole-catalog sold-out posture — while an
+  Availability Flag off at any level independently triggers the
+  Pre-order state for the items it covers.
   Non-purchasable Variants remain visible and selectable so the visitor
   can scope the capture to the specific Variant they want restocked;
-  the action for a non-purchasable selection is always the capture
+  selectable scopes to the purchase surface's own fit and size
+  selectors. Fit-level surfaces present the fit's first purchasable
+  Variant: a Suggestions Rail card links its `?fit=` preselection to
+  it, and the Simplified Purchase Surface's default selection and
+  fit-switch target resolve the same way. A fit's card surfaces the
+  sold-out badge — and stays non-interactive — only when no Variant
+  of the fit is purchasable, never deep-linking into the scoped
+  Pre-order state, so the capture is reached through the purchase
+  surface's selectors (owner ruling). Explicit scoping still resolves
+  flagged Variants into the capture: the `?fit=<variantId>`
+  preselection parameter and a rehydrated Cart line naming a
+  non-purchasable Variant select it and present its Pre-order state.
+  The action for a non-purchasable selection is always the capture
   control, never the purchase action. Server-side re-validation against
   Product Data Availability Flags remains the hard purchase backstop
   (ADR 00-004): the Stock Flag is a presentation-level override, so an
   operator who needs a hard stop also flags the Variants off in Product
   Data.
-- **Stock Flag mechanism.** The Stock Flag is a single operator toggle
-  in Site Config — the same mechanism as the section and chrome
-  toggles: held in Edge Config in production, the local stand-in file
-  in development, edited through the Admin Console, applying within
-  seconds without a rebuild. Its default is off (items purchasable):
-  Site Config reads fail open to defaults, and failing open to the
-  purchasable presentation is the bounded direction because the
-  checkout path's Product Data re-validation sits behind it.
+- **Stock Flag mechanism.** Each Stock Flag is an operator toggle in
+  Site Config — one per Variant in Product Data — the same mechanism as
+  the section and chrome toggles: held in Edge Config in production,
+  the local stand-in file in development, edited through the Admin
+  Console, applying within seconds without a rebuild. Each defaults
+  off (items purchasable): Site Config reads fail open to defaults,
+  and failing open to the purchasable presentation is the bounded
+  direction because the checkout path's Product Data re-validation
+  sits behind it. A Variant entering Product Data gains its Stock
+  Flag automatically — the flag keys are the catalog's own Variant
+  ids.
 - **Stock-notification Route Handler.** One new Route Handler joins the
   enumerated dynamic surface of ADR 00-002 on the Node runtime. It
   accepts the visitor's email, the visitor's Locale, and the
@@ -147,8 +165,8 @@ notification email send is a deferred dependency.
 - Out-of-stock stops being a dead end: demand is captured at the
   highest-intent moment as a scoped, actionable signal (which Variant
   to restock, and who asked) instead of being silently lost.
-- The Stock Flag gives the operator redeploy-free control through the
-  existing Admin Console / Edge Config mechanism — no new
+- The Stock Flags give the operator redeploy-free, per-Variant control
+  through the existing Admin Console / Edge Config mechanism — no new
   configuration infrastructure, consistent with every other toggle.
 - Exactly one new enumerated Route Handler inside the ADR 00-002
   boundary, on the same store and under the same hardening norm as its
@@ -161,8 +179,9 @@ notification email send is a deferred dependency.
   consent banner: single stated purpose, minimal data, operator-held
   records with a clear deletion path.
 - The composition rule is one sentence — Availability Flag AND NOT
-  Stock Flag — covering whole-catalog and per-Variant out-of-stock
-  with no new concepts in Product Data.
+  the Variant's own Stock Flag — covering per-Variant and
+  whole-catalog (every Variant flagged) out-of-stock with no new
+  concepts in Product Data.
 
 **Negative / trade-offs:**
 - The Storefront persists personal data for the first time: consent
@@ -170,8 +189,10 @@ notification email send is a deferred dependency.
   path become standing obligations, and the managed store's compromise
   or misconfiguration now touches real data rather than vanity
   counters.
-- The Stock Flag is presentation-level: while it is on, a stale page or
-  a direct POST can still reach the checkout Route Handler — only the
+- The Stock Flag is presentation-level: while a Variant's is on, a
+  stale
+  page or a direct POST can still reach the checkout Route Handler —
+  only the
   Product Data Availability Flags, enforced by server-side
   re-validation, are a hard stop. A fail-open Site Config read likewise
   resolves to purchasable during an Edge Config outage; the Product
@@ -231,10 +252,20 @@ notification email send is a deferred dependency.
   failing open on outage — added coupling without hard enforcement.
   Product Data Availability Flags remain the enforcement path; a hard
   stop sets them.
-- **Per-product Stock Flags in Site Config** — Rejected for now: a
-  one-product catalog needs one flag; per-item granularity already
-  exists through Product Data Availability Flags, and a per-product
-  config shape can be introduced when a second product ships.
+- **A single site-wide Stock Flag** — Rejected: stock posture differs
+  per item — a sold-out Variant must not force the still-available
+  Variants into the Pre-order state with it, blurring their demand
+  signal and blocking their sales; per-Variant flags reuse the same
+  per-key toggle mechanism and keep each Variant's capture
+  independent. A coarser per-product flag can layer conjunctively on
+  top if a multi-product catalog ever needs it.
+- **A Stock Flag per Fit** — Rejected: coarser than the operator's
+  control need — flagging a fit forces its still-in-stock size
+  Variants into the Pre-order state with it, blocking their sales and
+  merging their demand signal into the fit's. A bulk per-fit toggle
+  would save the operator a few clicks at the cost of that precision;
+  per-Variant flags keep each sellable item's toggle and capture
+  independent at no extra mechanism cost.
 - **Double opt-in (a confirmation email before listing an address)** —
   Rejected as the launch posture: it depends on the deferred
   email-send capability, and single-purpose consent rendered at the

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { allowRequest, clientIp, readCappedJson } from '@/lib/api-guard';
 import { FEED_POSTS } from '@/lib/feed-posts';
 import {
   baseLikeCounts,
@@ -6,7 +7,8 @@ import {
   likeLastKey,
   parseLikeToggleBody,
 } from '@/lib/likes';
-import { getLikesStore, readLiveCounts } from '@/lib/likes-server';
+import { readLiveCounts } from '@/lib/likes-server';
+import { getManagedStore } from '@/lib/managed-store';
 
 /**
  * Implements ADR 00-002: Rendering and Hosting Model - "the like counter
@@ -33,60 +35,16 @@ const MAX_BODY_BYTES = 1024;
  *
  * Basic in-memory rate limit, same approach as the checkout Route
  * Handler: at most `GET_RATE_LIMIT` count reads and `POST_RATE_LIMIT`
- * toggle writes per client IP per `RATE_WINDOW_MS`. This is per-instance
- * state — on a serverless fleet each instance enforces its own window,
- * adequate for the vanity-metric bound the ADR accepts; throttled
+ * toggle writes per client IP per the shared rate window
+ * (`lib/api-guard.ts`). This is per-instance state — on a serverless
+ * fleet each instance enforces its own window, adequate for the
+ * vanity-metric bound the ADR accepts; throttled
  * requests surface to the Interaction Row as the degraded state.
  */
-const RATE_WINDOW_MS = 60_000;
 const GET_RATE_LIMIT = 60;
 const POST_RATE_LIMIT = 30;
 const getRequestLog = new Map<string, number[]>();
 const postRequestLog = new Map<string, number[]>();
-
-/**
- * Check whether a client IP is within a rate window. Expired entries are
- * pruned in place; the map is reset when it grows past an arbitrary
- * bound so hostile IP churn cannot exhaust memory.
- *
- * @param ip - Client IP (first `x-forwarded-for` hop, or 'unknown').
- * @param log - The per-method request log being enforced.
- * @param limit - Maximum requests allowed inside `RATE_WINDOW_MS`.
- * @returns `true` when the request may proceed.
- */
-function allowRequest(
-  ip: string,
-  log: Map<string, number[]>,
-  limit: number
-): boolean {
-  const now = Date.now();
-  if (log.size > 10_000) {
-    log.clear();
-  }
-  const hits = (log.get(ip) ?? []).filter(
-    (timestamp) => now - timestamp < RATE_WINDOW_MS
-  );
-  if (hits.length >= limit) {
-    log.set(ip, hits);
-    return false;
-  }
-  hits.push(now);
-  log.set(ip, hits);
-  return true;
-}
-
-/**
- * Extract the client IP for rate limiting (first `x-forwarded-for`
- * hop, or 'unknown').
- *
- * @param request - The incoming request.
- * @returns The client IP string.
- */
-function clientIp(request: NextRequest): string {
-  return (
-    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
-  );
-}
 
 /**
  * Implements ADR 03-002: Landing Page Composition - "The displayed like
@@ -123,7 +81,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'likes_unavailable' }, { status: 429 });
   }
 
-  const store = getLikesStore();
+  const store = getManagedStore();
   if (!store) {
     return NextResponse.json({
       counts: baseLikeCounts(),
@@ -190,19 +148,8 @@ export async function POST(request: NextRequest) {
   }
 
   // Input cap: reject oversized bodies before parsing.
-  const declaredLength = Number(request.headers.get('content-length') ?? 0);
-  if (declaredLength > MAX_BODY_BYTES) {
-    return NextResponse.json({ error: 'invalid_request' }, { status: 400 });
-  }
-  const raw = await request.text();
-  if (raw.length > MAX_BODY_BYTES) {
-    return NextResponse.json({ error: 'invalid_request' }, { status: 400 });
-  }
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
+  const parsed = await readCappedJson(request, MAX_BODY_BYTES);
+  if (parsed === null) {
     return NextResponse.json({ error: 'invalid_request' }, { status: 400 });
   }
 
@@ -213,7 +160,7 @@ export async function POST(request: NextRequest) {
 
   // Fail-closed (ADR 00-002): with no store configured the toggle cannot
   // be deduplicated or persisted — refuse rather than pretend to count.
-  const store = getLikesStore();
+  const store = getManagedStore();
   if (!store) {
     return NextResponse.json({ error: 'likes_unavailable' }, { status: 503 });
   }

@@ -1,4 +1,4 @@
-import { Redis } from '@upstash/redis';
+import type { Redis } from '@upstash/redis';
 import { FEED_POSTS } from '@/lib/feed-posts';
 import { likeKey, likeLastKey } from '@/lib/likes';
 
@@ -12,48 +12,14 @@ import { likeKey, likeLastKey } from '@/lib/likes';
  * totals, per-post last-like timestamps, and store health — aggregates
  * only, never Like Token membership (ADR 00-008)".
  *
- * Server-side access to the managed like store: the lazily initialized
- * Redis client shared by the like counter Route Handler and the Admin
- * Console's likes view, plus the read helpers each consumes. Kept out
- * of `lib/likes.ts` so that module stays pure (no Redis import) and
+ * Server-side reads for the managed like store: the read helpers
+ * consumed by the like counter Route Handler and the Admin Console's
+ * likes view, over the shared fail-closed client from
+ * `lib/managed-store.ts` (`getManagedStore()`). Kept out of
+ * `lib/likes.ts` so that module stays pure (no Redis import) and
  * unit-testable in Node. Every helper here returns aggregates only —
  * Like Token membership is never read or exposed (ADR 00-008).
  */
-
-/**
- * Implements ADR 00-002: Rendering and Hosting Model - "Small shared
- * request-time state persists in a managed Redis store provisioned
- * through the Hosting Platform's marketplace ... when the store is
- * unconfigured or unreachable, the Interaction Row degrades to
- * authored base counts with toggling disabled and a visible
- * unavailable indicator."
- *
- * Lazily initialized Redis client, memoized so `next build` and every
- * unconfigured request never construct one. `Redis.fromEnv()` reads
- * `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` but — in the
- * pinned SDK version — only logs a warning and yields a broken client
- * when they are unset, so the env check happens here first: `null`
- * means genuinely unconfigured, not "a client whose every command
- * fails". The defensive try/catch stays so a future SDK throw degrades
- * the same way. Callers then take their fail-closed path.
- *
- * @returns The Redis client, or `null` when the store is unconfigured.
- */
-let redis: Redis | null | undefined;
-export function getLikesStore(): Redis | null {
-  if (redis === undefined) {
-    try {
-      redis =
-        process.env.UPSTASH_REDIS_REST_URL &&
-        process.env.UPSTASH_REDIS_REST_TOKEN
-          ? Redis.fromEnv()
-          : null;
-    } catch {
-      redis = null;
-    }
-  }
-  return redis;
-}
 
 /**
  * The live like total for every Post Card: the authored base count plus

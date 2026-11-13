@@ -1,6 +1,12 @@
 import { useTranslations } from 'next-intl';
 import { Link } from '@/lib/navigation';
-import { PRODUCT, representativeVariant } from '@/lib/constants';
+import {
+  FITS,
+  isVariantPurchasable,
+  PRODUCT,
+  purchasableRepresentative,
+  type VariantKey,
+} from '@/lib/constants';
 import { formatPrice } from '@/lib/utils';
 
 interface SuggestionsRailProps {
@@ -11,6 +17,17 @@ interface SuggestionsRailProps {
    * surface only while `PURCHASE_SURFACE_ENABLED` is `'true'`.
    */
   purchaseSurfaceEnabled: boolean;
+  /**
+   * Implements ADR 00-010: Pre-order and Stock Notification — the
+   * server-evaluated per-Variant Stock Flags from Site Config. "A
+   * Variant is purchasable exactly when every Availability Flag
+   * applying to it in Product Data is on AND its own Stock Flag in
+   * Site Config is off" — a fit's card presents its first purchasable
+   * Variant and badges sold-out only when no Variant of the fit is
+   * purchasable, so a flagged Variant neither blocks the card's link
+   * nor drags its purchasable siblings into the badge.
+   */
+  stockFlags: Record<VariantKey, boolean>;
 }
 
 /**
@@ -21,10 +38,10 @@ interface SuggestionsRailProps {
  * also joins — it renders at wider viewports only."
  *
  * The Feed Shell's right column: a suggestion card per fit (fit name,
- * EUR price, Availability Flag badge — sold-out shown but never
- * linked), each linking its representative Variant — the first
- * purchasable one, or the first entry on a sold-out fit — plus a
- * discovery CTA card, and the legal links at its foot.
+ * EUR price, sold-out badge — shown but never linked), each linking
+ * the fit's shopper-facing representative — the first purchasable
+ * Variant, or the flag-agnostic representative on a fully sold-out
+ * fit — plus a discovery CTA card, and the legal links at its foot.
  * Present only at `lg` and wider. Legal links render as inert
  * placeholders until the localized legal routes land (temporary test
  * control; wired to `/{locale}/privacy` and `/{locale}/terms` when
@@ -32,6 +49,7 @@ interface SuggestionsRailProps {
  */
 export default function SuggestionsRail({
   purchaseSurfaceEnabled,
+  stockFlags,
 }: SuggestionsRailProps) {
   const t = useTranslations('feed.suggestions');
   const tProduct = useTranslations('product');
@@ -41,10 +59,12 @@ export default function SuggestionsRail({
   // a fit's localized label resolves through the `product.fit.<fit>`
   // message key, so a fit entering or leaving the catalog needs no
   // component change.
-  const variants = (
-    Object.keys(PRODUCT.variants) as (keyof typeof PRODUCT.variants)[]
-  ).map((fit) => ({
-    variant: representativeVariant(PRODUCT.variants[fit]),
+  const variants = FITS.map((fit) => ({
+    // Implements ADR 00-010 - "Fit-level surfaces ... present the
+    // fit's first purchasable Variant": the card's representative is
+    // the first purchasable Variant of its fit, so a flagged Variant
+    // never turns the card into the purchasable path's dead end.
+    variant: purchasableRepresentative(PRODUCT.variants[fit], stockFlags),
     label: tProduct(`fit.${fit}`),
   }));
 
@@ -54,6 +74,11 @@ export default function SuggestionsRail({
 
       <div className="mt-4 space-y-3">
         {variants.map(({ variant, label }) => {
+          // Implements ADR 00-010: the representative is the fit's
+          // first purchasable Variant, so this is `true` exactly when
+          // some Variant of the fit is purchasable — the badge is a
+          // whole-fit sold-out, never one Variant's flag.
+          const purchasable = isVariantPurchasable(variant, stockFlags);
           const card = (
             <div className="flex items-center gap-3 rounded-xl border border-border bg-surface p-3 transition-colors group-hover:border-accent/40">
               <div className="min-w-0 flex-1">
@@ -73,13 +98,15 @@ export default function SuggestionsRail({
                   </span>
                 </p>
               </div>
-              {variant.available ? (
+              {purchasable ? (
                 <span className="text-sm font-semibold text-primary">
                   {t('view')}
                 </span>
               ) : (
-                /* Availability Flag (ADR 00-004): sold-out Variants are
-                   shown but never become links to the purchase surface. */
+                /* Whole-fit sold-out — no Variant of the fit is
+                   purchasable (Availability Flags off, ADR 00-004, or
+                   every Stock Flag on, ADR 00-010): shown but never a
+                   link to the purchase surface. */
                 <span className="rounded-full bg-accent/15 px-3 py-1 text-xs font-bold uppercase tracking-wide text-accent">
                   {t('sold_out')}
                 </span>
@@ -87,12 +114,14 @@ export default function SuggestionsRail({
             </div>
           );
 
-          return variant.available && purchaseSurfaceEnabled ? (
+          return purchasable && purchaseSurfaceEnabled ? (
             /* Implements ADR 03-002 - "an available Variant suggestion
                selects that Variant on the surface": the card's link
                carries the `?fit=<variantId>` preselection parameter the
-               Simplified Purchase Surface honors; a sold-out Variant is
-               shown but never linked (Availability Flag, ADR 00-004). */
+               Simplified Purchase Surface honors, naming the fit's
+               first purchasable Variant; a fit with no purchasable
+               Variant is shown but never linked (Availability Flag,
+               ADR 00-004; per-Variant Stock Flag, ADR 00-010). */
             <Link
               key={variant.id}
               href={`/checkout?fit=${variant.id}`}

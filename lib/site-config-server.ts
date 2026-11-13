@@ -19,10 +19,14 @@ import {
  * Untracked local stand-in for Edge Config, used only when `EDGE_CONFIG`
  * is unset (local dev). `writeSiteConfig()` persists here, `getSiteConfig()`
  * reads it back — the admin toggles work locally with no Vercel wiring.
+ * `SITE_CONFIG_LOCAL_PATH` overrides the filename so e2e projects can
+ * point a `next start` server at a tracked fixture (Playwright runs
+ * several servers off one cwd — per-server paths keep their Site
+ * Config postures isolated).
  */
 export const LOCAL_SITE_CONFIG_PATH = path.join(
   process.cwd(),
-  '.site-config.local.json'
+  process.env.SITE_CONFIG_LOCAL_PATH ?? '.site-config.local.json'
 );
 
 /**

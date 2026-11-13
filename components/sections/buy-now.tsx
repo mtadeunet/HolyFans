@@ -4,9 +4,15 @@ import WhatsAppGlyph from '@/components/ui/whatsapp-glyph';
 import { useCart } from '@/context/cart-context';
 import {
   findVariant,
+  FITS,
+  fitOfVariant,
+  isVariantPurchasable,
   PRODUCT,
+  purchasableRepresentative,
   representativeVariant,
   SITE_CONFIG,
+  type FitKey,
+  type VariantKey,
 } from '@/lib/constants';
 import type {
   CartCorrection,
@@ -38,36 +44,6 @@ interface DriftLine {
 type CheckoutFailure =
   { kind: 'drift'; lines: DriftLine[] } | { kind: 'unavailable' };
 
-type FitKey = keyof typeof PRODUCT.variants;
-
-/**
- * Implements ADR 00-004: Commerce and Checkout - "sold-out state is
- * expressed through Availability Flags in Product Data".
- *
- * The fits carrying at least one purchasable Variant, derived once at
- * module level from the static Product Data — never hardcoded.
- */
-const AVAILABLE_FITS = (Object.keys(PRODUCT.variants) as FitKey[]).filter(
-  (fit) => PRODUCT.variants[fit].some((variant) => variant.available)
-);
-
-/**
- * Resolve a Variant id to the fit that carries it, restricted to fits
- * with a purchasable Variant. Shared by the `?fit=<variantId>`
- * preselection parameter and the rehydrated-Cart-line preselection so
- * both paths identify the fit the same way.
- *
- * @param variantId - Variant identifier from the `fit` search parameter
- *   or a stored Cart line.
- * @returns The `FitKey` carrying the Variant, or `undefined` when no
- *   available fit does.
- */
-function fitOfVariant(variantId: string): FitKey | undefined {
-  return AVAILABLE_FITS.find((key) =>
-    PRODUCT.variants[key].some((variant) => variant.id === variantId)
-  );
-}
-
 /**
  * Implements ADR 03-002: Landing Page Composition — Three-Column Feed
  * Shell with Simplified Purchase Surface - "The existing checkout page is
@@ -75,40 +51,78 @@ function fitOfVariant(variantId: string): FitKey | undefined {
  * quantity, the VAT-inclusive EUR price, and one purchase action that
  * submits the selection into the existing checkout path."
  *
+ * Implements ADR 00-010: Pre-order and Stock Notification — "When the
+ * visitor's selected Variant is not purchasable, the Simplified
+ * Purchase Surface keeps rendering in place: a localized sold-out
+ * message, and the purchase action replaced by a notify-me control
+ * that asks for the visitor's email."
+ *
  * The Simplified Purchase Surface: one centered card with the product
  * image, Variant selection (fit, then size within the fit), a quantity
  * stepper clamped to the Variant's Purchase Cap, the price, and a
- * single purchase action. Selectable Variants are derived from Product
- * Data's Availability Flags (ADR 00-004 is the single source of
- * truth): a fit selector renders only when more than one fit carries a
- * purchasable Variant, a size selector renders only when the selected
- * fit carries more than one, and a lone purchasable Variant of a lone
- * available fit shows a compact static label instead. The Cart remains
- * the shopper-held collection underneath — submit replaces its contents
+ * single action. Every Variant in Product Data stays visible and
+ * selectable — a fit selector renders only when more than one fit
+ * exists, a size selector only when the selected fit carries more than
+ * one Variant, and a lone Variant of a lone fit shows a compact static
+ * label instead. A Variant is purchasable exactly when its
+ * Availability Flag is on AND its own Stock Flag in Site Config is
+ * off (the conjunctive composition of ADR 00-010): a purchasable
+ * selection offers the single purchase action, a non-purchasable one
+ * the Pre-order state — the sold-out message plus the consented
+ * notify-me email capture. The Cart remains the shopper-held
+ * collection underneath — the purchase submit replaces its contents
  * with the single selected line, preserving cancel-preserved and
- * drift-correction semantics. The Outbound Share Surface (ADR 00-009)
- * lives beneath the buy action, making this the canonical purchase
- * block.
+ * drift-correction semantics; the Pre-order capture touches it not at
+ * all. The Outbound Share Surface (ADR 00-009) lives beneath the
+ * action, making this the canonical purchase block.
  */
-export default function BuyNow() {
+export default function BuyNow({
+  stockFlags,
+}: {
+  /**
+   * Implements ADR 00-010: "a Variant is purchasable exactly when
+   * every Availability Flag applying to it in Product Data is on AND
+   * its own Stock Flag in Site Config is off". The server-evaluated
+   * per-Variant Stock Flags: a `true` entry resolves that Variant
+   * non-purchasable, forcing its selection into the Pre-order state
+   * while sibling Variants stay purchasable. Presentation-level only —
+   * Product Data server-side re-validation stays the hard backstop.
+   */
+  stockFlags: Record<VariantKey, boolean>;
+}) {
   const t = useTranslations('purchase');
   const tProduct = useTranslations('product');
   const tWhatsApp = useTranslations('whatsapp');
   const locale = useLocale();
   const { items, hydrated, clearCart, addItem, removeItem, updateQuantity } =
     useCart();
-  // Default to the first purchasable Variant — never a sold-out one.
+  // Default to the first fit's shopper-facing representative — the
+  // first purchasable Variant under the Availability and Stock Flags
+  // (ADR 00-010), else the flag-agnostic representative (first
+  // available, then first entry) on a fully sold-out fit.
   const [selectedFit, setSelectedFit] = useState<FitKey>(
-    () => AVAILABLE_FITS[0] ?? 'female'
+    () => FITS[0] ?? 'female'
   );
   const [selectedSize, setSelectedSize] = useState<string>(
     () =>
-      representativeVariant(PRODUCT.variants[AVAILABLE_FITS[0] ?? 'female'])
-        .size
+      purchasableRepresentative(
+        PRODUCT.variants[FITS[0] ?? 'female'],
+        stockFlags
+      ).size
   );
   const [quantity, setQuantity] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
   const [failure, setFailure] = useState<CheckoutFailure | null>(null);
+  // Pre-order capture state (ADR 00-010): the email being captured, an
+  // in-flight guard, the graceful unavailable flag, and the Variant id
+  // whose capture already confirmed — confirmation is scoped per
+  // Variant so switching the selection offers a fresh capture.
+  const [email, setEmail] = useState('');
+  const [isNotifying, setIsNotifying] = useState(false);
+  const [notifyError, setNotifyError] = useState(false);
+  const [confirmedVariantId, setConfirmedVariantId] = useState<string | null>(
+    null
+  );
 
   /**
    * Implements ADR 00-004: Commerce and Checkout - "creates Sessions
@@ -135,18 +149,16 @@ export default function BuyNow() {
     preselected.current = true;
     const line = items[0];
 
-    // Implements ADR 03-002 - "an available Variant suggestion selects
-    // that Variant on the surface, while a sold-out Variant is shown
-    // but never offered as a purchasable path": the `fit` parameter is
-    // honored only when it names a Variant that exists in Product Data
-    // AND is purchasable; an absent, unknown, or sold-out value falls
-    // back to the Cart preselection below.
+    // Implements ADR 00-010 - "Non-purchasable Variants remain visible
+    // and selectable so the visitor can scope the capture to the
+    // specific Variant they want restocked": the `fit` parameter is
+    // honored whenever it names a Variant that exists in Product Data —
+    // a sold-out Variant selects too and scopes its Pre-order capture;
+    // an absent or unknown value falls back to the Cart preselection
+    // below.
     const fitParam = searchParams.get('fit');
     const paramVariant = fitParam ? findVariant(fitParam) : undefined;
-    const paramFit =
-      paramVariant && paramVariant.available
-        ? fitOfVariant(paramVariant.id)
-        : undefined;
+    const paramFit = paramVariant ? fitOfVariant(paramVariant.id) : undefined;
     if (paramFit && paramVariant) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedFit(paramFit);
@@ -160,13 +172,15 @@ export default function BuyNow() {
     }
 
     if (line) {
-      // A stale Cart line can hold a Variant whose Availability Flag has
-      // since flipped off (or that Product Data no longer carries):
-      // ignore its fit and keep the available default — the preselect
-      // must never resurrect a sold-out Variant.
-      const fit = line.variant.available
-        ? fitOfVariant(line.variant.id)
-        : undefined;
+      // Implements ADR 00-010 - "Non-purchasable Variants remain
+      // visible and selectable so the visitor can scope the capture to
+      // the specific Variant they want restocked": the rehydrated Cart
+      // line resolves like the `?fit=` path above — any Variant still
+      // carried in Product Data preselects, flag state included, so a
+      // line whose Availability Flag flipped off scopes its Pre-order
+      // capture instead of silently dropping to the default. Only a
+      // Variant Product Data no longer carries keeps the default.
+      const fit = fitOfVariant(line.variant.id);
       if (fit) {
         setSelectedFit(fit);
         setSelectedSize(line.variant.size);
@@ -183,16 +197,21 @@ export default function BuyNow() {
     }
   }, [hydrated, items, selectedFit, searchParams]);
 
-  // The purchasable Variants of the selected fit, then the selected one
-  // within them — the resolved Variant is always available (the fit only
-  // ever takes AVAILABLE_FITS values, and an unmatched size falls back
-  // to the fit's first purchasable Variant).
-  const availableVariants = PRODUCT.variants[selectedFit].filter(
-    (entry) => entry.available
-  );
+  // Every Variant of the selected fit stays selectable (ADR 00-010);
+  // the resolved Variant always exists — every fit carries at least one
+  // Variant, and an unmatched size falls back to the fit's
+  // shopper-facing representative (first purchasable, ADR 00-010).
+  const fitVariants = PRODUCT.variants[selectedFit];
   const variant =
-    availableVariants.find((entry) => entry.size === selectedSize) ??
-    availableVariants[0];
+    fitVariants.find((entry) => entry.size === selectedSize) ??
+    purchasableRepresentative(fitVariants, stockFlags);
+
+  // Implements ADR 00-010: "a Variant is purchasable exactly when every
+  // Availability Flag applying to it in Product Data is on AND its
+  // own Stock Flag in Site Config is off" — the conjunctive
+  // composition that resolves the purchase action versus the Pre-order
+  // state.
+  const purchasable = isVariantPurchasable(variant, stockFlags);
 
   /**
    * Correct the local Cart to match Product Data using the handler's
@@ -228,7 +247,7 @@ export default function BuyNow() {
    */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isProcessing || !variant.available) {
+    if (isProcessing || !purchasable) {
       return;
     }
 
@@ -290,6 +309,49 @@ export default function BuyNow() {
     }
   };
 
+  /**
+   * Implements ADR 00-010: Pre-order and Stock Notification —
+   * "Submitting stores the email and shows an in-page confirmation that
+   * the visitor will be notified when stock returns."
+   *
+   * The Pre-order capture submit: POSTs the visitor's email, Locale,
+   * and the selected Variant to the stock-notification Route Handler.
+   * The Cart is untouched — a Pre-order creates no payment, no
+   * Checkout Session, no reservation. Any non-200 or network failure
+   * surfaces the graceful unavailable state — honest failure, never a
+   * fake success (ADR 00-010); success shows the in-page confirmation
+   * scoped to this Variant.
+   */
+  const handleNotifySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isNotifying) {
+      return;
+    }
+
+    setIsNotifying(true);
+    setNotifyError(false);
+    try {
+      const response = await fetch('/api/stock-notification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          locale: locale === 'pt' ? 'pt' : 'en',
+          variantId: variant.id,
+        }),
+      });
+      if (!response.ok) {
+        setNotifyError(true);
+        return;
+      }
+      setConfirmedVariantId(variant.id);
+    } catch {
+      setNotifyError(true);
+    } finally {
+      setIsNotifying(false);
+    }
+  };
+
   // Stored Cart lines rehydrate in an effect after mount; holding the
   // render until then avoids a one-frame flash of the default selection
   // for returning shoppers.
@@ -312,19 +374,36 @@ export default function BuyNow() {
           </div>
 
           <form
-            onSubmit={handleSubmit}
+            onSubmit={purchasable ? handleSubmit : handleNotifySubmit}
             className="space-y-6 rounded-2xl border border-border bg-surface p-6 shadow-xl"
           >
-            {/* Product image — the selected Variant's first master. */}
+            {/* Product image — the selected Variant's first master, or
+                the branded placeholder composition (the Media Slot's
+                convention, ADR 03-001) when Product Data carries no
+                imagery for it. */}
             <div className="relative aspect-square overflow-hidden rounded-xl bg-background">
-              <Image
-                src={variant.images[0]}
-                alt={`${PRODUCT.name} — ${variant.name}`}
-                fill
-                sizes="(max-width: 768px) 100vw, 512px"
-                className="object-cover"
-                priority
-              />
+              {variant.images[0] ? (
+                <Image
+                  src={variant.images[0]}
+                  alt={`${PRODUCT.name} — ${variant.name}`}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 512px"
+                  className="object-cover"
+                  priority
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary via-primary/90 to-accent/50">
+                  <div className="flex h-24 w-24 items-center justify-center rounded-full border border-white/20 bg-white/10">
+                    <Image
+                      src="/logo/logo-mark.png"
+                      alt=""
+                      width={48}
+                      height={48}
+                      className="h-12 w-12 object-contain opacity-90"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex items-baseline justify-between">
@@ -348,20 +427,26 @@ export default function BuyNow() {
               </p>
             </div>
 
-            {/* Variant selection (ADR 00-004 Availability Flags): a
-                fit choice only exists when more than one fit carries a
-                purchasable Variant — a lone available fit renders as a
+            {/* Variant selection (ADR 00-010): every fit stays
+                selectable — a fit choice only exists when Product Data
+                carries more than one fit; a lone fit renders as a
                 compact static label (with the size appended only when
-                it also carries a single purchasable Variant), no
-                `choose_fit` heading. */}
-            {AVAILABLE_FITS.length > 1 ? (
+                it also carries a single Variant), no `choose_fit`
+                heading. */}
+            {FITS.length > 1 ? (
               <div className="space-y-3">
                 <h3 className="text-sm font-semibold text-text-primary">
                   {tProduct('choose_fit')}
                 </h3>
                 <div className="grid grid-cols-2 gap-3">
-                  {AVAILABLE_FITS.map((fit) => {
-                    const option = representativeVariant(PRODUCT.variants[fit]);
+                  {FITS.map((fit) => {
+                    // Fit-switch target: the fit's shopper-facing
+                    // representative — its first purchasable Variant
+                    // (ADR 00-010).
+                    const option = purchasableRepresentative(
+                      PRODUCT.variants[fit],
+                      stockFlags
+                    );
                     const isSelected = selectedFit === fit;
                     return (
                       <button
@@ -394,25 +479,31 @@ export default function BuyNow() {
                   })}
                 </div>
               </div>
-            ) : AVAILABLE_FITS.length === 1 ? (
+            ) : FITS.length === 1 ? (
               <p className="text-sm text-text-secondary">
                 {tProduct(`fit.${selectedFit}`)}
-                {availableVariants.length === 1 && ` · ${variant.size}`}
+                {fitVariants.length === 1 && ` · ${variant.size}`}
               </p>
             ) : null}
 
-            {/* Size selection (ADR 00-004 Availability Flags): a size
-                choice only exists when the selected fit carries more
-                than one purchasable Variant — sold-out size Variants
-                are never offered as a purchasable path. */}
-            {availableVariants.length > 1 && (
+            {/* Size selection (ADR 00-010): sold-out size Variants
+                remain visible and selectable so the visitor scopes the
+                capture to the Variant they want restocked — a
+                non-purchasable option carries the sold-out badge; the
+                capture control, never the purchase action, answers its
+                selection. */}
+            {fitVariants.length > 1 && (
               <div className="space-y-3">
                 <h3 className="text-sm font-semibold text-text-primary">
                   {tProduct('choose_size')}
                 </h3>
                 <div className="grid grid-cols-2 gap-3">
-                  {availableVariants.map((option) => {
+                  {fitVariants.map((option) => {
                     const isSelected = variant.id === option.id;
+                    const optionPurchasable = isVariantPurchasable(
+                      option,
+                      stockFlags
+                    );
                     return (
                       <button
                         key={option.id}
@@ -432,6 +523,11 @@ export default function BuyNow() {
                         <span className="block text-center font-semibold text-text-primary">
                           {option.size}
                         </span>
+                        {!optionPurchasable && (
+                          <span className="mt-1 block text-center text-xs font-medium uppercase tracking-wide text-text-secondary">
+                            {t('pre_order.badge')}
+                          </span>
+                        )}
                       </button>
                     );
                   })}
@@ -440,61 +536,65 @@ export default function BuyNow() {
             )}
 
             {/* Quantity stepper — clamped to the Variant's Purchase Cap
-                (ADR 00-004). */}
-            <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-text-primary">
-                {tProduct('quantity')}
-              </h3>
-              <div className="flex items-center space-x-4">
-                <button
-                  type="button"
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  disabled={quantity <= 1}
-                  className="flex h-12 w-12 items-center justify-center rounded-lg border-2 border-border bg-background transition-colors hover:bg-border/40 disabled:opacity-40"
-                >
-                  <svg
-                    className="h-5 w-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
+                (ADR 00-004). Purchase-only: a quantity is meaningless
+                to the Pre-order capture, so the stepper renders only
+                for a purchasable selection. */}
+            {purchasable && (
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-text-primary">
+                  {tProduct('quantity')}
+                </h3>
+                <div className="flex items-center space-x-4">
+                  <button
+                    type="button"
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    disabled={quantity <= 1}
+                    className="flex h-12 w-12 items-center justify-center rounded-lg border-2 border-border bg-background transition-colors hover:bg-border/40 disabled:opacity-40"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M20 12H4"
-                    />
-                  </svg>
-                </button>
-                <span className="w-16 text-center text-xl font-medium">
-                  {quantity}
-                </span>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setQuantity(Math.min(quantity + 1, variant.maxQuantity))
-                  }
-                  disabled={quantity >= variant.maxQuantity}
-                  className="flex h-12 w-12 items-center justify-center rounded-lg border-2 border-border bg-background transition-colors hover:bg-border/40 disabled:opacity-40"
-                >
-                  <svg
-                    className="h-5 w-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
+                    <svg
+                      className="h-5 w-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M20 12H4"
+                      />
+                    </svg>
+                  </button>
+                  <span className="w-16 text-center text-xl font-medium">
+                    {quantity}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setQuantity(Math.min(quantity + 1, variant.maxQuantity))
+                    }
+                    disabled={quantity >= variant.maxQuantity}
+                    className="flex h-12 w-12 items-center justify-center rounded-lg border-2 border-border bg-background transition-colors hover:bg-border/40 disabled:opacity-40"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 4v16m8-8H4"
-                    />
-                  </svg>
-                </button>
+                    <svg
+                      className="h-5 w-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 4v16m8-8H4"
+                      />
+                    </svg>
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Cart/Product-Data divergence — "cart updated, review
                 changes" (ADR 00-004). */}
@@ -537,41 +637,129 @@ export default function BuyNow() {
               </div>
             )}
 
-            {/* Single purchase action — idempotent submit; every retry
-                reuses this mount's `attemptId` (ADR 00-004). */}
-            <button
-              type="submit"
-              disabled={isProcessing || !variant.available}
-              className="btn-primary w-full text-lg shadow-xl hover:shadow-2xl disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {isProcessing ? (
-                <span className="flex items-center justify-center space-x-2">
-                  <svg
-                    className="h-5 w-5 animate-spin"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
+            {/* Implements ADR 00-010: "the action for a non-purchasable
+                selection is always the capture control, never the
+                purchase action". */}
+            {purchasable ? (
+              /* Single purchase action — idempotent submit; every
+                 retry reuses this mount's `attemptId` (ADR 00-004). */
+              <button
+                type="submit"
+                disabled={isProcessing}
+                className="btn-primary w-full text-lg shadow-xl hover:shadow-2xl disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isProcessing ? (
+                  <span className="flex items-center justify-center space-x-2">
+                    <svg
+                      className="h-5 w-5 animate-spin"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    <span>{t('processing')}</span>
+                  </span>
+                ) : (
+                  <span>{t('buy_now')}</span>
+                )}
+              </button>
+            ) : (
+              /* Implements ADR 00-010: the Pre-order state — "a
+                 localized sold-out message, and the purchase action
+                 replaced by a notify-me control that asks for the
+                 visitor's email ... an in-page confirmation that the
+                 visitor will be notified when stock returns." The
+                 consent statement (ADR 00-008's single-purpose
+                 consent language) renders at the capture point in the
+                 visitor's Locale; the capture creates no payment, no
+                 Checkout Session, no reservation. */
+              <div data-testid="pre-order-state" className="space-y-4">
+                <div className="rounded-xl border-2 border-accent/30 bg-accent/5 p-6 text-center">
+                  <h2 className="mb-2 text-lg font-semibold text-text-primary">
+                    {t('pre_order.sold_out_title')}
+                  </h2>
+                  <p className="text-sm text-text-secondary">
+                    {t('pre_order.sold_out_description')}
+                  </p>
+                </div>
+
+                {confirmedVariantId === variant.id ? (
+                  /* In-page confirmation only — no email is sent
+                     (deferred per ADR 00-010). */
+                  <div
+                    role="status"
+                    className="rounded-xl border-2 border-green-300 bg-green-50 p-6 text-center"
                   >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  <span>{t('processing')}</span>
-                </span>
-              ) : (
-                <span>{t('buy_now')}</span>
-              )}
-            </button>
+                    <h2 className="mb-2 text-lg font-semibold text-green-800">
+                      {t('pre_order.confirmed_title')}
+                    </h2>
+                    <p className="text-sm text-green-800">
+                      {t('pre_order.confirmed_description')}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <label className="block">
+                      <span className="mb-1 block text-sm font-semibold text-text-primary">
+                        {t('pre_order.email_label')}
+                      </span>
+                      <input
+                        type="email"
+                        required
+                        value={email}
+                        onChange={(event) => setEmail(event.target.value)}
+                        placeholder={t('pre_order.email_placeholder')}
+                        autoComplete="email"
+                        className="w-full rounded-lg border border-border bg-background px-4 py-3 text-text-primary outline-none ring-primary/30 transition focus:border-primary focus:ring"
+                      />
+                    </label>
+                    {/* Consent statement at the capture point (ADR
+                        00-008): states the single purpose — stock
+                        notification for this Variant. */}
+                    <p className="text-xs text-text-secondary">
+                      {t('pre_order.consent')}
+                    </p>
+                    {notifyError && (
+                      /* Graceful unavailable state — honest failure,
+                         never a fake success (ADR 00-010). */
+                      <div
+                        role="alert"
+                        className="rounded-xl border-2 border-red-300 bg-red-50 p-4"
+                      >
+                        <h2 className="mb-1 text-sm font-semibold text-red-800">
+                          {t('pre_order.unavailable_title')}
+                        </h2>
+                        <p className="text-sm text-red-800">
+                          {t('pre_order.unavailable_description')}
+                        </p>
+                      </div>
+                    )}
+                    <button
+                      type="submit"
+                      disabled={isNotifying}
+                      className="btn-primary w-full text-lg shadow-xl hover:shadow-2xl disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {isNotifying
+                        ? t('pre_order.submitting')
+                        : t('pre_order.notify_cta')}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Implements ADR 00-009: WhatsApp Deep-Link Channels — "a
                 control on the canonical purchase block lets a visitor

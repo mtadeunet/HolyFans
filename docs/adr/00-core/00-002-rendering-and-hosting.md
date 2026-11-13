@@ -24,12 +24,14 @@ positioning demands excellent load performance and reliability for visitors in
 Portugal. Alongside the static content, the business needs a small set of
 request-time capabilities: the permanent QR Redirect Route with a destination
 that can be retargeted without redeploys (ADR 00-003), operator-controlled
-Site Config toggles, an Admin Console write path plus a request-time
-read of the like store's aggregate state, the creation of Checkout
-Sessions with the PSP, a request-time read of the created Session's
-payment status on the post-checkout success page (ADR 00-004), shared
-like counters for the feed's Interaction Row (ADR 03-002), and consented
-email capture for the purchase surface's Pre-order state (ADR 00-010).
+Site Config toggles, an Admin Console write path plus request-time
+reads of the like store's aggregate state and the Stock Notification
+List — including its per-Variant purge path — the creation of
+Checkout Sessions with the PSP, a request-time read of the created
+Session's payment status on the post-checkout success page (ADR 00-004),
+shared like counters for the feed's Interaction Row (ADR 03-002), and
+consented email capture for the purchase surface's Pre-order state
+(ADR 00-010).
 Hosting must be inexpensive, low-
 operations, able to serve the QR Redirect Route indefinitely, and present in
 Europe for the primary market.
@@ -46,7 +48,8 @@ The Storefront runs a **hybrid model on the Vercel Hosting Platform**:
   per request to perform the session-status read below.
 - **Site Config is read from Edge Config at request time** — the Hosting
   Platform's edge-replicated key-value store holds section/chrome
-  visibility, the Stock Flag (ADR 00-010), and the QR Redirect Route
+  visibility, the per-Variant Stock Flags (ADR 00-010), and the QR
+  Redirect Route
   destination, so operator changes apply within
   seconds without a rebuild. Reads degrade to safe defaults when the store
   is unavailable; this read is the only request-time data dependency in
@@ -62,10 +65,18 @@ The Storefront runs a **hybrid model on the Vercel Hosting Platform**:
     paths to the bare QR Redirect Route (ADR 00-003);
   - the QR Redirect Route read (ADR 00-003), Edge-capable;
   - the **Admin Console surface**: a write path that persists Site
-    Config through the Hosting Platform's API, plus a request-time
-    read of the like store's aggregate state — per-post totals,
-    per-post last-like timestamps, and store health — aggregates
-    only, never Like Token membership (ADR 00-008);
+    Config through the Hosting Platform's API, plus, against the
+    managed store below, a request-time read of the like store's
+    aggregate state — per-post totals, per-post last-like
+    timestamps, and store health — aggregates only, never Like
+    Token membership (ADR 00-008); a request-time read of the Stock
+    Notification List — the individual consented emails and their
+    consent records per Variant, operator-only and never joined to
+    Like Tokens or analytics, the export half of the ADR 00-008
+    export-and-clear path (ADR 00-010); and a per-Variant purge
+    write that deletes a Variant's Stock Notification List on the
+    operator's clear action, the clear half of that path
+    (ADR 00-010);
   - the single checkout Route Handler on the **Node runtime** (required by
     the PSP SDK), which creates Checkout Sessions (ADR 00-004);
   - the **post-checkout session-status read**: the localized
@@ -134,8 +145,8 @@ The Storefront runs a **hybrid model on the Vercel Hosting Platform**:
   operator toggles, the Admin Console, and checkout — with no second hosting
   provider or deploy pipeline.
 - Edge Config gives the operator redeploy-free control (sections, chrome,
-  the Stock Flag, QR destination) with an always-safe fallback to
-  defaults.
+  the per-Variant Stock Flags, QR destination) with an always-safe fallback
+  to defaults.
 - Static generation plus edge delivery gives best-possible latency and Core
   Web Vitals for the primary market.
 - Git-integrated preview deployments make every change reviewable in

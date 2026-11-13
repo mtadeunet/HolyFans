@@ -10,6 +10,7 @@ ADR 00-001 (Application Framework — Next.js)
 ADR 00-002 (Rendering and Hosting Model)
 ADR 00-003 (Permanent QR Redirect Route)
 ADR 00-004 (Commerce and Checkout)
+ADR 00-010 (Pre-order and Stock Notification)
 
 ## Context
 
@@ -52,7 +53,10 @@ CI:
     detection defaults correctly, the QR Redirect Route resolves to its
     destination and falls back safely, the Admin Console fails closed
     without credentials, a product can be taken through the checkout
-    handoff, and sold-out items cannot be purchased.
+    handoff, and items sold out through Product Data Availability
+    Flags cannot be purchased — a Site Config Stock Flag (ADR 00-010)
+    is a presentation-level sold-out whose flagged Variant stays
+    selectable for the Pre-order capture.
 - **CI:** a hosted continuous-integration gate (GitHub Actions) verifies the
   complete quality baseline — install, lint, format check, typecheck, unit
   tests, production build — on every change; merges are gated by these

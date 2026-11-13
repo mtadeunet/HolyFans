@@ -95,7 +95,21 @@
     },
     "processing": "Redirecting to secure checkout…",
     "buy_now": "Buy Now",
-    "price_label": "Price"
+    "price_label": "Price",
+    "pre_order": {
+      "sold_out_title": "Out of stock",
+      "sold_out_description": "This variant is currently sold out. Leave your email and we'll let you know as soon as it's back.",
+      "email_label": "Email address",
+      "email_placeholder": "Your email",
+      "consent": "By submitting, you agree that we store your email only to notify you when this variant is back in stock — nothing else.",
+      "notify_cta": "Notify me when it's back",
+      "submitting": "Saving…",
+      "confirmed_title": "You're on the list",
+      "confirmed_description": "We'll email you as soon as this variant is back in stock.",
+      "unavailable_title": "Couldn't save your email",
+      "unavailable_description": "The notification list is unavailable right now — please try again in a moment.",
+      "badge": "Sold out"
+    }
   },
   "not_found": {
     "title": "Page Not Found",

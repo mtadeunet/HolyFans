@@ -16,11 +16,15 @@ import { getSiteConfig } from '@/lib/site-config-server';
  * purchase-surface gate threaded through.
  */
 export default async function HomePage() {
-  const { sections, chrome } = await getSiteConfig();
+  const { sections, chrome, stock } = await getSiteConfig();
   const purchaseSurfaceEnabled = isPurchaseSurfaceEnabled();
 
   return (
-    <FeedShell chrome={chrome} purchaseSurfaceEnabled={purchaseSurfaceEnabled}>
+    <FeedShell
+      chrome={chrome}
+      purchaseSurfaceEnabled={purchaseSurfaceEnabled}
+      stockFlags={stock}
+    >
       <FeedPosts
         sections={sections}
         chrome={chrome}

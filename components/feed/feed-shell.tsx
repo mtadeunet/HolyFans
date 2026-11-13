@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { VariantKey } from '@/lib/constants';
 import type { SiteConfig } from '@/lib/site-config';
 import MobileBottomNav from './mobile-bottom-nav';
 import MobileTopBar from './mobile-top-bar';
@@ -24,6 +25,15 @@ interface FeedShellProps {
    * contract.
    */
   purchaseSurfaceEnabled: boolean;
+  /**
+   * Implements ADR 00-010: Pre-order and Stock Notification — the
+   * server-evaluated per-Variant Stock Flags from Site Config: a
+   * `true` entry resolves that Variant non-purchasable. A Suggestions
+   * Rail card presents its fit's first purchasable Variant and shows
+   * the sold-out badge — unlinked — only when no Variant of the fit
+   * is purchasable.
+   */
+  stockFlags: Record<VariantKey, boolean>;
   /**
    * Implements ADR 03-002: Landing Page Composition — Three-Column Feed
    * Shell with Simplified Purchase Surface - "on the Product Page
@@ -66,6 +76,7 @@ interface FeedShellProps {
 export default function FeedShell({
   chrome,
   purchaseSurfaceEnabled,
+  stockFlags,
   returnToFeed = false,
   children,
 }: FeedShellProps) {
@@ -94,7 +105,10 @@ export default function FeedShell({
           {children}
         </div>
 
-        <SuggestionsRail purchaseSurfaceEnabled={purchaseSurfaceEnabled} />
+        <SuggestionsRail
+          purchaseSurfaceEnabled={purchaseSurfaceEnabled}
+          stockFlags={stockFlags}
+        />
       </div>
 
       {/* Consolidated mobile bottom band — governed by the repurposed

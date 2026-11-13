@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { allowRequest, clientIp, readCappedJson } from '@/lib/api-guard';
 import { PRODUCT, SITE_CONFIG } from '@/lib/constants';
 import {
   CheckoutLineInput,
@@ -31,14 +32,14 @@ const MAX_BODY_BYTES = 8 * 1024;
  * Implements ADR 00-002: Rendering and Hosting Model - "each must be
  * hardened (input caps, rate limiting, fail-closed auth)".
  *
- * Basic in-memory rate limit: at most `RATE_LIMIT` Session-creation POSTs
- * per client IP per `RATE_WINDOW_MS`. This is per-instance state — on a
- * serverless fleet each instance enforces its own window, which is
+ * Basic in-memory rate limit: at most `RATE_LIMIT` Session-creation
+ * POSTs per client IP per the shared rate window (`lib/api-guard.ts`).
+ * This is per-instance state — on a serverless fleet each instance
+ * enforces its own window, which is
  * adequate for a single-product launch (plan M3); throttled requests
  * surface to the shopper as the "checkout unavailable" state.
  */
 const RATE_LIMIT = 10;
-const RATE_WINDOW_MS = 60_000;
 const requestLog = new Map<string, number[]>();
 
 /**
@@ -50,31 +51,6 @@ const requestLog = new Map<string, number[]>();
 const STRIPE_PRICE_IDS: Record<string, string | undefined> = {
   'nsr-female-m': process.env.STRIPE_PRICE_ID_FEMALE,
 };
-
-/**
- * Check whether a client IP is within the Session-creation rate window.
- * Expired entries are pruned in place; the map is reset when it grows past
- * an arbitrary bound so hostile IP churn cannot exhaust memory.
- *
- * @param ip - Client IP (first `x-forwarded-for` hop, or 'unknown').
- * @returns `true` when the request may proceed.
- */
-function allowRequest(ip: string): boolean {
-  const now = Date.now();
-  if (requestLog.size > 10_000) {
-    requestLog.clear();
-  }
-  const hits = (requestLog.get(ip) ?? []).filter(
-    (timestamp) => now - timestamp < RATE_WINDOW_MS
-  );
-  if (hits.length >= RATE_LIMIT) {
-    requestLog.set(ip, hits);
-    return false;
-  }
-  hits.push(now);
-  requestLog.set(ip, hits);
-  return true;
-}
 
 /**
  * JSON body the client posts: Cart lines (identifiers + quantities only —
@@ -195,9 +171,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const ip =
-    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
-  if (!allowRequest(ip)) {
+  if (!allowRequest(clientIp(request), requestLog, RATE_LIMIT)) {
     return NextResponse.json(
       { error: 'checkout_unavailable' },
       { status: 429 }
@@ -205,19 +179,8 @@ export async function POST(request: NextRequest) {
   }
 
   // Input cap: reject oversized bodies before parsing.
-  const declaredLength = Number(request.headers.get('content-length') ?? 0);
-  if (declaredLength > MAX_BODY_BYTES) {
-    return NextResponse.json({ error: 'invalid_request' }, { status: 400 });
-  }
-  const raw = await request.text();
-  if (raw.length > MAX_BODY_BYTES) {
-    return NextResponse.json({ error: 'invalid_request' }, { status: 400 });
-  }
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
+  const parsed = await readCappedJson(request, MAX_BODY_BYTES);
+  if (parsed === null) {
     return NextResponse.json({ error: 'invalid_request' }, { status: 400 });
   }
 

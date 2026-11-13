@@ -83,9 +83,9 @@ PSP Hosted Checkout**:
   Product Data (small handmade runs); no automated stock counters at launch.
   A non-purchasable item is never hidden from the purchase surface: it
   presents the Pre-order state of ADR 00-010 — purchasability composes
-  every Availability Flag applying to the item with the operator Stock
-  Flag in Site Config — while server-side re-validation keeps Product
-  Data the hard purchase backstop.
+  every Availability Flag applying to the item with the item's own
+  Stock Flag in Site Config — while server-side re-validation keeps
+  Product Data the hard purchase backstop.
 - **Pricing and tax:** all prices are presented and charged in EUR, and the
   displayed price remains VAT-inclusive — the shopper always sees the
   final total before payment, as required for EU consumer sales. The
@@ -137,11 +137,11 @@ PSP Hosted Checkout**:
 **Negative / trade-offs:**
 - No automated inventory enforcement: a Variant can be oversold between
   Availability Flag updates. Accepted at launch volumes; must be revisited
-  if volume or sell-through speed grows. The Stock Flag (ADR 00-010) is a
-  presentation-level override — while it is on, a stale page or direct
-  POST can still reach the checkout Route Handler, so a hard stop
-  requires the Product Data Availability Flags that re-validation
-  enforces.
+  if volume or sell-through speed grows. The Stock Flags (ADR 00-010)
+  are a presentation-level override — while a Variant's flag is on, a
+  stale page or direct POST can still reach the checkout Route
+  Handler, so a hard stop requires the Product Data Availability Flags
+  that re-validation enforces.
 - The Purchase-Surface Gate is a transitional code-level switch:
   unlike Site Config toggles it needs a redeploy to flip — deliberate,
   because a fail-open toggle could silently re-expose the unlaunched

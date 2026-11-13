@@ -9,6 +9,14 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
+  isVariantPurchasable,
+  PRODUCT,
+  purchasableRepresentative,
+  representativeVariant,
+  type VariantKey,
+} from '@/lib/constants';
+import type { ProductVariant } from '@/types/product';
+import {
   DEFAULT_SITE_CONFIG,
   normalizeSiteConfig,
   type SiteConfig,
@@ -57,6 +65,53 @@ describe('normalizeSiteConfig', () => {
     expect(config.chrome.header).toBe(true);
   });
 
+  // Implements ADR 00-010: Pre-order and Stock Notification — "Each
+  // defaults off (items purchasable): Site Config reads fail open to
+  // defaults". The per-Variant Stock Flags merge like the other toggle
+  // groups and fall back to off when absent or malformed.
+  it('defaults every per-Variant Stock Flag to off when absent or malformed', () => {
+    expect(normalizeSiteConfig({}).stock['nsr-female-m']).toBe(false);
+    expect(normalizeSiteConfig({}).stock['nsr-female-l']).toBe(false);
+    expect(
+      normalizeSiteConfig({ stock: { 'nsr-female-m': 'yes' } }).stock[
+        'nsr-female-m'
+      ]
+    ).toBe(false);
+    expect(normalizeSiteConfig({ stock: 'on' }).stock['nsr-female-m']).toBe(
+      false
+    );
+  });
+
+  it('merges a per-Variant Stock Flag and ignores unknown stock keys', () => {
+    const raw: unknown = {
+      stock: { 'nsr-female-m': true, unknownStock: true },
+    };
+    const config = normalizeSiteConfig(raw);
+    expect(config.stock['nsr-female-m']).toBe(true);
+    expect('unknownStock' in config.stock).toBe(false);
+  });
+
+  it('scopes stock flags per Variant — flagging one size leaves its sibling off', () => {
+    const config = normalizeSiteConfig({
+      stock: { 'nsr-female-l': true },
+    });
+    expect(config.stock['nsr-female-l']).toBe(true);
+    expect(config.stock['nsr-female-m']).toBe(false);
+  });
+
+  it('ignores the retired stock key shapes', () => {
+    // Shape changes: the global flag and the per-fit keys are replaced
+    // by per-Variant keys — a stored document carrying either old
+    // shape fails open to purchasable.
+    const config = normalizeSiteConfig({
+      stock: { outOfStock: true, female: true },
+    });
+    expect(config.stock['nsr-female-m']).toBe(false);
+    expect(config.stock['nsr-female-l']).toBe(false);
+    expect('outOfStock' in config.stock).toBe(false);
+    expect('female' in config.stock).toBe(false);
+  });
+
   it('passes through a string qrcoderedirect destination', () => {
     const target = 'https://example.com/campaign';
     const config = normalizeSiteConfig({
@@ -78,5 +133,134 @@ describe('normalizeSiteConfig', () => {
     const before: SiteConfig = structuredClone(DEFAULT_SITE_CONFIG);
     normalizeSiteConfig({ sections: { hero: false } });
     expect(DEFAULT_SITE_CONFIG).toEqual(before);
+  });
+});
+
+// Shared fixtures for the purchasability/representative describes:
+// the female fit's two Variants and a Stock-Flag record builder that
+// merges overrides onto the flag-off defaults.
+const [medium, large] = PRODUCT.variants.female;
+const stockFlags = (
+  flags: Record<VariantKey, boolean>
+): Record<VariantKey, boolean> => ({
+  ...DEFAULT_SITE_CONFIG.stock,
+  ...flags,
+});
+
+/**
+ * Implements ADR 00-010: Pre-order and Stock Notification — "a Variant
+ * is purchasable exactly when every Availability Flag applying to it in
+ * Product Data is on AND its own Stock Flag in Site Config is off".
+ * The conjunctive composition shared by every buy surface.
+ */
+describe('isVariantPurchasable', () => {
+  it('is purchasable when the Availability Flag is on and its Stock Flag is off', () => {
+    expect(isVariantPurchasable(medium, stockFlags({}))).toBe(true);
+  });
+
+  it('is not purchasable when it carries the Stock Flag', () => {
+    expect(
+      isVariantPurchasable(medium, stockFlags({ 'nsr-female-m': true }))
+    ).toBe(false);
+  });
+
+  it('stays purchasable when a sibling Variant carries the Stock Flag', () => {
+    // Per-Variant granularity: flagging L does not drag M into the
+    // Pre-order state with it.
+    expect(isVariantPurchasable(medium, stockFlags({ [large.id]: true }))).toBe(
+      true
+    );
+  });
+
+  it('is not purchasable when the Availability Flag is off even with its Stock Flag off', () => {
+    expect(
+      isVariantPurchasable({ ...medium, available: false }, stockFlags({}))
+    ).toBe(false);
+  });
+});
+
+/**
+ * Implements ADR 00-004: Commerce and Checkout - "sold-out state is
+ * expressed through Availability Flags in Product Data". The
+ * flag-agnostic representative — label text and defensive fallbacks —
+ * ignores Stock Flags entirely.
+ */
+describe('representativeVariant', () => {
+  const fitVariants = PRODUCT.variants.female;
+
+  it('returns the first available Variant', () => {
+    expect(representativeVariant(fitVariants)).toBe(medium);
+    expect(
+      representativeVariant([{ ...medium, available: false }, large])
+    ).toBe(large);
+  });
+
+  it('falls back to the first entry when every Variant of the fit is Availability-Flag-off', () => {
+    const soldOut: ProductVariant[] = fitVariants.map((variant) => ({
+      ...variant,
+      available: false,
+    }));
+    expect(representativeVariant(soldOut)).toEqual(soldOut[0]);
+  });
+});
+
+/**
+ * Implements ADR 00-010: Pre-order and Stock Notification — "Fit-level
+ * surfaces present the fit's first purchasable Variant". The
+ * shopper-facing representative rule: first `isVariantPurchasable`,
+ * then the flag-agnostic fallback so a sold-out fit still resolves.
+ */
+describe('purchasableRepresentative', () => {
+  const fitVariants = PRODUCT.variants.female;
+
+  it('returns the first Variant when every Stock Flag is off', () => {
+    expect(purchasableRepresentative(fitVariants, stockFlags({}))).toBe(medium);
+  });
+
+  it('skips a flagged Variant for its purchasable sibling', () => {
+    expect(
+      purchasableRepresentative(
+        fitVariants,
+        stockFlags({ 'nsr-female-m': true })
+      )
+    ).toBe(large);
+  });
+
+  it('keeps the first Variant when only its sibling is flagged', () => {
+    expect(
+      purchasableRepresentative(
+        fitVariants,
+        stockFlags({ 'nsr-female-l': true })
+      )
+    ).toBe(medium);
+  });
+
+  it('falls back to the first available Variant when every Variant is Stock-Flagged', () => {
+    expect(
+      purchasableRepresentative(
+        fitVariants,
+        stockFlags({ 'nsr-female-m': true, 'nsr-female-l': true })
+      )
+    ).toBe(medium);
+  });
+
+  it('falls back to the first available Variant — flagged or not — when nothing is purchasable', () => {
+    // Medium's Availability Flag is off and L carries the Stock Flag:
+    // nothing purchasable, so the flag-agnostic representative (first
+    // available) resolves — a sold-out fit still has a representative.
+    const variants: ProductVariant[] = [{ ...medium, available: false }, large];
+    expect(
+      purchasableRepresentative(variants, stockFlags({ 'nsr-female-l': true }))
+    ).toBe(large);
+  });
+
+  it('falls back to the first entry when every Variant is Availability-Flag-off', () => {
+    const soldOut: ProductVariant[] = fitVariants.map((variant) => ({
+      ...variant,
+      available: false,
+    }));
+    expect(purchasableRepresentative(soldOut, stockFlags({}))).toEqual(
+      soldOut[0]
+    );
   });
 });

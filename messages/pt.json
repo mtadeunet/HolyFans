@@ -95,7 +95,21 @@
     },
     "processing": "A redirecionar para o checkout seguro…",
     "buy_now": "Comprar Agora",
-    "price_label": "Preço"
+    "price_label": "Preço",
+    "pre_order": {
+      "sold_out_title": "Esgotado",
+      "sold_out_description": "Esta variante está esgotada de momento. Deixe o seu email e avisamos assim que estiver de volta.",
+      "email_label": "Endereço de email",
+      "email_placeholder": "O seu email",
+      "consent": "Ao submeter, concorda que guardemos o seu email apenas para o avisar quando esta variante estiver novamente em stock — nada mais.",
+      "notify_cta": "Avise-me quando estiver disponível",
+      "submitting": "A guardar…",
+      "confirmed_title": "Está na lista",
+      "confirmed_description": "Vamos enviar-lhe um email assim que esta variante estiver novamente em stock.",
+      "unavailable_title": "Não foi possível guardar o seu email",
+      "unavailable_description": "A lista de notificações está indisponível neste momento — tente novamente dentro de instantes.",
+      "badge": "Esgotado"
+    }
   },
   "not_found": {
     "title": "Página Não Encontrada",

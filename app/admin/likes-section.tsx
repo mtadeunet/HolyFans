@@ -1,6 +1,8 @@
 import Image from 'next/image';
 import { FEED_POSTS } from '@/lib/feed-posts';
 import type { PostLikesAggregate } from '@/lib/likes-server';
+import { formatStoreTimestamp } from './format-timestamp';
+import type { StoreStatus } from './types';
 
 /**
  * Implements ADR 00-002: Rendering and Hosting Model - the Admin
@@ -15,40 +17,14 @@ import type { PostLikesAggregate } from '@/lib/likes-server';
  * ever reaches this surface (ADR 00-008).
  */
 
-/** Health of the managed like store as surfaced to the operator. */
-export type LikesStoreStatus = 'connected' | 'unconfigured' | 'error';
-
 interface LikesSectionProps {
   /** Store health: connected, unconfigured, or a failed read. */
-  status: LikesStoreStatus;
+  status: StoreStatus;
   /** The store's error message when `status` is `'error'`. */
   statusDetail?: string;
   /** One aggregate per Post Card, in feed order; falls back to
    *  authored base counts with no timestamps when the store is down. */
   aggregates: PostLikesAggregate[];
-}
-
-/** Deterministic UTC rendering of a last-like ISO timestamp. */
-const lastLikeFormatter = new Intl.DateTimeFormat('en-GB', {
-  dateStyle: 'medium',
-  timeStyle: 'short',
-  timeZone: 'UTC',
-});
-
-/**
- * Format a last-like timestamp for the operator view.
- *
- * @param iso - The stored ISO timestamp (untrusted: the record could
- *   hold a corrupt value).
- * @returns A `dd Mon yyyy, HH:mm UTC` rendering, or the raw string when
- *   it does not parse.
- */
-function formatLastLike(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) {
-    return iso;
-  }
-  return `${lastLikeFormatter.format(date)} UTC`;
 }
 
 /**
@@ -130,7 +106,7 @@ export default function LikesSection({
                 <span className="block text-xs text-text-secondary">
                   Last like:{' '}
                   {aggregate?.lastLikeAt
-                    ? formatLastLike(aggregate.lastLikeAt)
+                    ? formatStoreTimestamp(aggregate.lastLikeAt)
                     : '—'}
                 </span>
               </div>

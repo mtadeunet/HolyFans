@@ -40,7 +40,16 @@ const ENABLED_PROJECT = 'purchase-enabled';
 
 /** First Media Slot purchase link on the Feed Surface (ADR 03-002). */
 const firstMediaSlotLink = (page: Page) =>
-  page.locator('article[id^="post-"] a[href$="/checkout"]').first();
+  // The Media Slot's own link — the one wrapping the aspect-square
+  // slot — not the Post Card's stretched-link overlay (the first
+  // `a[href$="/checkout"]` in DOM order), which sits under the
+  // raised Media Slot and never receives the click. Same selector
+  // convention as `feed.spec.ts`.
+  page
+    .locator(
+      'article[id^="post-"] a[href$="/checkout"]:has(div.aspect-square)'
+    )
+    .first();
 /** The Feed Shell's Nav Rail — the only `aside` holding a `#feed` brand anchor. */
 const navRail = (page: Page) =>
   page.locator('aside').filter({ has: page.locator('a[href="#feed"]') });

@@ -157,10 +157,12 @@ composition obeys.
   with a discovery call-to-action and the legal links (privacy, terms)
   at its foot. The rail renders on the Product Page routes as well,
   where
-  its suggestion cards stay Variant-relevant: an available Variant
-  suggestion selects that Variant on the surface, while a sold-out
-  Variant is shown but never offered as a purchasable path — its
-  surface presence is the Pre-order state.
+  its suggestion cards stay Variant-relevant: each card presents its
+  fit's first purchasable Variant — an available Variant suggestion
+  selects that Variant on the surface, while a fit with no
+  purchasable Variant is shown badged but never offered as a
+  purchasable path — its Variants' surface presence is the Pre-order
+  state (ADR 00-010).
 - **Simplified Purchase Surface.** The Product Page presents the single
   decision the shopper must make: Variant selection,
   quantity, the VAT-inclusive EUR price, and one purchase action that
@@ -174,9 +176,8 @@ composition obeys.
   Product Page route it renders inside the Feed Shell as the center
   column's single occupant — a single focused decision block, minimal
   by design, not a browsing surface. When the selected Variant is not
-  purchasable — an Availability Flag applying to it off, or the
-  operator Stock Flag in Site Config forcing the whole surface
-  (ADR 00-010) — the surface
+  purchasable — an Availability Flag applying to it off, or its
+  own Stock Flag in Site Config on (ADR 00-010) — the surface
   keeps rendering and presents the **Pre-order state** in place of the
   purchase action: a localized sold-out message and a notify-me
   control that captures the visitor's consented email into the Stock
