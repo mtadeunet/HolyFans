@@ -169,7 +169,8 @@
       "likes": "{count} gostos",
       "like_aria": "Gosto",
       "share_aria": "Partilhar esta publicação",
-      "share_copied": "Ligação copiada"
+      "share_copied": "Ligação copiada",
+      "product_aria": "Ver produto"
     },
     "posts": {
       "post-hero": {

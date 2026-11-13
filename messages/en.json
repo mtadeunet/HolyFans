@@ -169,7 +169,8 @@
       "likes": "{count} likes",
       "like_aria": "Like",
       "share_aria": "Share this post",
-      "share_copied": "Link copied"
+      "share_copied": "Link copied",
+      "product_aria": "View product"
     },
     "posts": {
       "post-hero": {

@@ -21,9 +21,10 @@ interface MediaSlotProps {
 
 /**
  * Implements ADR 03-002: Landing Page Composition — Three-Column Feed
- * Shell with Simplified Purchase Surface - "Every Media Slot is a link to
- * the Simplified Purchase Surface within the same Locale — seeing a
- * product image and tapping it is the primary path to purchase."
+ * Shell with Simplified Purchase Surface - "Every Media Slot is a link
+ * to the Product Page of the product it features within the same Locale
+ * (ADR 00-011) — seeing a product image and tapping it is the primary
+ * path to purchase."
  *
  * The Post Card's media region. Image media render through the
  * framework's image optimization (ADR 00-006) at the Feed Surface's
