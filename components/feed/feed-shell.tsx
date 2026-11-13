@@ -21,7 +21,7 @@ interface FeedShellProps {
    *
    * Server-evaluated fail-closed gate threaded to every purchase link
    * in the shell: while unset, media slots render unlinked and the cart
-   * entries/CTAs are absent, preserving the zero-`/checkout`-anchors
+   * entries are absent, preserving the zero-`/checkout`-anchors
    * contract.
    */
   purchaseSurfaceEnabled: boolean;

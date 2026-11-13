@@ -81,7 +81,7 @@ Product Data.
   unambiguous; it is retired when a second product ships.
 - **Link retargeting.** Every in-shell affordance that resolves
   purchase intent — Media Slot links, the Nav Rail purchase
-  call-to-action, Suggestions Rail Variant suggestions — resolves to
+  entry, Suggestions Rail Variant suggestions — resolves to
   the Product Page of the product it features. The Variant
   preselection query parameter that selects a Variant on the surface
   is preserved on the product route, so a suggestion landing on a

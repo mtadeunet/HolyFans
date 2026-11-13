@@ -1,6 +1,5 @@
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
-import { Link } from '@/lib/navigation';
 import LanguageToggle from '@/components/layout/language-toggle';
 import { buildFeedNavEntries, FeedNavLink } from './nav-entries';
 
@@ -11,8 +10,8 @@ interface NavRailProps {
    * M0)
    *
    * `true` only when the server evaluated the fail-closed
-   * `PURCHASE_SURFACE_ENABLED` flag: the cart entry and the rail's
-   * purchase call-to-action render only while it is `'true'`.
+   * `PURCHASE_SURFACE_ENABLED` flag: the cart entry renders only while
+   * it is `'true'`.
    */
   purchaseSurfaceEnabled: boolean;
   /**
@@ -28,8 +27,7 @@ interface NavRailProps {
  * Implements ADR 03-002: Landing Page Composition — Three-Column Feed
  * Shell with Simplified Purchase Surface - "A fixed column holding the
  * brand mark, a store-adapted list of icon-and-label navigation entries,
- * language switching, and a prominent purchase call-to-action at its
- * foot."
+ * and language switching."
  *
  * The Feed Shell's left column: a full icon-and-label rail at `lg`,
  * collapsing to an icon strip at `md` and dropping below `md` (the
@@ -96,36 +94,12 @@ export default function NavRail({
         ))}
       </nav>
 
-      <div className="mb-4 flex justify-center lg:justify-start">
+      {/* Language switching closes the rail — the purchase surface is
+          reached through the `cart` navigation entry above, shared with
+          the mobile bottom band. */}
+      <div className="flex justify-center lg:justify-start">
         <LanguageToggle />
       </div>
-
-      {/* Purchase CTA at the rail's foot — the shell's canonical path to
-          the Simplified Purchase Surface; suppressed entirely while the
-          purchase-surface gate is closed (ADR 00-004 / plan M0). */}
-      {purchaseSurfaceEnabled && (
-        <Link
-          href="/checkout"
-          aria-label={t('cta')}
-          className="btn-primary flex items-center justify-center gap-2 px-4 py-3 text-base"
-        >
-          <svg
-            className="h-5 w-5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
-            />
-          </svg>
-          <span className="hidden lg:inline">{t('cta')}</span>
-        </Link>
-      )}
     </aside>
   );
 }

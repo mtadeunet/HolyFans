@@ -68,7 +68,7 @@ export default function PostCard({
       {/* Implements ADR 00-011: Page Model and Product Routes — A
           Landing Page and One Product Page per Product - "Every
           in-shell affordance that resolves purchase intent — Media Slot
-          links, the Nav Rail purchase call-to-action, Suggestions Rail
+          links, the Nav Rail purchase entry, Suggestions Rail
           Variant suggestions — resolves to the Product Page of the
           product it features." The stretched link covers the whole
           Post Card so a tap anywhere resolves purchase intent — a

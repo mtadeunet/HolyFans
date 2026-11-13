@@ -10,7 +10,7 @@
  * Verifies the fail-closed posture while `PURCHASE_SURFACE_ENABLED` is
  * unset: both Locale checkout pages render the not-found response, no
  * purchase CTA links to the checkout page anywhere in the Locale trees
- * (media slots unlinked, `nav-cart` and rail CTA absent), and the Feed
+ * (media slots unlinked, `nav-cart` entries absent), and the Feed
  * Surface itself still renders its Post Cards. Runs in the `storefront`
  * project (flag forced unset).
  */

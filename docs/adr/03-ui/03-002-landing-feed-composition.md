@@ -91,8 +91,8 @@ composition obeys.
   flow: they present a terminal payment outcome and keep the focused
   classic chrome rather than feed affordances.
 - **Nav Rail.** A fixed column holding the brand mark, a store-adapted
-  list of icon-and-label navigation entries, language switching, and a
-  prominent purchase call-to-action at its foot. Entries are
+  list of icon-and-label navigation entries, and language switching.
+  Entries are
   store-purpose only — landing sections, the purchase surface, and the
   contact channel through the Inbound Contact Surface's deep-link
   mechanism (ADR 00-009). Social-platform concepts (profiles, messages,

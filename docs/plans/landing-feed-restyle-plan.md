@@ -136,8 +136,9 @@ Shell with Simplified Purchase Surface - "<quoted ADR 03-002 requirement>"
 - `e2e` contract today: `purchase-surface.spec.ts` asserts zero
   `a[href*="/checkout"]` elements on `/pt` and `/en` while the gate is
   closed — every checkout link in the Feed Shell (media slots, Nav Rail
-  CTA, cart entry, bottom nav entry, suggestion cards) MUST be
-  conditional on the gate.
+  CTA (superseded 2026-11-13 — removed; the `cart` entry carries the
+  rail's purchase path), cart entry, bottom nav entry, suggestion
+  cards) MUST be conditional on the gate.
 - `tailwind.config.js` already carries the canonical Brand Palette
   (`primary #0369a1`, `accent #075985`, `background #fafafa`,
   `surface #ffffff`, `text-primary #111827`, `text-secondary #6b7280`,
@@ -281,7 +282,9 @@ non-landing routes.
   `[ADR 03-002]` `[ADR 00-002]` `[ADR 00-004]`
 - **Nav Rail — `components/feed/nav-rail.tsx`:** brand mark
   (`/logo/logo-mark.png`), store-adapted icon+label entries, language
-  toggle, and a prominent bottom CTA. `[ADR 03-002]` `[ADR 00-006]`
+  toggle, and a prominent bottom CTA (superseded 2026-11-13 — the
+  rail-foot CTA was removed; the `cart` entry carries the rail's
+  purchase path). `[ADR 03-002]` `[ADR 00-006]`
   - Entries: Home (scroll to `#feed`), Shop (`#products` — kept on the
     first product post for continuity), FAQ (`#post-faq`), Contact
     (WhatsApp deep link via `whatsappChatUrl(NEXT_PUBLIC_WHATSAPP_NUMBER,
@@ -290,7 +293,9 @@ non-landing routes.
     `data-testid="nav-cart"`, rendered only when
     `purchaseSurfaceEnabled`). `[ADR 00-009]` `[ADR 00-004]`
   - Big CTA at the rail's foot → `/{locale}/checkout`, rendered only
-    when `purchaseSurfaceEnabled`; localized label.
+    when `purchaseSurfaceEnabled`; localized label (superseded
+    2026-11-13 — removed; the `cart` entry carries the rail's purchase
+    path).
   - `LanguageToggle` reused in the rail. `[ADR 00-005]`
 - **Post Card — `components/feed/post-card.tsx`:** card unit with:
   header (logo-mark avatar, `common.brand` name, decorative handle text
@@ -385,7 +390,8 @@ non-landing routes.
   `context/cart-context.tsx`. `[ADR 03-002]` `[ADR 00-007]`
 - **i18n — `messages/pt.json` + `messages/en.json`:** new `feed`
   namespace (key-for-key parity): `[ADR 00-005]` `[ADR 03-002]`
-  - `feed.nav.{home,shop,faq,contact,cart,cta,logo_aria}`
+  - `feed.nav.{home,shop,faq,contact,cart,cta,logo_aria}` (`cta`
+    superseded 2026-11-13 — key deleted with the rail-foot CTA)
   - `feed.post.{handle,likes,like_aria,comment_aria,bookmark_aria}`
     (`likes` carries a `{count}` placeholder; `handle` is own-brand
     decorative text — see Open Questions)
@@ -407,8 +413,9 @@ non-landing routes.
 - **e2e updates:** `[ADR 00-007]` `[ADR 03-002]` `[ADR 00-004]`
   - `purchase-surface.spec.ts` (gated project): unchanged assertions
     still hold — `/pt`,`/en` expose zero `a[href*="/checkout"]` (media
-    slots unlinked, `nav-cart` and rail CTA absent); extend to assert
-    the feed renders ≥3 Post Cards while gated.
+    slots unlinked, `nav-cart` and rail CTA absent — rail CTA
+    superseded 2026-11-13, removed); extend to assert the feed renders
+    ≥3 Post Cards while gated.
   - `purchase-surface-enabled.spec.ts` (enabled project): `nav-cart`
     visible in the Nav Rail; ≥3 Media Slot links to `/checkout` present.
   - New `feed.spec.ts`: both Locales render ≥3 Post Cards with header
@@ -442,9 +449,11 @@ non-landing routes.
   3. Mobile viewport: icon-less bottom nav band + slim top band render;
      Suggestions Rail hidden; WhatsApp bubble sits above the bottom nav.
   4. With `PURCHASE_SURFACE_ENABLED` unset: no `/checkout` links anywhere
-     on the landing (media slots, rail CTA, cart entries all absent).
-  5. With the flag set in a non-production env: Media Slots, rail CTA,
-     cart entries, suggestion cards all link to `/{locale}/checkout`.
+     on the landing (media slots, rail CTA (superseded 2026-11-13 —
+     removed), cart entries all absent).
+  5. With the flag set in a non-production env: Media Slots, rail CTA
+     (superseded 2026-11-13 — removed), cart entries, suggestion cards
+     all link to `/{locale}/checkout`.
   6. Admin Console: section toggles show feed-vocabulary labels; toggling
      `faq` hides the FAQ Post Card; toggling `products` hides the
      product posts; a pre-existing stored config applies unchanged.
@@ -465,7 +474,8 @@ non-landing routes.
 - Media Slot click-through: links to `/{locale}/checkout` only when the
   purchase surface is enabled; locale prefix preserved.
 - Nav Rail: entries navigate/scroll correctly; Contact opens a WhatsApp
-  deep link (when configured); big CTA → checkout (gated).
+  deep link (when configured); big CTA → checkout (gated — superseded
+  2026-11-13, removed).
 - Suggestions Rail: variant cards, availability badge, discover CTA,
   legal links.
 - Site Config: each section toggle hides its feed unit(s); chrome labels
@@ -503,7 +513,8 @@ non-landing routes.
 
 - `PURCHASE_SURFACE_ENABLED` — pre-existing plan-M0 control; media-slot
   links and purchase CTAs are exercised with it set in non-production
-  envs. Removed at master-plan M4 launch (unchanged by this plan).
+  envs (the rail-foot CTA formerly among them superseded 2026-11-13 —
+  removed). Removed at master-plan M4 launch (unchanged by this plan).
 - Synthetic digits-only `NEXT_PUBLIC_WHATSAPP_NUMBER` in non-production
   envs to exercise the Contact nav entry (same convention as the
   WhatsApp plan). Never committed.

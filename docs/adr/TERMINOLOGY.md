@@ -102,9 +102,8 @@ user-facing documentation.
   chrome on the Locale landing roots and the Product Page routes (ADR
   03-002, ADR 00-011).
 - **Nav Rail** — the Feed Shell's left column: the brand mark, a
-  store-adapted list of icon-and-label navigation entries, language
-  switching, and a prominent purchase call-to-action at its foot
-  resolving to a Product Page (ADR 03-002, ADR 00-011).
+  store-adapted list of icon-and-label navigation entries, and language
+  switching (ADR 03-002, ADR 00-011).
 - **Feed Surface** — the Feed Shell's center column and primary content
   region: on the Locale landing roots a vertical scroll of Post Cards;
   on each Product Page route the single centered panel carrying the
