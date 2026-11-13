@@ -29,6 +29,14 @@ Governing documents:
 - `docs/plans/holyfans-store-implementation-plan.md` — master plan this
   restyle lands on top of
 
+**Scope note (route vocabulary):** "the purchase route", "the checkout
+page", and `/{locale}/checkout` references throughout this plan
+describe the surface's path as-built for the milestones documented
+here. The canonical product route is now `/<Locale>/product/<slug>`
+(ADR 00-011); when the route rename lands, these references map onto
+the Product Page route. The post-checkout `/{locale}/checkout/success`
+and `cancel` pages keep their paths.
+
 ## Architecture Summary (per ADRs)
 
 `[ADR 03-002]`
@@ -416,7 +424,7 @@ non-landing routes.
 - Previous milestones: none (lands on the current codebase). Master-plan
   infrastructure assumed: Site Config/Edge Config read path, Cart
   context, message catalogs, vitest + Playwright scaffolds,
-  `lib/whatsapp.ts`, purchase-surface gate.
+  `lib/whatsapp.ts`, Purchase-Surface Gate.
 - External: none. (Owner copy review of captions — see Open Questions.)
 
 ### Build and Launch Verification
@@ -832,7 +840,7 @@ Surface moves here from the retired product gallery.
   events; no beacons, pixels, or tracking parameters are added.
   `[ADR 00-008]`
 - **Checkout contract preserved:** `/api/checkout`, `validateCart`, and
-  the fail-closed purchase-surface gate are untouched; the request body
+  the fail-closed Purchase-Surface Gate are untouched; the request body
   stays `{items, locale, attemptId}`. The shell wrap is presentation
   only — and it stops at the purchase route: the success/cancel
   PSP-return pages keep classic chrome. `[ADR 00-004]` `[ADR 00-002]`

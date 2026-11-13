@@ -9,6 +9,7 @@ Proposed
 ADR 00-001 (Application Framework — Next.js)
 ADR 00-003 (Permanent QR Redirect Route)
 ADR 00-004 (Commerce and Checkout)
+ADR 00-010 (Pre-order and Stock Notification)
 ADR 03-002 (Landing Page Composition)
 
 ## Context
@@ -22,9 +23,10 @@ request-time capabilities: the permanent QR Redirect Route with a destination
 that can be retargeted without redeploys (ADR 00-003), operator-controlled
 Site Config toggles, an Admin Console write path, the creation of Checkout
 Sessions with the PSP, a request-time read of the created Session's
-payment status on the post-checkout success page (ADR 00-004), and shared
-like counters for the feed's Interaction Row (ADR 03-002). Hosting must
-be inexpensive, low-
+payment status on the post-checkout success page (ADR 00-004), shared
+like counters for the feed's Interaction Row (ADR 03-002), and consented
+email capture for the purchase surface's Pre-order state (ADR 00-010).
+Hosting must be inexpensive, low-
 operations, able to serve the QR Redirect Route indefinitely, and present in
 Europe for the primary market.
 
@@ -39,8 +41,9 @@ The Storefront runs a **hybrid model on the Vercel Hosting Platform**:
   enumerated exception is the post-checkout success page, which renders
   per request to perform the session-status read below.
 - **Site Config is read from Edge Config at request time** — the Hosting
-  Platform's edge-replicated key-value store holds section/chrome visibility
-  and the QR Redirect Route destination, so operator changes apply within
+  Platform's edge-replicated key-value store holds section/chrome
+  visibility, the Stock Flag (ADR 00-010), and the QR Redirect Route
+  destination, so operator changes apply within
   seconds without a rebuild. Reads degrade to safe defaults when the store
   is unavailable; this read is the only request-time data dependency in
   storefront page composition other than the post-checkout session-status
@@ -72,14 +75,29 @@ The Storefront runs a **hybrid model on the Vercel Hosting Platform**:
     Post Cards (ADR 03-002) — reads and writes against the managed
     store below, deduplicating each toggle per Post Card by the
     visitor's anonymous client-held Like Token, hardened like the
-    checkout endpoint (input caps, IP rate limiting, fail-closed).
-- **Shared like counts persist in a managed Redis store provisioned
-  through the Hosting Platform's marketplace** — the platform-native
-  choice for small shared request-time state beyond Edge Config's
-  operator-configuration scope. It holds per-post dedup records that
-  feed aggregate counters only (ADR 03-002, ADR 00-008); when the
-  store is unconfigured or unreachable, the Interaction Row degrades
-  to authored base counts with toggling disabled rather than failing.
+    checkout endpoint (input caps, IP rate limiting, fail-closed);
+  - the **stock-notification Route Handler** on the Node runtime,
+    which records a visitor's consented email into the Stock
+    Notification List when the Simplified Purchase Surface's
+    Pre-order state is submitted (ADR 00-010) — writes against the
+    managed store below in a dedicated per-Variant keyspace, hardened
+    like the checkout and like counter endpoints (input caps, IP rate
+    limiting, fail-closed) and sharing the Purchase-Surface Gate
+    posture of ADR 00-004: it answers unavailable while the gate is
+    closed.
+- **Small shared request-time state persists in a managed Redis store
+  provisioned through the Hosting Platform's marketplace** — the
+  platform-native choice for small shared request-time state beyond
+  Edge Config's operator-configuration scope. It holds per-post like
+  dedup records that feed aggregate counters only (ADR 03-002, ADR
+  00-008) and, in a dedicated per-Variant keyspace never joined to
+  them, the Stock Notification List of consented visitor emails
+  (ADR 00-010) —
+  the Storefront's first persisted personal data, held under the
+  per-feature consent posture of ADR 00-008. When the store is
+  unconfigured or unreachable, the Interaction Row degrades to
+  authored base counts with toggling disabled and the Pre-order
+  capture answers a graceful unavailable state rather than failing.
 - No other inbound request-time capability exists or may be added without a
   new ADR — this boundary forecloses webhook receivers, additional
   middleware duties beyond the three enumerated, any additional dynamic
@@ -101,14 +119,18 @@ The Storefront runs a **hybrid model on the Vercel Hosting Platform**:
 - One platform serves everything — static pages, the QR Redirect Route,
   operator toggles, the Admin Console, and checkout — with no second hosting
   provider or deploy pipeline.
-- Edge Config gives the operator redeploy-free control (sections, chrome, QR
-  destination) with an always-safe fallback to defaults.
+- Edge Config gives the operator redeploy-free control (sections, chrome,
+  the Stock Flag, QR destination) with an always-safe fallback to
+  defaults.
 - Static generation plus edge delivery gives best-possible latency and Core
   Web Vitals for the primary market.
 - Git-integrated preview deployments make every change reviewable in
   production-identical conditions.
 - The dynamic surface is small and enumerated — minimal attack area,
   minimal operational surface.
+- One marketplace-provisioned store serves every small shared-state
+  need — like dedup records and the Stock Notification List — under a
+  single lazy, fail-closed posture.
 
 **Negative / trade-offs:**
 - Vendor coupling: Edge Config, the marketplace Redis store, Route Handler
@@ -120,6 +142,10 @@ The Storefront runs a **hybrid model on the Vercel Hosting Platform**:
 - The like counter store is a second live request-time data dependency;
   the degrade-to-base fallback of ADR 03-002 bounds its blast radius, but
   shared counts silently revert to authored values while it is down.
+- The managed store now holds personal data — the Stock Notification
+  List's consented emails — so its compromise or misconfiguration
+  touches real data, and the purpose-limitation, retention, and
+  deletion obligations of ADR 00-008 and ADR 00-010 apply to it.
 - The post-checkout session-status read is a live PSP dependency at page
   render time; mitigated by a degrade-to-generic fallback, it extends the
   dynamic surface beyond the Request-Time Middleware and Route Handlers

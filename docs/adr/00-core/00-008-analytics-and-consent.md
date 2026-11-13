@@ -9,6 +9,7 @@ Proposed
 ADR 00-002 (Rendering and Hosting Model)
 ADR 00-003 (Permanent QR Redirect Route)
 ADR 00-004 (Commerce and Checkout)
+ADR 00-010 (Pre-order and Stock Notification)
 ADR 03-002 (Landing Page Composition)
 
 ## Context
@@ -23,13 +24,18 @@ require no consent flow at all. The chosen approach must be cheap, low-
 maintenance, and honest about what it does not collect. Because the QR
 Redirect Route resolves server-side (an HTTP redirect from a Route Handler),
 client-side beacons alone cannot observe it — its measurement needs a
-request-level signal.
+request-level signal. Beyond measurement, the purchase surface's
+Pre-order state (ADR 00-010) introduces the first feature that persists
+visitor-supplied personal data — a consented email — so the posture must
+state precisely where personal data is permitted at all.
 
 ## Decision
 
 Measurement uses **Cookieless Analytics only** — privacy-first mechanisms
 that set no cookies and collect no personal data, so no consent banner is
-required.
+required. Beyond measurement, the Storefront persists **no personal data
+without explicit per-feature consent** — the only sanctioned collection
+is the purpose-bound capture below.
 
 - The mechanism: **the Hosting Platform's native privacy-first analytics**
   (the platform's web-analytics integration already wired into the
@@ -51,6 +57,16 @@ required.
   no person, joins to no identity or analytics surface, and requires no
   consent flow; the Interaction Row's Like Token (ADR 03-002) is the
   sanctioned instance.
+- Consented, purpose-bound personal data is within the expanded posture:
+  a feature may persist a visitor-supplied datum only when consent
+  language stating the single purpose is rendered at the capture point
+  in the visitor's Locale, the datum serves that purpose alone (no
+  marketing reuse without separate consent), retention ends when the
+  purpose completes or the operator purges the record, an operator
+  export-and-clear path exists as the deletion mechanism, and it joins
+  to no feature token, identity, or analytics surface. The Stock
+  Notification List's visitor emails (ADR 00-010) are the sanctioned
+  instance — the first personal data the Storefront persists.
 - No consent-management platform, cookie banner, or tag manager is part of
   the architecture. If a future requirement ever demands identified or
   cross-session tracking, it requires a new ADR and a consent mechanism.
@@ -83,6 +99,11 @@ required.
 - Feature tokens persist a pseudonymous per-browser value in client
   storage; bounded by the aggregate-only, no-identity, no-analytics rules
   above, the posture now depends on every feature honoring them.
+- The Storefront now persists personal data: the guarantees of the
+  consented-capture rule — consent copy at the capture point, single
+  stated purpose, bounded retention, an operator deletion path — depend
+  on every collecting feature honoring them; the no-personal-data
+  simplicity is traded for a bounded per-feature consent model.
 
 ## Alternatives Considered
 
@@ -106,3 +127,8 @@ required.
   disproportionate complexity for aggregate traffic stats; platform request
   observability already covers the QR signal, and no business requirement
   justifies more.
+- **A consent-management platform or banner for consented captures** —
+  Rejected: per-purpose consent rendered at the collection point
+  satisfies the requirement without degrading the premium first
+  impression; a CMP stays unwarranted while capture remains
+  single-purpose.

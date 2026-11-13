@@ -9,6 +9,8 @@ Proposed
 ADR 00-001 (Application Framework — Next.js)
 ADR 00-002 (Rendering and Hosting Model)
 ADR 00-006 (Media and Asset Pipeline)
+ADR 00-010 (Pre-order and Stock Notification)
+ADR 00-011 (Page Model and Product Routes)
 
 ## Context
 
@@ -34,8 +36,10 @@ PSP Hosted Checkout**:
 
 - **Product Data** lives in the repository as structured, versioned content
   (names, descriptions, EUR prices, Variants — including optional per-Variant
-  Purchase Caps for small handmade runs — imagery references, and
-  Availability Flags). An item may carry an optional **Compare-At Price**: a
+  Purchase Caps for small handmade runs — imagery references,
+  Availability Flags, and the item's canonical slug — the brand-owned,
+  locale-neutral identifier segmenting its Product Page route,
+  ADR 00-011). An item may carry an optional **Compare-At Price**: a
   display-only regular price shown struck-through next to the effective
   price — the charged amount remains the listed price, and the compare-at
   value is never submitted to the checkout path or the PSP. There is no CMS
@@ -77,6 +81,11 @@ PSP Hosted Checkout**:
   and reporting surfaces.
 - **Availability:** sold-out state is expressed through Availability Flags in
   Product Data (small handmade runs); no automated stock counters at launch.
+  A non-purchasable item is never hidden from the purchase surface: it
+  presents the Pre-order state of ADR 00-010 — purchasability composes
+  every Availability Flag applying to the item with the operator Stock
+  Flag in Site Config — while server-side re-validation keeps Product
+  Data the hard purchase backstop.
 - **Pricing and tax:** all prices are presented and charged in EUR, and the
   displayed price remains VAT-inclusive — the shopper always sees the
   final total before payment, as required for EU consumer sales. The
@@ -91,6 +100,15 @@ PSP Hosted Checkout**:
   the applicable jurisdiction(s) MUST exist in the PSP Dashboard — without
   it, no tax is computed or recorded. That registration is an owner
   prerequisite, configured and maintained outside the codebase.
+- **Purchase-Surface Gate (interim).** Until launch, the purchase
+  surface — the Product Page routes (ADR 00-011) — and its endpoints
+  stay hidden behind a code-level **Purchase-Surface Gate** — a
+  fail-closed environment switch,
+  deliberately not a Site Config toggle: Site Config reads fail open
+  to defaults, which would silently re-expose the surface on an Edge
+  Config outage. The gate is transitional — it exists to keep the
+  unlaunched purchase flow invisible and is removed at launch, after
+  which the surface is permanently open.
 
 ## Consequences
 
@@ -119,7 +137,15 @@ PSP Hosted Checkout**:
 **Negative / trade-offs:**
 - No automated inventory enforcement: a Variant can be oversold between
   Availability Flag updates. Accepted at launch volumes; must be revisited
-  if volume or sell-through speed grows.
+  if volume or sell-through speed grows. The Stock Flag (ADR 00-010) is a
+  presentation-level override — while it is on, a stale page or direct
+  POST can still reach the checkout Route Handler, so a hard stop
+  requires the Product Data Availability Flags that re-validation
+  enforces.
+- The Purchase-Surface Gate is a transitional code-level switch:
+  unlike Site Config toggles it needs a redeploy to flip — deliberate,
+  because a fail-open toggle could silently re-expose the unlaunched
+  surface.
 - The checkout Route Handler is custom server-side code holding a PSP
   secret — the one place the Storefront keeps a credential and performs
   outbound payment work; it must be hardened (input caps, rate limiting,

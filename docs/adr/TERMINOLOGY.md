@@ -12,7 +12,9 @@ user-facing documentation.
   Storefront.
 - **Product Data** — the structured, versioned description of each catalog item:
   name, description, price in EUR, an optional Compare-At Price, imagery,
-  Variants, and its Availability Flag.
+  Variants, its Availability Flag, and its canonical slug — the
+  brand-owned, locale-neutral route segment of the item's Product Page
+  (ADR 00-011).
 - **Compare-At Price** — an optional, display-only regular price carried in
   Product Data and shown struck-through next to the effective price; it is
   never charged and never enters the checkout path (ADR 00-004).
@@ -21,7 +23,10 @@ user-facing documentation.
 - **Purchase Cap** — an optional per-Variant limit on the quantity orderable in
   a single Checkout Session, used for small handmade runs.
 - **Availability Flag** — a per-product or per-Variant indicator in Product Data
-  marking an item as purchasable or sold out. Managed manually.
+  marking an item as purchasable or sold out. Managed manually. Composes
+  with the operator Stock Flag to decide the Simplified Purchase
+  Surface's state (ADR 00-010); the catalog currently carries
+  per-Variant flags only.
 - **Cart** — the shopper-held collection of selected Variants and quantities,
   maintained entirely on the shopper's device.
 - **Checkout Session** — a single payment transaction created with the PSP,
@@ -33,8 +38,9 @@ user-facing documentation.
 - **Fulfillment** — the manual process of receiving order notifications,
   producing/sourcing the item, and shipping it to the customer.
 - **Site Config** — the operator-controlled configuration record holding
-  Storefront section visibility, chrome visibility, and the QR Redirect Route
-  destination. Stored in Edge Config and editable via the Admin Console.
+  Storefront section visibility, chrome visibility, the Stock Flag, and
+  the QR Redirect Route destination. Stored in Edge Config and editable
+  via the Admin Console.
 - **Admin Console** — the password-gated `/admin` surface used by the operator
   to read and write Site Config.
 - **Store Messaging Number** — the operator-supplied WhatsApp contact number
@@ -50,27 +56,59 @@ user-facing documentation.
   that lets a visitor compose a WhatsApp message containing the Storefront's
   canonical URL on the Store Domain for their own contacts; ungated and
   configuration-free (ADR 00-009).
+- **Stock Flag** — the operator-controlled Site Config toggle that forces
+  the entire Simplified Purchase Surface into the Pre-order state,
+  independent of the per-Variant Availability Flags; flips without a
+  rebuild through the Admin Console / Edge Config (ADR 00-010).
+- **Pre-order** — the Simplified Purchase Surface's non-purchasable
+  presentation: a sold-out message plus a notify-me control that captures
+  a consented visitor email into the Stock Notification List. An
+  expression of interest — no payment, no Checkout Session, no
+  reservation (ADR 00-010).
+- **Stock Notification List** — the operator-held list of consented
+  visitor emails captured by the Pre-order state, scoped to the
+  Variant the visitor asked about; stored in a dedicated per-Variant
+  keyspace of the managed Redis store, purpose-limited to stock
+  notification, retained until the notification sends or the operator
+  purges it, and never joined to Like Tokens or analytics (ADR 00-010,
+  ADR 00-008).
+- **Purchase-Surface Gate** — the interim, code-level environment
+  switch that keeps the unlaunched purchase surface and its endpoints
+  hidden until launch; fail-closed and deliberately not a Site Config
+  toggle (Site Config reads fail open). Transitional — removed at
+  launch (ADR 00-004).
 
 ## UI Composition Terms
 
+- **Landing Page** — the Locale landing root: the Feed Shell route
+  carrying the Post Card feed, the Storefront's front door and the
+  origin of Media Slot links (ADR 03-002, ADR 00-011).
+- **Product Page** — the per-product conversion route carrying the
+  Simplified Purchase Surface inside the Feed Shell — Variant
+  selection, quantity, the VAT-inclusive EUR price, the purchase
+  action or the Pre-order state, and the Outbound Share Surface;
+  served at a Locale-prefixed, product-namespaced path whose final
+  segment is the product's canonical slug from Product Data (ADR
+  00-011, ADR 03-002).
 - **Feed Shell** — the three-column composition of the browse-and-
   purchase flow: Nav Rail, Feed Surface, and Suggestions Rail; it
   replaces the stacked marketing sections and the classic header/footer
-  chrome on the Locale landing roots and the purchase route (ADR
-  03-002).
+  chrome on the Locale landing roots and the Product Page routes (ADR
+  03-002, ADR 00-011).
 - **Nav Rail** — the Feed Shell's left column: the brand mark, a
   store-adapted list of icon-and-label navigation entries, language
   switching, and a prominent purchase call-to-action at its foot
-  (ADR 03-002).
+  resolving to a Product Page (ADR 03-002, ADR 00-011).
 - **Feed Surface** — the Feed Shell's center column and primary content
   region: on the Locale landing roots a vertical scroll of Post Cards;
-  on the purchase route the single centered panel carrying the
-  Simplified Purchase Surface (ADR 03-002).
+  on each Product Page route the single centered panel carrying the
+  Simplified Purchase Surface (ADR 03-002, ADR 00-011).
 - **Post Card** — the repeating content unit of the landing's feed: a
   brand header (avatar, name, decorative handle), localized caption
   copy, a Media Slot, and an Interaction Row (ADR 03-002).
 - **Media Slot** — the Post Card's media region; every Media Slot links
-  to the Simplified Purchase Surface within the same Locale (ADR 03-002).
+  to the Product Page of the product it features within the same Locale
+  (ADR 00-011).
 - **Interaction Row** — the social affordance row on a Post Card: a
   like control showing the shared count (the authored base plus the
   server-persisted delta, deduplicated per visitor by a Like Token)
@@ -87,9 +125,11 @@ user-facing documentation.
   links at its foot; present only on wider viewports (ADR 03-002).
 - **Simplified Purchase Surface** — the reduced checkout surface:
   Variant selection, quantity, the VAT-inclusive EUR price, and a single
-  purchase action into the existing checkout path; no cart-review
-  presentation; rendered inside the Feed Surface on the purchase route
-  (ADR 03-002; commerce contract per ADR 00-004).
+  purchase action into the existing checkout path — replaced by the
+  Pre-order state when the selected Variant is not purchasable (ADR
+  00-010); no cart-review presentation; rendered inside the Feed
+  Surface on the product's Product Page (ADR 03-002, ADR 00-011;
+  commerce contract per ADR 00-004).
 
 ## Technical Terms
 
@@ -100,15 +140,16 @@ user-facing documentation.
   and provides preview deployments driven by the repository's Git integration.
 - **Route Handler** — a request-time HTTP endpoint provided by the application
   framework on the Hosting Platform. The Storefront's enumerated dynamic
-  compute surface consists of the Request-Time Middleware, four Route
+  compute surface consists of the Request-Time Middleware, five Route
   Handlers — the QR Redirect Route read, the Admin Console write path,
-  the single checkout endpoint, and the like counter endpoint serving
-  the Interaction Row (backed by the Hosting Platform's
+  the single checkout endpoint, the like counter endpoint serving the
+  Interaction Row, and the stock-notification endpoint serving the
+  Pre-order state (the last two backed by the Hosting Platform's
   marketplace-provisioned Redis store) — and the dynamic post-checkout
   success page, which performs a read-only retrieval of the Checkout
   Session's payment status at render time (ADR 00-002). The checkout,
-  Admin Console write, and like counter paths run on the Node runtime;
-  the QR Redirect Route is Edge-capable.
+  Admin Console write, like counter, and stock-notification paths run
+  on the Node runtime; the QR Redirect Route is Edge-capable.
 - **Request-Time Middleware** — the single middleware layer that runs on every
   inbound request to a non-static path and performs exactly three duties:
   Locale routing and browser-language detection, the fail-closed password gate

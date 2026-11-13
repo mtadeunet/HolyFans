@@ -22,7 +22,11 @@ Governing documents:
   enumerated dynamic surface: the Request-Time Middleware (Locale
   routing/detection, Admin Console gating, QR-path canonicalization) plus
   the Route Handler set (QR redirect read, Admin Console write path, single
-  checkout handler on the Node runtime). `[ADR 00-002]`
+  checkout handler, like counter, and stock-notification handler on the
+  Node runtime). `[ADR 00-002]` (Enumeration updated to the current five:
+  this plan's M0–M4 scope predates the like counter and
+  stock-notification additions — amendments recorded in ADR 00-002,
+  ADR 03-002, and ADR 00-010.)
 - **QR Redirect Route:** permanent Route Handler at `/qrcoderedirect` reading
   its destination from Site Config, `/` fallback, locale-neutral, `noindex`,
   e2e-tested invariant. `[ADR 00-003]`
@@ -64,6 +68,14 @@ Implements ADR <number>: <ADR title> - "<quoted ADR section/requirement>"
 
 ## Repo State Note (implementation context, not architecture)
 
+**Route-vocabulary scope note:** references to "the checkout page", "the
+purchase route", and `/{locale}/checkout` throughout this plan describe
+the purchase surface's path as-built for the M0–M4 milestones. The
+canonical product route is now `/<Locale>/product/<slug>` (ADR 00-011);
+a route-rename plan retargets these references when it lands. The
+post-checkout `/{locale}/checkout/success` and `cancel` pages keep
+their paths.
+
 **The codebase is recovered, not lost.** The full Next.js application source
 was restored from the project's GitHub remote with history intact; branches
 `master`, `develop`, `staging` exist on the remote. The earlier spec's
@@ -102,7 +114,7 @@ defaulting `pt`), `@vercel/edge-config` (Site Config + QR target),
 
 | # | Milestone | ADRs | Delivers |
 |---|-----------|------|----------|
-| 0 | Repository Hygiene & Tooling Baseline | 00-002, 00-004, 00-006, 00-007 | Untracked env files, interim purchase-surface gate, ESLint+Prettier, test scaffold, CI quality gate, dead-artifact cleanup |
+| 0 | Repository Hygiene & Tooling Baseline | 00-002, 00-004, 00-006, 00-007 | Untracked env files, interim Purchase-Surface Gate, ESLint+Prettier, test scaffold, CI quality gate, dead-artifact cleanup |
 | 1 | Verification & Hardening on the Existing App | 00-002, 00-003, 00-005, 00-007 | QR invariant e2e, i18n audit, token audit, branded 404, noindex coverage |
 | 2 | Product Data & Media Pipeline | 00-001, 00-004, 00-006, 03-001 | Formalized Product Data model, real imagery via image optimization, brand masters wired |
 | 3 | Real Stripe Checkout | 00-002, 00-004, 00-007 | `POST /api/checkout` Route Handler, Hosted Checkout handoff, async/degradation/drift states, cart persistence |
@@ -147,7 +159,7 @@ below).
   in shared constants move to environment-driven or placeholder-neutral
   values; the admin form's real social placeholder becomes a generic
   placeholder. `[ADR 00-007]`
-- Interim purchase-surface gate (URGENT — lands first within M0): the
+- Interim Purchase-Surface Gate (URGENT — lands first within M0): the
   simulated checkout is reachable in production today — the Locale-prefixed
   checkout page returns 200 publicly and its submit flow fabricates
   `HF######` order confirmations for real customers. A code-level gate
@@ -214,7 +226,7 @@ below).
 - Hygiene: no tracked env files with real values; no real-world identifiers
   in tracked code (search for the domain and known social handles); the
   secret/identifier scan runs and blocks on a planted test secret.
-- Purchase-surface gate: both Locale checkout pages render the not-found
+- Purchase-Surface Gate: both Locale checkout pages render the not-found
   response while the gate flag is unset; no purchase CTA links to the
   checkout page; flipping the flag in a non-production environment
   restores the surface for verification.
@@ -263,7 +275,7 @@ below).
 - [ ] User testing completed successfully
 - [ ] Temporary test controls documented
 - [ ] No tracked env file or code file contains real identifiers/secrets
-- [ ] Purchase surface gated off in both Locales (not-found response; no
+- [ ] Purchase-Surface Gate off in both Locales (not-found response; no
   purchase CTA links); `PURCHASE_SURFACE_ENABLED` control documented
 
 ---
@@ -810,7 +822,7 @@ full verification sweep.
 - None new — all temporary controls from earlier milestones are removed at
   this milestone (test keys replaced by live keys in platform env;
   placeholder products replaced by real catalog; preview QR test
-  destination reverted; the M0 purchase-surface gate flag removed once the
+  destination reverted; the M0 Purchase-Surface Gate flag removed once the
   real checkout is verified live).
 
 ### Completion Criteria
@@ -848,8 +860,8 @@ full verification sweep.
   request-time compute is the enumerated dynamic surface of ADR 00-002 —
   the Request-Time Middleware (Locale routing/detection, Admin Console
   gating, QR-path canonicalization) plus the Route Handler set (QR read,
-  Admin Console write path, checkout) — plus Edge Config reads.
-  `[ADR 00-002]`
+  Admin Console write path, checkout, like counter, stock notification) —
+  plus Edge Config reads. `[ADR 00-002]`
 - **Modernize, don't rewrite:** existing working components are hardened
   and extended; no gratuitous refactors outside milestone scope.
   `[ADR 00-001]`

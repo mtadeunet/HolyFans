@@ -14,6 +14,8 @@ ADR 00-006 (Media and Asset Pipeline)
 ADR 00-007 (Quality Tooling and CI)
 ADR 00-008 (Analytics and Consent)
 ADR 00-009 (WhatsApp Deep-Link Channels)
+ADR 00-010 (Pre-order and Stock Notification)
+ADR 00-011 (Page Model and Product Routes)
 ADR 03-001 (Design System and Visual Identity)
 
 ## Context
@@ -29,7 +31,7 @@ cart-review step.
 The owner has approved a restyle that mirrors the three-column
 social-feed composition used by a creator-subscription platform reference:
 a left navigation rail, a center feed of post-style cards, and a right
-suggestions rail. The owner has also decided that the purchase route
+suggestions rail. The owner has also decided that the Product Page
 joins the composition, so discovery and conversion present inside one
 chrome system rather than switching to a different page frame at the
 decisive step. The Storefront takes the *pattern* only — HolyFans
@@ -40,12 +42,15 @@ pattern, not a source of content.
 
 The architecture constrains the shape the restyle can take. ADR 00-002
 confines request-time compute to an enumerated dynamic surface; within
-it, a dedicated counter endpoint backed by a managed store gives the
-feed's like affordance a real, shared count, while comments and other
+it, dedicated endpoints backed by a managed store give the feed's like
+affordance a real, shared count and the purchase surface's Pre-order
+state a consented email capture (ADR 00-010), while comments and other
 attributed social mechanics remain outside the boundary. ADR 00-008
-permits only Cookieless Analytics, so the row emits no tracking signal
-and its per-visitor dedup rests on an anonymous, self-generated
-client-held token feeding aggregate counts only. ADR 00-004 fixes the
+permits only Cookieless Analytics plus purpose-bound consented
+collection, so the row emits no tracking signal, its per-visitor dedup
+rests on an anonymous, self-generated client-held token feeding
+aggregate counts only, and the capture stores nothing beyond the
+consented email. ADR 00-004 fixes the
 commerce contract (client-side
 Cart, server-side re-validation, PSP Hosted Checkout), which any new
 purchase presentation must preserve. ADR 00-005 requires every
@@ -56,21 +61,25 @@ Surface must keep working inside whatever composition replaces the
 current chrome. Site Config's section and chrome toggles — stored in
 Edge Config and operated through the Admin Console — must keep working
 for already-saved configurations; the mapping from toggles to visible
-units needs a defined meaning under the new composition.
+units needs a defined meaning under the new composition. ADR 00-011
+fixes the page model: the conversion surface's canonical host is a
+per-product Product Page route, so feed media and suggestions resolve
+to the product they feature.
 
 ## Decision
 
-The Locale landing roots and the purchase route are composed as a
+The Locale landing roots and the Product Page routes are composed as a
 **Feed Shell** — a three-column layout consisting of a **Nav Rail**
 (left), a **Feed Surface** (center), and a **Suggestions Rail** (right).
 Purchase intent raised anywhere in the shell resolves at a **Simplified
 Purchase Surface** — the composition's single conversion endpoint,
-rendered inside the shell on the purchase route. One decision: the
+rendered inside the shell on each Product Page route (ADR 00-011). One
+decision: the
 composition model of the browse-and-purchase flow and the rules the
 composition obeys.
 
 - **Scope.** The Feed Shell is the composition of the Locale landing
-  roots and the purchase route — the browse-and-purchase flow. It is
+  roots and the Product Page routes — the browse-and-purchase flow. It is
   the entire chrome on those routes: the classic site header and footer
   do not render on either — the Nav Rail carries brand and navigation,
   and the Suggestions Rail carries the legal links. Every other route —
@@ -87,8 +96,8 @@ composition obeys.
   contact channel through the Inbound Contact Surface's deep-link
   mechanism (ADR 00-009). Social-platform concepts (profiles, messages,
   notifications) are not carried over. Every entry resolves wherever
-  the shell renders: on the purchase route, entries that target landing
-  feed units return the shopper to that unit on the landing within the
+  the shell renders: on the Product Page routes, entries that target
+  landing feed units return the shopper to that unit on the landing within the
   same Locale.
 - **Feed Surface.** The shell's center column and primary content
   region. On the landing roots it is a vertical scroll of **Post
@@ -96,17 +105,18 @@ composition obeys.
   self-contained unit: a header carrying the brand avatar, name, and a
   decorative handle string (own brand only, never a third-party
   account reference and never a link); localized caption copy; a
-  **Media Slot**; and an **Interaction Row**. On the purchase
+  **Media Slot**; and an **Interaction Row**. On a Product Page
   route the Feed Surface carries a single occupant — the Simplified
   Purchase Surface, presented as a plain centered panel inside the
   column, not as a Post Card: the conversion surface carries no
   interaction affordances and no Media Slot link, because it is the
   destination those affordances resolve to. The column's measure and
-  rhythm are shared across both routes so the purchase route reads as
-  the same composition.
-- **Media Slots convert.** Every Media Slot is a link to the Simplified
-  Purchase Surface within the same Locale — seeing a product image and
-  tapping it is the primary path to purchase.
+  rhythm are shared across every route the shell composes, so a
+  Product Page reads as the same composition.
+- **Media Slots convert.** Every Media Slot is a link to the Product
+  Page of the product it features within the same Locale (ADR 00-011)
+  — seeing a product image and tapping it is the primary path to
+  purchase.
 - **Interaction Row.** Each Post Card carries a row of social-style
   affordances that is real but bounded — a like control with its
   count and a share control:
@@ -137,12 +147,14 @@ composition obeys.
     no-personal-data posture of ADR 00-008.
 - **Suggestions Rail.** A column of product and Variant suggestion cards
   with a discovery call-to-action and the legal links (privacy, terms)
-  at its foot. The rail renders on the purchase route as well, where
+  at its foot. The rail renders on the Product Page routes as well,
+  where
   its suggestion cards stay Variant-relevant: an available Variant
   suggestion selects that Variant on the surface, while a sold-out
-  Variant is shown but never offered as a purchasable path.
-- **Simplified Purchase Surface.** The existing checkout page is reduced
-  to the single decision the shopper must make: Variant selection,
+  Variant is shown but never offered as a purchasable path — its
+  surface presence is the Pre-order state.
+- **Simplified Purchase Surface.** The Product Page presents the single
+  decision the shopper must make: Variant selection,
   quantity, the VAT-inclusive EUR price, and one purchase action that
   submits the selection into the existing checkout path — server-side
   re-validation and the PSP's Hosted Checkout per ADR 00-004, including
@@ -150,10 +162,24 @@ composition obeys.
   presentation; the Cart remains the shopper-held collection underneath
   (a single line), preserving cancel-preserved and drift-correction
   semantics. The Simplified Purchase Surface is the canonical purchase
-  block: the Outbound Share Surface (ADR 00-009) lives on it. On the
-  purchase route it renders inside the Feed Shell as the center
+  block: the Outbound Share Surface (ADR 00-009) lives on it. On its
+  Product Page route it renders inside the Feed Shell as the center
   column's single occupant — a single focused decision block, minimal
-  by design, not a browsing surface.
+  by design, not a browsing surface. When the selected Variant is not
+  purchasable — an Availability Flag applying to it off, or the
+  operator Stock Flag in Site Config forcing the whole surface
+  (ADR 00-010) — the surface
+  keeps rendering and presents the **Pre-order state** in place of the
+  purchase action: a localized sold-out message and a notify-me
+  control that captures the visitor's consented email into the Stock
+  Notification List through the stock-notification Route Handler.
+  Non-purchasable Variants remain visible and selectable so the
+  capture can be scoped to the Variant the visitor wants restocked;
+  the confirmation is an in-page state — no email is sent, the send
+  being deferred per ADR 00-010 — and the consent statement rendered
+  at the capture point is authored in both Locales. The Pre-order
+  state lives inside the surface and shares the Purchase-Surface Gate
+  (ADR 00-004): while the gate is closed, neither renders.
 - **No composer, no search.** The pattern's create-post affordance and
   search bar are explicitly excluded by the owner: the feed is editorial
   store content, not user-generated, and the catalog is too small to
@@ -165,7 +191,8 @@ composition obeys.
   carrying navigation and the purchase affordance — while a minimal top
   band retains brand and language switching. The Feed Surface is the
   primary column at every width, and the collapse is identical on every
-  route the shell composes — the purchase route gets the same bands.
+  route the shell composes — the Product Page routes get the same
+  bands.
   Small-viewport bottom chrome is a single consolidated band: the
   Inbound Contact Surface floats above it and must never occlude
   navigation or purchase actions (the ADR 00-009 presentation
@@ -216,9 +243,9 @@ composition obeys.
   impression → Simplified Purchase Surface → Hosted Checkout, removing
   the intermediate cart-review step and any chrome discontinuity at the
   purchase step.
-- The Suggestions Rail remains useful on the purchase route as Variant
-  context, and the mobile bands keep navigation and the contact channel
-  reachable during checkout.
+- The Suggestions Rail remains useful on the Product Page routes as
+  Variant context, and the mobile bands keep navigation and the
+  contact channel reachable during checkout.
 - Existing content, imagery, and Site Config toggles are preserved
   through remapping — no configuration migration, no lost operator
   controls, and stored configs keep their semantics.
@@ -230,6 +257,9 @@ composition obeys.
 - The checkout contract of ADR 00-004 is preserved wholesale — server
   re-validation, Hosted Checkout, drift and degradation behavior — only
   the presentation that feeds it changes.
+- Out-of-stock keeps the conversion surface alive: the Pre-order state
+  captures demand as consented, per-Variant emails instead of
+  dead-ending the shopper at the highest-intent moment.
 - Mobile posture consolidates bottom chrome into one band while keeping
   the Inbound Contact Surface reachable without occlusion.
 
@@ -241,6 +271,15 @@ composition obeys.
   store is unconfigured or unreachable the row falls back to authored
   base counts with toggling disabled — graceful, but the shared
   signal silently disappears.
+- The Pre-order capture makes the surface depend on the
+  stock-notification Route Handler and its store: when they are
+  unavailable the capture answers a graceful unavailable state —
+  honest failure, never a fake success — but the shopper's intent is
+  lost for that attempt.
+- The surface now renders consented personal-data capture: the
+  sold-out message, the consent statement, and the confirmation are
+  legal-bearing copy that must be authored and kept truthful in both
+  Locales.
 - The Like Token is self-minted on the visitor's device: clearing
   client storage or scripting fresh tokens inflates likes past honest
   dedup — an accepted vanity-metric bound, mitigated by per-post
@@ -257,7 +296,7 @@ composition obeys.
   suggestion content, mobile bands — rather than a bare focused page;
   accepted by owner decision for composition continuity.
 - Landing-targeted shell navigation has no on-page target on the
-  purchase route: feed-unit entries navigate back to the landing — an
+  Product Page routes: feed-unit entries navigate back to the landing — an
   accepted wayfinding trade-off that keeps one entry set across the
   shell.
 - The Suggestions Rail's suggestion, discovery, and legal content is
@@ -304,7 +343,7 @@ composition obeys.
   serves the browse-and-purchase flow; post-checkout returns, legal,
   and admin surfaces are terminal or operational pages outside that
   flow and need focused minimal chrome, not feed affordances. Scope is
-  the Locale landing roots and the purchase route.
+  the Locale landing roots and the Product Page routes.
 - **Simplified Purchase Surface kept under the classic chrome** —
   Rejected: owner decision — the conversion endpoint joins the
   composition so discovery and purchase share one chrome system;
@@ -319,6 +358,10 @@ composition obeys.
   the simplification; a single-line direct purchase matches the
   one-product catalog. The Cart mechanism of ADR 00-004 remains
   underneath as the shopper-held collection.
+- **Sold-out Variants kept hidden or unselectable** — Rejected: owner
+  decision — out-of-stock is handled in place so the surface captures
+  demand; a Variant that disappears teaches the shopper nothing and
+  stores no interest.
 - **Composer and search affordances for pattern completeness** —
   Rejected: explicit owner exclusion — no user-generated content exists
   to compose, and the catalog is too small to need search.
