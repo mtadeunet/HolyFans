@@ -170,7 +170,8 @@
       "like_aria": "Like",
       "share_aria": "Share this post",
       "share_copied": "Link copied",
-      "product_aria": "View product"
+      "product_aria": "View product",
+      "like_unavailable": "Likes unavailable"
     },
     "posts": {
       "post-hero": {

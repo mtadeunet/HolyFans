@@ -24,7 +24,8 @@ positioning demands excellent load performance and reliability for visitors in
 Portugal. Alongside the static content, the business needs a small set of
 request-time capabilities: the permanent QR Redirect Route with a destination
 that can be retargeted without redeploys (ADR 00-003), operator-controlled
-Site Config toggles, an Admin Console write path, the creation of Checkout
+Site Config toggles, an Admin Console write path plus a request-time
+read of the like store's aggregate state, the creation of Checkout
 Sessions with the PSP, a request-time read of the created Session's
 payment status on the post-checkout success page (ADR 00-004), shared
 like counters for the feed's Interaction Row (ADR 03-002), and consented
@@ -60,8 +61,11 @@ The Storefront runs a **hybrid model on the Vercel Hosting Platform**:
     gate on the Admin Console, and canonicalization of Locale-prefixed QR
     paths to the bare QR Redirect Route (ADR 00-003);
   - the QR Redirect Route read (ADR 00-003), Edge-capable;
-  - the Admin Console write path, which persists Site Config through the
-    Hosting Platform's API;
+  - the **Admin Console surface**: a write path that persists Site
+    Config through the Hosting Platform's API, plus a request-time
+    read of the like store's aggregate state — per-post totals,
+    per-post last-like timestamps, and store health — aggregates
+    only, never Like Token membership (ADR 00-008);
   - the single checkout Route Handler on the **Node runtime** (required by
     the PSP SDK), which creates Checkout Sessions (ADR 00-004);
   - the **post-checkout session-status read**: the localized
@@ -77,8 +81,12 @@ The Storefront runs a **hybrid model on the Vercel Hosting Platform**:
     Row's shared like counts and records per-visitor like toggles for
     Post Cards (ADR 03-002) — reads and writes against the managed
     store below, deduplicating each toggle per Post Card by the
-    visitor's anonymous client-held Like Token, hardened like the
-    checkout endpoint (input caps, IP rate limiting, fail-closed);
+    visitor's anonymous client-held Like Token, stamping each newly
+    recorded like in a per-post last-like record for the Admin
+    Console's aggregate view, and answering degraded reads with the
+    authored base counts plus an explicit reason so failures surface
+    rather than degrade silently; hardened like the checkout endpoint
+    (input caps, IP rate limiting, fail-closed);
   - the **stock-notification Route Handler** on the Node runtime,
     which records a visitor's consented email into the Stock
     Notification List when the Simplified Purchase Surface's
@@ -92,14 +100,17 @@ The Storefront runs a **hybrid model on the Vercel Hosting Platform**:
   provisioned through the Hosting Platform's marketplace** — the
   platform-native choice for small shared request-time state beyond
   Edge Config's operator-configuration scope. It holds per-post like
-  dedup records that feed aggregate counters only (ADR 03-002, ADR
+  dedup records and last-like timestamps that feed aggregate counters
+  and the Admin Console's aggregate likes view only (ADR 03-002, ADR
   00-008) and, in a dedicated per-Variant keyspace never joined to
   them, the Stock Notification List of consented visitor emails
   (ADR 00-010) —
   the Storefront's first persisted personal data, held under the
   per-feature consent posture of ADR 00-008. When the store is
   unconfigured or unreachable, the Interaction Row degrades to
-  authored base counts with toggling disabled and the Pre-order
+  authored base counts with toggling disabled and a visible
+  unavailable indicator — and the Admin Console surfaces the store's
+  health — while the Pre-order
   capture answers a graceful unavailable state rather than failing.
 - No other inbound request-time capability exists or may be added without a
   new ADR — this boundary forecloses webhook receivers, additional
@@ -143,8 +154,9 @@ The Storefront runs a **hybrid model on the Vercel Hosting Platform**:
 - Request-time Edge Config reads are a live dependency for toggles and the
   QR destination; mitigated by default-fallback behavior but not eliminable.
 - The like counter store is a second live request-time data dependency;
-  the degrade-to-base fallback of ADR 03-002 bounds its blast radius, but
-  shared counts silently revert to authored values while it is down.
+  the degrade-to-base fallback of ADR 03-002 bounds its blast radius and
+  the degradation is surfaced — an inline indicator on the row and the
+  store health in the Admin Console — rather than silent.
 - The managed store now holds personal data — the Stock Notification
   List's consented emails — so its compromise or misconfiguration
   touches real data, and the purpose-limitation, retention, and

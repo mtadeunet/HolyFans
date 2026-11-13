@@ -53,7 +53,8 @@ is the purpose-bound capture below.
 - Anonymous feature tokens are within the posture: an interactive feature
   may use a self-generated, per-browser token held in client-side storage
   — never a cookie, never server-issued — sent only to that feature's own
-  endpoint and feeding aggregate counters only. Such a token identifies
+  endpoint and feeding aggregates only — per-post totals, last-like
+  times, and store health. Such a token identifies
   no person, joins to no identity or analytics surface, and requires no
   consent flow; the Interaction Row's Like Token (ADR 03-002) is the
   sanctioned instance.

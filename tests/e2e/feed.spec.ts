@@ -17,10 +17,15 @@
  * Implements ADR 03-002 - the Interaction Row is "real but bounded — a
  * like control with its count and a share control": "When the store is
  * unconfigured or unreachable, the row degrades to the authored base
- * count with toggling disabled", and when live a toggle persists
- * through the visitor's client-held Like Token and local liked state.
- * Unconfigured CI exercises the degraded path; the live-path assertions
- * skip themselves when the GET reports `live: false`.
+ * count with toggling disabled and a visible unavailable indicator —
+ * graceful, never a crash, and never silent; a failed toggle rolls
+ * back and surfaces the same indicator", and when live a toggle
+ * persists through the visitor's client-held Like Token and local
+ * liked state. Unconfigured CI exercises the degraded path; the
+ * live-path assertions skip themselves when the GET reports
+ * `live: false`, and the failed-toggle path is exercised
+ * deterministically through a route interception independent of store
+ * provisioning.
  *
  * Implements ADR 03-002 - "on the Product Page routes, entries that
  * target landing feed units return the shopper to that unit on the
@@ -105,32 +110,108 @@ test.describe('Feed Shell — Post Cards', () => {
 
   // Implements ADR 03-002 - "When the store is unconfigured or
   // unreachable, the row degrades to the authored base count with
-  // toggling disabled — graceful, never a crash": the GET's
-  // `live: false` leaves the toggle inert and the authored base count
-  // on screen. This is the path unconfigured CI exercises; the test
-  // skips itself when a store is provisioned.
-  test('the Interaction Row degrades to the authored base count with a disabled like toggle when the like store is unconfigured', async ({
+  // toggling disabled and a visible unavailable indicator — graceful,
+  // never a crash, and never silent": the GET's `live: false` leaves
+  // the toggle inert, keeps the authored base count on screen, and
+  // surfaces the localized unavailable indicator. This is the path
+  // unconfigured CI exercises; each test skips itself when a store is
+  // provisioned.
+  for (const [locale, unavailableText] of [
+    ['en', 'Likes unavailable'],
+    ['pt', 'Gostos indisponíveis'],
+  ] as const) {
+    test(`/${locale} the Interaction Row degrades to the authored base count, a disabled like toggle, and a visible unavailable indicator when the like store is unconfigured`, async ({
+      page,
+    }) => {
+      const countsResponse = page.waitForResponse('**/api/likes');
+      await page.goto(`/${locale}`);
+      const body = (await (await countsResponse).json()) as {
+        live?: boolean;
+      };
+      test.skip(
+        body.live === true,
+        'like store configured — the degraded path does not apply'
+      );
+
+      const card = postCards(page).first();
+      const likeButton = card.locator('button[aria-pressed]');
+      const likeCount = card.locator('button[aria-pressed] + span');
+      await expect(likeButton).toHaveAttribute('aria-pressed', 'false');
+      await expect(likeButton).toBeDisabled();
+      // The deactivated control is dimmed and shows the prohibited
+      // cursor (computed styles — no real hover needed).
+      await expect(likeButton).toHaveCSS('cursor', 'not-allowed');
+      await expect(likeButton).toHaveCSS('opacity', '0.5');
+      // The authored base count renders as a non-negative number.
+      const shown = Number((await likeCount.textContent())?.match(/\d+/)?.[0]);
+      expect(Number.isNaN(shown)).toBe(false);
+      expect(shown).toBeGreaterThanOrEqual(0);
+      // The visible unavailable indicator — the degraded state is
+      // surfaced, never a silent disable.
+      await expect(
+        card.locator('span[role="status"]', { hasText: unavailableText })
+      ).toBeVisible();
+    });
+  }
+
+  // Implements ADR 03-002 - "a failed toggle rolls back and surfaces
+  // the same indicator": a forced 502 on the toggle POST rolls the
+  // optimistic like back, disables further toggling, and shows the
+  // unavailable indicator. The counts GET is intercepted as live and
+  // the POST held until released, so the optimistic → rollback
+  // transition is exercised deterministically regardless of store
+  // provisioning.
+  test('a failed like toggle rolls back the optimistic count and surfaces the unavailable indicator', async ({
     page,
   }) => {
-    const countsResponse = page.waitForResponse('**/api/likes');
+    let releaseToggle: (() => void) | undefined;
+    const toggleHeld = new Promise<void>((resolve) => {
+      releaseToggle = resolve;
+    });
+    await page.route('**/api/likes', async (route, request) => {
+      if (request.method() === 'POST') {
+        await toggleHeld;
+        return route.fulfill({
+          status: 502,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'likes_unavailable' }),
+        });
+      }
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ counts: {}, live: true }),
+      });
+    });
     await page.goto('/en');
-    const body = (await (await countsResponse).json()) as {
-      live?: boolean;
-    };
-    test.skip(
-      body.live === true,
-      'like store configured — the degraded path does not apply'
-    );
 
     const card = postCards(page).first();
     const likeButton = card.locator('button[aria-pressed]');
     const likeCount = card.locator('button[aria-pressed] + span');
+    await expect(likeButton).toBeEnabled();
+    const before = Number((await likeCount.textContent())?.match(/\d+/)?.[0]);
+    expect(Number.isNaN(before)).toBe(false);
+
+    await likeButton.click();
+    // The optimistic toggle applies while the POST is still held.
+    await expect(likeButton).toHaveAttribute('aria-pressed', 'true');
+    const optimistic = Number(
+      (await likeCount.textContent())?.match(/\d+/)?.[0]
+    );
+    expect(optimistic).toBe(before + 1);
+
+    // The failed POST rolls the toggle back, disables the control,
+    // and surfaces the visible unavailable indicator.
+    releaseToggle?.();
     await expect(likeButton).toHaveAttribute('aria-pressed', 'false');
     await expect(likeButton).toBeDisabled();
-    // The authored base count renders as a non-negative number.
-    const shown = Number((await likeCount.textContent())?.match(/\d+/)?.[0]);
-    expect(Number.isNaN(shown)).toBe(false);
-    expect(shown).toBeGreaterThanOrEqual(0);
+    await expect(likeButton).toHaveCSS('cursor', 'not-allowed');
+    await expect(likeButton).toHaveCSS('opacity', '0.5');
+    await expect(
+      card.locator('span[role="status"]', { hasText: 'Likes unavailable' })
+    ).toBeVisible();
+    const after = Number((await likeCount.textContent())?.match(/\d+/)?.[0]);
+    expect(after).toBe(before);
   });
 
   // Implements ADR 03-002 - "a visitor's toggle persists in
@@ -160,10 +241,26 @@ test.describe('Feed Shell — Post Cards', () => {
     const before = Number((await likeCount.textContent())?.match(/\d+/)?.[0]);
     expect(Number.isNaN(before)).toBe(false);
 
+    const toggleResponse = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/likes') &&
+        response.request().method() === 'POST'
+    );
     await likeButton.click();
     await expect(likeButton).toHaveAttribute('aria-pressed', 'true');
-    const after = Number((await likeCount.textContent())?.match(/\d+/)?.[0]);
-    expect(after).toBe(before + 1);
+    // Wait for the toggle POST to resolve before asserting: the
+    // handler's total is authoritative, and the client-side liked
+    // state is written only after the POST answers — reloading earlier
+    // would cancel the fetch and lose the persisted like. The total
+    // is a shared counter — parallel toggles (e.g. the other
+    // project's run) can only push it higher, so it is at least
+    // `before + 1`, never exactly that.
+    const toggleBody = (await (await toggleResponse).json()) as {
+      count?: number;
+    };
+    expect(toggleBody.count).toBeGreaterThanOrEqual(before + 1);
+    // The row adopts the handler's total as authoritative.
+    await expect(likeCount).toHaveText(`${toggleBody.count} likes`);
 
     // The liked state persists client-side and the shared count
     // server-side: a reload keeps the toggle pressed and the raised
@@ -316,8 +413,14 @@ test.describe('Feed Shell — purchase path (flag enabled)', () => {
       page,
     }) => {
       await page.goto(`/${locale}`);
+      // The Media Slot's own link — the one wrapping the aspect-square
+      // slot — not the Post Card's stretched-link overlay (the first
+      // `a[href$="/checkout"]` in DOM order), which sits under the
+      // raised Media Slot and never receives the click.
       await page
-        .locator('article[id^="post-"] a[href$="/checkout"]')
+        .locator(
+          'article[id^="post-"] a[href$="/checkout"]:has(div.aspect-square)'
+        )
         .first()
         .click();
       await page.waitForURL(`**/${locale}/checkout`);
@@ -338,12 +441,8 @@ test.describe('Feed Shell — purchase path (flag enabled)', () => {
       await page.goto(`/${locale}/checkout`);
       const rail = navRail(page);
       await expect(rail.locator(`a[href="/${locale}#feed"]`)).toBeVisible();
-      await expect(
-        rail.locator(`a[href="/${locale}#products"]`)
-      ).toBeVisible();
-      await expect(
-        rail.locator(`a[href="/${locale}#post-faq"]`)
-      ).toBeVisible();
+      await expect(rail.locator(`a[href="/${locale}#products"]`)).toBeVisible();
+      await expect(rail.locator(`a[href="/${locale}#post-faq"]`)).toBeVisible();
       // The brand mark still anchors the shell's own center column.
       await expect(rail.locator('a[href="#feed"]').first()).toBeVisible();
       // The purchase entry resolves to the same-Locale checkout.
@@ -377,9 +476,7 @@ test.describe('Feed Shell — purchase path (flag enabled)', () => {
 
       await card.click();
       await page.waitForURL(`**/${locale}/checkout**`);
-      expect(new URL(page.url()).searchParams.get('fit')).toBe(
-        'nsr-female-m'
-      );
+      expect(new URL(page.url()).searchParams.get('fit')).toBe('nsr-female-m');
       const surface = page.getByTestId('purchase-surface');
       await expect(surface).toBeVisible();
       await expect(surface).toContainText(fitLabel);

@@ -42,7 +42,9 @@ user-facing documentation.
   the QR Redirect Route destination. Stored in Edge Config and editable
   via the Admin Console.
 - **Admin Console** — the password-gated `/admin` surface used by the operator
-  to read and write Site Config.
+  to read and write Site Config and to inspect the like store's
+  aggregate state — per-post totals, per-post last-like timestamps,
+  and store health (ADR 00-002, ADR 00-008).
 - **Store Messaging Number** — the operator-supplied WhatsApp contact number
   the Inbound Contact Surface opens a chat to; provided via Hosting Platform
   environment configuration and never committed to tracked files (identifier
@@ -147,7 +149,9 @@ user-facing documentation.
   Pre-order state (the last two backed by the Hosting Platform's
   marketplace-provisioned Redis store) — and the dynamic post-checkout
   success page, which performs a read-only retrieval of the Checkout
-  Session's payment status at render time (ADR 00-002). The checkout,
+  Session's payment status at render time (ADR 00-002). The Admin
+  Console page likewise reads the like store's aggregate state at
+  request time — a page-render read, not a Route Handler. The checkout,
   Admin Console write, like counter, and stock-notification paths run
   on the Node runtime; the QR Redirect Route is Edge-capable.
 - **Request-Time Middleware** — the single middleware layer that runs on every

@@ -11,10 +11,13 @@ const LIKE_TOKEN_KEY = 'holyfans:like-token';
 /** localStorage key holding the visitor's liked Post Card ids. */
 const LIKED_POSTS_KEY = 'holyfans:liked-posts';
 
-/** Shape of the like counter Route Handler's GET response. */
+/** Shape of the like counter Route Handler's GET response. `error`
+ *  carries the degraded reason (`'unconfigured' | 'store_failure'`)
+ *  whenever `live` is not `true`. */
 interface LikeCountsResponse {
   counts?: Record<string, number>;
   live?: boolean;
+  error?: 'unconfigured' | 'store_failure';
 }
 
 /**
@@ -27,9 +30,7 @@ let countsPromise: Promise<LikeCountsResponse | null> | null = null;
 function fetchLikeCounts(): Promise<LikeCountsResponse | null> {
   countsPromise ??= fetch('/api/likes')
     .then((response) =>
-      response.ok
-        ? (response.json() as Promise<LikeCountsResponse>)
-        : null
+      response.ok ? (response.json() as Promise<LikeCountsResponse>) : null
     )
     .catch(() => null);
   return countsPromise;
@@ -121,10 +122,11 @@ interface InteractionRowProps {
  * like control shows the shared count (authored base + server-persisted
  * delta): it renders the authored base immediately, hydrates the live
  * total after mount, and toggles optimistically with a POST carrying
- * the visitor's Like Token; on failure it rolls back and disables —
- * "when the store is unconfigured or unreachable, the row degrades to
- * the authored base count with toggling disabled — graceful, never a
- * crash" (ADR 00-002). The share control "invokes the visitor device's
+ * the visitor's Like Token; on failure it rolls back, disables, and
+ * surfaces a visible unavailable indicator — "the row degrades to the
+ * authored base count with toggling disabled and a visible unavailable
+ * indicator — graceful, never a crash, and never silent" (ADR 03-002).
+ * The share control "invokes the visitor device's
  * native share capability with the Post Card's anchored URL on the
  * Store Domain, falling back to clipboard copy" — it transmits nothing
  * to the Storefront and emits no analytics signal (ADR 00-008).
@@ -140,6 +142,10 @@ export default function InteractionRow({
   const [liked, setLiked] = useState(false);
   const [count, setCount] = useState(likes);
   const [live, setLive] = useState(false);
+  /** Whether the like store is known-unavailable — drives the visible
+   *  unavailable indicator. Distinct from `live` so the indicator
+   *  never flashes while the shared GET is still in flight. */
+  const [likeError, setLikeError] = useState(false);
   const [copied, setCopied] = useState(false);
   /** Guards the toggle against double-submits while a POST is in flight. */
   const pending = useRef(false);
@@ -163,6 +169,11 @@ export default function InteractionRow({
         if (typeof total === 'number') {
           setCount(total);
         }
+      } else {
+        // Degraded (`live: false` with an explicit `error` reason),
+        // rate-limited, or unreachable — surface the failure rather
+        // than silently disabling the toggle (ADR 03-002).
+        setLikeError(true);
       }
     })();
     return () => {
@@ -185,7 +196,8 @@ export default function InteractionRow({
    * then POSTs `{postId, token, liked}` — the Like Token goes only to
    * this feature's own endpoint (ADR 00-008). The handler's returned
    * total is adopted as authoritative; any non-200 or network failure
-   * rolls back and disables further toggling (fail-closed, ADR 00-002).
+   * rolls back, disables further toggling, and surfaces the visible
+   * unavailable indicator (fail-closed, ADR 00-002).
    */
   const toggleLike = async () => {
     if (!live || pending.current) {
@@ -222,6 +234,7 @@ export default function InteractionRow({
       setLiked(!next);
       setCount((current) => current + (next ? -1 : 1));
       setLive(false);
+      setLikeError(true);
     } finally {
       pending.current = false;
     }
@@ -267,6 +280,11 @@ export default function InteractionRow({
 
   return (
     <div className="flex items-center gap-4 px-4 py-3">
+      {/* Disabled while the like store is unavailable: the control
+          stays muted (`disabled:opacity-50`), shows the prohibited
+          cursor, and `enabled:hover` keeps the accent color from
+          re-lighting the deactivated icon on hover — the working
+          state's hover behavior is unchanged. */}
       <button
         type="button"
         onClick={() => void toggleLike()}
@@ -274,7 +292,9 @@ export default function InteractionRow({
         aria-label={t('like_aria')}
         disabled={!live}
         className={`flex items-center justify-center transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-          liked ? 'text-primary' : 'text-text-secondary hover:text-primary'
+          liked
+            ? 'text-primary'
+            : 'text-text-secondary enabled:hover:text-primary'
         }`}
       >
         <svg
@@ -296,6 +316,32 @@ export default function InteractionRow({
         {t('likes', { count })}
       </span>
 
+      {/* Unavailable indicator (ADR 03-002): shown whenever the like
+          store is degraded or a toggle failed — failures surface to
+          the visitor instead of silently disabling the control. */}
+      {likeError && (
+        <span
+          role="status"
+          className="flex items-center gap-1 text-xs font-medium text-red-600"
+        >
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+            />
+          </svg>
+          {t('like_unavailable')}
+        </span>
+      )}
+
       {/* Share control — client-resolved, transmits nothing to the
           Storefront (ADR 03-002). `copied` swaps the glyph briefly as
           the visual half of the confirmation; the `role="status"` span
@@ -305,9 +351,7 @@ export default function InteractionRow({
         onClick={() => void share()}
         aria-label={t('share_aria')}
         className={`ml-auto flex items-center justify-center transition-colors ${
-          copied
-            ? 'text-primary'
-            : 'text-text-secondary hover:text-primary'
+          copied ? 'text-primary' : 'text-text-secondary hover:text-primary'
         }`}
       >
         <svg

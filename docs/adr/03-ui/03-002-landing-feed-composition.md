@@ -133,8 +133,15 @@ composition obeys.
     serves counts and records toggles; it is hardened like the
     checkout endpoint — input caps, IP rate limiting, fail-closed.
     When the store is unconfigured or unreachable, the row degrades
-    to the authored base count with toggling disabled — graceful,
-    never a crash.
+    to the authored base count with toggling disabled and a visible
+    unavailable indicator — graceful, never a crash, and never
+    silent; a failed toggle rolls back and surfaces the same
+    indicator. The managed store additionally stamps each newly
+    recorded like in a per-post last-like record — marking the last
+    like event, never rewound by unlikes — exposed only as
+    aggregates (per-post totals, last-like times, and store health)
+    in the Admin Console, never as Like Token membership (ADR
+    00-008).
   - **Share is a client-resolved affordance.** The comment and
     bookmark glyphs are replaced by a share control that invokes the
     visitor device's native share capability with the Post Card's
@@ -271,8 +278,9 @@ composition obeys.
   perception risk remains.
 - The shared like count is a live store dependency: when the managed
   store is unconfigured or unreachable the row falls back to authored
-  base counts with toggling disabled — graceful, but the shared
-  signal silently disappears.
+  base counts with toggling disabled — graceful, with the outage
+  surfaced to visitors by an inline indicator and to operators by the
+  Admin Console's store health rather than silently.
 - The Pre-order capture makes the surface depend on the
   stock-notification Route Handler and its store: when they are
   unavailable the capture answers a graceful unavailable state —

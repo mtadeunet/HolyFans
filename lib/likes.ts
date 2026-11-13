@@ -13,8 +13,7 @@ import { FEED_POSTS } from '@/lib/feed-posts';
  * Implements ADR 00-008: Analytics and Consent — Cookieless,
  * Privacy-First Measurement - "a self-generated, per-browser token held
  * in client-side storage — never a cookie, never server-issued — sent
- * only to that feature's own endpoint and feeding aggregate counters
- * only".
+ * only to that feature's own endpoint and feeding aggregates only".
  *
  * Pure, side-effect-free helpers shared by the like counter Route
  * Handler and unit tests: the authored base counts, the managed-store
@@ -29,6 +28,16 @@ export const LIKE_TOKEN_MAX_LENGTH = 128;
 /** Redis key holding one Post Card's dedup set of Like Tokens. */
 export function likeKey(postId: string): string {
   return `likes:${postId}`;
+}
+
+/** Redis key holding one Post Card's last-like timestamp — an ISO
+ *  string written on each newly recorded like event for the Admin
+ *  Console's aggregate likes view (ADR 00-002). It records the most
+ *  recent like *event*, not the newest current liker: an unlike does
+ *  not rewind it, so a post whose dedup set later empties still shows
+ *  when its last like arrived. */
+export function likeLastKey(postId: string): string {
+  return `likes:last:${postId}`;
 }
 
 /**

@@ -1,11 +1,12 @@
-import { Redis } from '@upstash/redis';
 import { NextRequest, NextResponse } from 'next/server';
 import { FEED_POSTS } from '@/lib/feed-posts';
 import {
   baseLikeCounts,
   likeKey,
+  likeLastKey,
   parseLikeToggleBody,
 } from '@/lib/likes';
+import { getLikesStore, readLiveCounts } from '@/lib/likes-server';
 
 /**
  * Implements ADR 00-002: Rendering and Hosting Model - "the like counter
@@ -83,51 +84,16 @@ function allowRequest(
  */
 function clientIp(request: NextRequest): string {
   return (
-    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
-    'unknown'
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
   );
-}
-
-/**
- * Implements ADR 00-002: Rendering and Hosting Model - "Shared like
- * counts persist in a managed Redis store provisioned through the
- * Hosting Platform's marketplace ... when the store is unconfigured or
- * unreachable, the Interaction Row degrades to authored base counts
- * with toggling disabled rather than failing."
- *
- * Lazily initialized Redis client, memoized so `next build` and every
- * unconfigured request never construct one. `Redis.fromEnv()` reads
- * `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` but — in the
- * pinned SDK version — only logs a warning and yields a broken client
- * when they are unset, so the env check happens here first: `null`
- * means genuinely unconfigured, not "a client whose every command
- * fails". The defensive try/catch stays so a future SDK throw degrades
- * the same way. Handlers then take their fail-closed path.
- *
- * @returns The Redis client, or `null` when the store is unconfigured.
- */
-let redis: Redis | null | undefined;
-function getRedis(): Redis | null {
-  if (redis === undefined) {
-    try {
-      redis =
-        process.env.UPSTASH_REDIS_REST_URL &&
-        process.env.UPSTASH_REDIS_REST_TOKEN
-          ? Redis.fromEnv()
-          : null;
-    } catch {
-      redis = null;
-    }
-  }
-  return redis;
 }
 
 /**
  * Implements ADR 03-002: Landing Page Composition - "The displayed like
  * count is the sum of an authored base count ... and a shared delta
- * persisted server-side in the managed store" and "When the store is
- * unconfigured or unreachable, the row degrades to the authored base
- * count with toggling disabled — graceful, never a crash."
+ * persisted server-side in the managed store" and "the row degrades to
+ * the authored base count with toggling disabled and a visible
+ * unavailable indicator — graceful, never a crash, and never silent."
  *
  * Serves every Post Card's total like count: the authored base (from
  * `FEED_POSTS`) plus the managed store's deduped toggle delta (`SCARD
@@ -137,9 +103,14 @@ function getRedis(): Redis | null {
  * Response contract (consumed by `components/feed/interaction-row.tsx`):
  * - `200 {counts: Record<postId, number>, live: true}` — store-backed
  *   totals; the row enables toggling.
- * - `200 {counts: Record<postId, number>, live: false}` — store
- *   unconfigured or unreachable: authored base counts only; the row
- *   disables toggling (fail-closed degradation, ADR 00-002).
+ * - `200 {counts, live: false, error: 'unconfigured'}` — no store
+ *   configured: authored base counts only; the row disables toggling
+ *   and surfaces a visible unavailable indicator (fail-closed
+ *   degradation made explicit, ADR 00-002).
+ * - `200 {counts, live: false, error: 'store_failure'}` — the count
+ *   read failed: same degraded body and UI as `'unconfigured'`; the
+ *   distinct reason is diagnostic only — consumed by network traces
+ *   and admin diagnostics, not by visitor-UI differentiation.
  * - `429 {error: 'likes_unavailable'}` — rate-limited; the row treats
  *   this identically to `live: false`.
  *
@@ -149,34 +120,35 @@ function getRedis(): Redis | null {
  */
 export async function GET(request: NextRequest) {
   if (!allowRequest(clientIp(request), getRequestLog, GET_RATE_LIMIT)) {
-    return NextResponse.json(
-      { error: 'likes_unavailable' },
-      { status: 429 }
-    );
+    return NextResponse.json({ error: 'likes_unavailable' }, { status: 429 });
   }
 
-  const store = getRedis();
+  const store = getLikesStore();
   if (!store) {
-    return NextResponse.json({ counts: baseLikeCounts(), live: false });
+    return NextResponse.json({
+      counts: baseLikeCounts(),
+      live: false,
+      error: 'unconfigured',
+    });
   }
 
   try {
-    const entries = await Promise.all(
-      FEED_POSTS.map(
-        async (post) =>
-          [post.id, post.likes + (await store.scard(likeKey(post.id)))] as const
-      )
-    );
     return NextResponse.json({
-      counts: Object.fromEntries(entries),
+      counts: await readLiveCounts(store),
       live: true,
     });
   } catch (error) {
     // Graceful failure posture (ADR 00-002): a store outage degrades to
     // authored base counts, never a crash — the Interaction Row shows
-    // the bases with toggling disabled.
+    // the bases with toggling disabled and a visible unavailable
+    // indicator, and the explicit reason distinguishes an outage from
+    // a missing configuration.
     console.error('[likes] count read failed:', error);
-    return NextResponse.json({ counts: baseLikeCounts(), live: false });
+    return NextResponse.json({
+      counts: baseLikeCounts(),
+      live: false,
+      error: 'store_failure',
+    });
   }
 }
 
@@ -190,7 +162,11 @@ export async function GET(request: NextRequest) {
  * Records a like toggle: `liked: true` adds the visitor's Like Token to
  * the Post Card's dedup set (`SADD`), `false` removes it (`SREM`) — set
  * membership makes dedup inherent, so repeated toggles from one browser
- * count once. Returns the post-toggle total (authored base + `SCARD`).
+ * count once. A newly recorded like also stamps the Post Card's
+ * last-like record (`likes:last:<postId>`, an ISO timestamp) for the
+ * Admin Console's aggregate view (ADR 00-002); an unlike never rewinds
+ * it — the record marks the last like *event*, not the newest current
+ * liker. Returns the post-toggle total (authored base + `SCARD`).
  * The Like Token is opaque and is never logged (ADR 00-008).
  *
  * Error contract (consumed by `components/feed/interaction-row.tsx`):
@@ -201,18 +177,16 @@ export async function GET(request: NextRequest) {
  * - `429 {error: 'likes_unavailable'}` — rate-limited.
  * - `503 {error: 'likes_unavailable'}` — store unconfigured.
  * - `502 {error: 'likes_unavailable'}` — store unreachable/write failure.
- *   Any non-200 rolls back the row's optimistic toggle and disables
- *   further toggling (fail-closed, ADR 00-002).
+ *   Any non-200 rolls back the row's optimistic toggle, disables
+ *   further toggling, and surfaces a visible unavailable indicator
+ *   (fail-closed, ADR 00-002).
  *
  * @param request - The POST request.
  * @returns `{count}` on success.
  */
 export async function POST(request: NextRequest) {
   if (!allowRequest(clientIp(request), postRequestLog, POST_RATE_LIMIT)) {
-    return NextResponse.json(
-      { error: 'likes_unavailable' },
-      { status: 429 }
-    );
+    return NextResponse.json({ error: 'likes_unavailable' }, { status: 429 });
   }
 
   // Input cap: reject oversized bodies before parsing.
@@ -239,30 +213,41 @@ export async function POST(request: NextRequest) {
 
   // Fail-closed (ADR 00-002): with no store configured the toggle cannot
   // be deduplicated or persisted — refuse rather than pretend to count.
-  const store = getRedis();
+  const store = getLikesStore();
   if (!store) {
-    return NextResponse.json(
-      { error: 'likes_unavailable' },
-      { status: 503 }
-    );
+    return NextResponse.json({ error: 'likes_unavailable' }, { status: 503 });
   }
 
   try {
     const key = likeKey(body.postId);
     if (body.liked) {
-      await store.sadd(key, body.token);
+      const added = await store.sadd(key, body.token);
+      if (added > 0) {
+        // A genuinely new like stamps the last-like record for the
+        // Admin Console's aggregate view. Its failure must not fail a
+        // toggle that already recorded — log and continue.
+        try {
+          await store.set(likeLastKey(body.postId), new Date().toISOString());
+        } catch (timestampError) {
+          console.error(
+            '[likes] last-like timestamp write failed:',
+            timestampError
+          );
+        }
+      }
     } else {
       await store.srem(key, body.token);
     }
-    const post = FEED_POSTS.find((entry) => entry.id === body.postId);
-    const count = (post?.likes ?? 0) + (await store.scard(key));
+    // `parseLikeToggleBody` already rejected unknown postIds, so this
+    // lookup always yields the Post Card — destructuring the filter
+    // result narrows away the `undefined` the validator made
+    // unreachable.
+    const [post] = FEED_POSTS.filter((entry) => entry.id === body.postId);
+    const count = post.likes + (await store.scard(key));
     return NextResponse.json({ count });
   } catch (error) {
     // The Like Token is deliberately not logged — only the store failure.
     console.error('[likes] toggle write failed:', error);
-    return NextResponse.json(
-      { error: 'likes_unavailable' },
-      { status: 502 }
-    );
+    return NextResponse.json({ error: 'likes_unavailable' }, { status: 502 });
   }
 }

@@ -9,10 +9,20 @@
  * count ... and a shared delta persisted server-side".
  *
  * Covers `lib/likes.ts`: the authored base-count map the Route Handler
- * serves when the managed store is unconfigured or unreachable, and the
- * narrow body validation that rejects malformed toggle input before any
- * store write — no Redis or framework mocking required (the same
- * route-vs-logic split as `lib/checkout-validation.ts`).
+ * serves when the managed store is unconfigured or unreachable, the
+ * managed-store key conventions (the per-post dedup set and the
+ * per-post last-like record the Admin Console aggregates — "last like
+ * event, never rewound"), and the narrow body validation that rejects
+ * malformed toggle input before any store write — no Redis or
+ * framework mocking required (the same route-vs-logic split as
+ * `lib/checkout-validation.ts`).
+ *
+ * Also covers `lib/likes-server.ts`'s pure degraded-path helper
+ * `basePostAggregates` — the authored-base aggregates the Admin
+ * Console falls back to when the store is unconfigured or failing.
+ * The module's Redis-touching helpers (`readLiveCounts`,
+ * `readPostAggregates`) follow the convention of not mocking Redis:
+ * they are exercised by the e2e suite's live-path assertions instead.
  */
 import { describe, expect, it } from 'vitest';
 import { FEED_POSTS } from '@/lib/feed-posts';
@@ -20,8 +30,10 @@ import {
   baseLikeCounts,
   LIKE_TOKEN_MAX_LENGTH,
   likeKey,
+  likeLastKey,
   parseLikeToggleBody,
 } from '@/lib/likes';
+import { basePostAggregates } from '@/lib/likes-server';
 
 describe('baseLikeCounts', () => {
   it('returns the authored base count for every FEED_POSTS id', () => {
@@ -38,6 +50,34 @@ describe('baseLikeCounts', () => {
 describe('likeKey', () => {
   it('builds the per-post dedup-set key', () => {
     expect(likeKey('post-hero')).toBe('likes:post-hero');
+  });
+});
+
+describe('likeLastKey', () => {
+  it('builds the per-post last-like record key', () => {
+    expect(likeLastKey('post-hero')).toBe('likes:last:post-hero');
+  });
+
+  it('names a keyspace distinct from the dedup-set key for the same post', () => {
+    expect(likeLastKey('post-hero')).not.toBe(likeKey('post-hero'));
+  });
+});
+
+describe('basePostAggregates', () => {
+  it('returns one aggregate per FEED_POSTS entry, in feed order', () => {
+    const aggregates = basePostAggregates();
+    expect(aggregates.map((aggregate) => aggregate.postId)).toEqual(
+      FEED_POSTS.map((post) => post.id)
+    );
+  });
+
+  it('degrades to the authored base count with no last-like timestamp', () => {
+    for (const aggregate of basePostAggregates()) {
+      const post = FEED_POSTS.find((entry) => entry.id === aggregate.postId);
+      expect(post).toBeDefined();
+      expect(aggregate.count).toBe(post?.likes);
+      expect(aggregate.lastLikeAt).toBeNull();
+    }
   });
 });
 
