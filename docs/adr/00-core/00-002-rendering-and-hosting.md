@@ -9,6 +9,9 @@ Proposed
 ADR 00-001 (Application Framework — Next.js)
 ADR 00-003 (Permanent QR Redirect Route)
 ADR 00-004 (Commerce and Checkout)
+ADR 00-005 (Internationalization)
+ADR 00-007 (Quality Tooling and CI)
+ADR 00-008 (Analytics and Consent)
 ADR 00-010 (Pre-order and Stock Notification)
 ADR 03-002 (Landing Page Composition)
 

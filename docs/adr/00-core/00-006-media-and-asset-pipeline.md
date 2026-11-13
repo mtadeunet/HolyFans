@@ -7,7 +7,10 @@ Proposed
 ## Related
 
 ADR 00-001 (Application Framework — Next.js)
+ADR 00-002 (Rendering and Hosting Model)
+ADR 00-003 (Permanent QR Redirect Route)
 ADR 00-004 (Commerce and Checkout)
+ADR 00-007 (Quality Tooling and CI)
 ADR 03-001 (Design System and Visual Identity)
 
 ## Context
@@ -46,16 +49,19 @@ optimization**:
   ordinary masters and is held to the same standard.
 - **Brand assets live in the repo.** The owner's logo masters — currently
   high-resolution raster marks committed to a brand-assets location — are
-  the canonical sources for the site and the QR Generator, so both the site
-  build and offline tooling are fully reproducible from the repository
-  alone. A vector master is the ideal form for print and QR work at
-  arbitrary scales; it is desirable but not a launch blocker.
-- **The QR Generator is repository tooling**: a Python script/toolchain kept
-  under the repo's tooling area with its own dependency manifest, run
-  offline by the operator. It is not part of the Storefront runtime or
-  build.
-- Generated QR artifacts used as brand assets are committed to the repo; the
-  QR Generator produces them, it does not serve them.
+  the canonical brand sources: the site uses them directly and the
+  operator's local QR Generator reads its logo input from them. A vector
+  master is the ideal form for print and QR work at arbitrary scales; it
+  is desirable but not a launch blocker.
+- **The QR Generator is local operator tooling, not repository source.**
+  It lives in the operator's untracked tooling area and runs entirely
+  offline; it is not part of the Storefront runtime, build, or tracked
+  source.
+- **QR artifacts are generated locally and never committed.** A rendered
+  QR encodes the real store URL — a real-world identifier — so tracking
+  it would violate identifier hygiene (ADR 00-007). The Storefront
+  neither generates nor serves QR images; its only QR-related surface is
+  the permanent redirect route that printed codes point at (ADR 00-003).
 
 ## Consequences
 
@@ -65,11 +71,12 @@ optimization**:
 - The framework's optimizer delivers modern formats and responsive images
   per request context, integrated with the same component model the site
   already uses.
-- Committing brand sources makes the build fully self-contained: the site
-  and offline tooling resolve every asset — including the QR Generator's
-  logo input — from the repository alone.
-- The in-repo QR Generator lets the operator regenerate branded QRs for new
-  campaigns at any time.
+- Committing brand sources makes the build fully self-contained and gives
+  local tooling a canonical brand input — the QR Generator reads its logo
+  from the repository's committed masters.
+- The operator can regenerate branded QR artifacts locally at any time —
+  for new campaigns, reprints, or replacements — with no build, deploy,
+  or commit required.
 
 **Negative / trade-offs:**
 - Binary masters grow the repository over time; acceptable at small-catalog
@@ -80,9 +87,13 @@ optimization**:
   not a blocker).
 - Framework image optimization on the Hosting Platform is a per-request,
   metered platform capability — bounded by the small catalog but a platform
-  quota to watch, and platform-coupled like the rest of ADR 00-002.
-- The QR Generator's Python toolchain is a second dependency ecosystem to
-  keep working, isolated from the site toolchain.
+  quota to watch, and platform-coupled like the rest of ADR 00-002. It is
+  a platform-serving capability applied to otherwise-static assets, not an
+  additional dynamic surface: ADR 00-002's enumeration governs routes and
+  handlers, not asset delivery.
+- Neither the QR Generator nor its artifacts are tracked, so the repo
+  cannot reproduce printed materials; regenerating them relies on the
+  operator's local setup rather than anything the repository guarantees.
 
 ## Alternatives Considered
 
@@ -103,6 +114,8 @@ optimization**:
   set is small; LFS adds tooling friction and a remote dependency. Adopted
   only if repository growth demands it (requires a future ADR).
 - **Regenerate images/QRs on demand instead of committing outputs** —
-  Rejected for QR artifacts: the QR Generator is offline tooling and its
-  output must be available to design/print workflows independently of any
-  build.
+  Adopted for QR artifacts: a rendered QR encodes the real store URL and
+  can never be a tracked file (identifier hygiene, ADR 00-007), so the
+  operator regenerates it locally on demand. For imagery the split is
+  different: masters are committed sources, and only the optimized
+  derivatives are generated — per request — by the framework.

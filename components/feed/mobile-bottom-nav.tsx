@@ -11,9 +11,9 @@ interface MobileBottomNavProps {
   purchaseSurfaceEnabled: boolean;
   /**
    * Implements ADR 03-002: Landing Page Composition — Three-Column Feed
-   * Shell with Simplified Purchase Surface - "on the purchase route,
-   * entries that target landing feed units return the shopper to that
-   * unit on the landing within the same Locale." The band's cart entry
+   * Shell with Simplified Purchase Surface - "on the Product Page
+   * routes, entries that target landing feed units return the shopper
+   * to that unit on the landing within the same Locale." The band's cart entry
    * resolves to `/checkout` — a self-link marking the current location.
    */
   returnToFeed?: boolean;
@@ -21,11 +21,11 @@ interface MobileBottomNavProps {
 
 /**
  * Implements ADR 03-002: Landing Page Composition — Three-Column Feed
- * Shell with Simplified Purchase Surface - on small viewports the Nav
- * Rail "collapses to a compact bottom navigation band — carrying
- * navigation and the purchase affordance"; "Small-viewport bottom
- * chrome is a single consolidated band" that the Inbound Contact
- * Surface floats above without occluding it.
+ * Shell with Simplified Purchase Surface - on small viewports the
+ * shell is "the Feed Surface with a compact bottom navigation band —
+ * carrying navigation and the purchase affordance"; "Small-viewport
+ * bottom chrome is a single consolidated band" that the Inbound
+ * Contact Surface floats above without occluding it.
  *
  * The consolidated mobile bottom navigation band, governed by the
  * retained `mobileStickyCta` Site Config chrome key (its role absorbs

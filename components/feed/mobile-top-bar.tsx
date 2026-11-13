@@ -5,7 +5,7 @@ import LanguageToggle from '@/components/layout/language-toggle';
 /**
  * Implements ADR 03-002: Landing Page Composition — Three-Column Feed
  * Shell with Simplified Purchase Surface - on small viewports "a
- * minimal top band retains brand and language switching."
+ * minimal top band retaining brand and language switching."
  *
  * The Feed Shell's small-viewport top band: brand mark (scrolling back
  * to the feed's top) plus the shared LanguageToggle Island. Renders

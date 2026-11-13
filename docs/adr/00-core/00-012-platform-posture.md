@@ -32,13 +32,17 @@ a mechanism that silently drops desktop support — the corpus already treats
 desktop as a platform that must keep working, without ever saying so as a
 posture.
 
-ADR 03-002's Feed Shell collapses by column below desktop widths. Described
-top-down, the rules leave the baseline direction unstated: is the three-column
-form the composition, with small viewports receiving a reduced version of it —
-or is the single-column form the composition, with wider viewports gaining
-columns? The rendered result is identical either way, but the direction
-decides where design effort, performance budget, and verification attention
-concentrate first.
+ADR 03-002's Feed Shell states the direction for its own contract: the
+composition "scales up from a single-column baseline" — a baseline it
+cites to this ADR — and its collapse rules are identical at every
+width and on every route the shell composes. But one contract's
+wording is not a corpus posture. The rendered result is identical
+under either reading, so the question was never the shell's pixels:
+it is which form of the Storefront is canonical — the primary
+composition that wider viewports expand, or the full form that
+narrower viewports reduce. That question recurs on every layout,
+flow, and verification decision; only a declared primary platform
+settles it once for the whole corpus.
 
 ## Decision
 

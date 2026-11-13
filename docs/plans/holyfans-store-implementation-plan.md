@@ -38,7 +38,8 @@ Governing documents:
   by browser-language detection defaulting to `pt`; no `dev` pseudo-locale.
   `[ADR 00-005]`
 - **Media:** in-repo masters incl. brand assets; framework image
-  optimization; QR Generator retained as offline repo tooling. `[ADR 00-006]`
+  optimization; QR Generator is local operator tooling outside tracked
+  source, its artifacts never committed. `[ADR 00-006]`
 - **Quality/CI:** TypeScript strict, ESLint + Prettier, unit + e2e tests on
   built output, GitHub Actions as merge gate, deploys via the Hosting
   Platform's Git integration, git branch conventions. `[ADR 00-007]`

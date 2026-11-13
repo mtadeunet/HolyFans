@@ -18,7 +18,7 @@ interface ChromeFrameProps {
  * Implements ADR 03-002: Landing Page Composition — Three-Column Feed
  * Shell with Simplified Purchase Surface - "the classic site header and
  * footer do not render on either [the Locale landing roots or the
- * purchase route] ... Every other route — the post-checkout success and
+ * Product Page routes] ... Every other route — the post-checkout success and
  * cancel pages, auxiliary and legal pages, and the Admin Console —
  * keeps the classic header/footer chrome, still governed by the
  * existing Site Config chrome toggles."

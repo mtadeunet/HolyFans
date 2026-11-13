@@ -7,6 +7,7 @@ Proposed
 ## Related
 
 ADR 00-002 (Rendering and Hosting Model)
+ADR 00-004 (Commerce and Checkout)
 ADR 00-005 (Internationalization)
 ADR 00-007 (Quality Tooling and CI)
 ADR 00-008 (Analytics and Consent)

@@ -193,6 +193,9 @@ user-facing documentation.
 
 ## Tooling Terms
 
-- **QR Generator** — the repository's retained Python tooling that renders
-  branded QR images (module color, logo overlay, shape). Located under
-  `scripts/`; used offline, not part of the Storefront runtime.
+- **QR Generator** — the operator's local tooling that renders branded
+  QR images (module color, logo overlay, shape) from the repo's
+  committed logo masters; kept outside the repo's tracked source and
+  used offline. Not part of the Storefront runtime or build; its
+  generated artifacts are never tracked (identifier hygiene,
+  ADR 00-007).

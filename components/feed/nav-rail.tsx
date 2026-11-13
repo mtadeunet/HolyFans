@@ -17,9 +17,9 @@ interface NavRailProps {
   purchaseSurfaceEnabled: boolean;
   /**
    * Implements ADR 03-002: Landing Page Composition — Three-Column Feed
-   * Shell with Simplified Purchase Surface - "on the purchase route,
-   * entries that target landing feed units return the shopper to that
-   * unit on the landing within the same Locale."
+   * Shell with Simplified Purchase Surface - "on the Product Page
+   * routes, entries that target landing feed units return the shopper
+   * to that unit on the landing within the same Locale."
    */
   returnToFeed?: boolean;
 }

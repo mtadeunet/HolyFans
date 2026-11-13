@@ -26,24 +26,24 @@ interface FeedShellProps {
   purchaseSurfaceEnabled: boolean;
   /**
    * Implements ADR 03-002: Landing Page Composition — Three-Column Feed
-   * Shell with Simplified Purchase Surface - "on the purchase route,
-   * entries that target landing feed units return the shopper to that
-   * unit on the landing within the same Locale."
+   * Shell with Simplified Purchase Surface - "on the Product Page
+   * routes, entries that target landing feed units return the shopper
+   * to that unit on the landing within the same Locale."
    *
-   * `true` on the purchase route: in-feed anchor entries (home/shop/
-   * faq) render as `/{locale}#<anchor>` Links back to the landing
+   * `true` on the Product Page routes: in-feed anchor entries (home/
+   * shop/faq) render as `/{locale}#<anchor>` Links back to the landing
    * instead of same-page anchors. `false` on the landing itself.
    */
   returnToFeed?: boolean;
   /**
    * Implements ADR 03-002: Landing Page Composition — Three-Column Feed
-   * Shell with Simplified Purchase Surface - "On the purchase route the
-   * Feed Surface carries a single occupant — the Simplified Purchase
-   * Surface, presented as a plain centered panel inside the column, not
-   * as a Post Card."
+   * Shell with Simplified Purchase Surface - "On a Product Page route
+   * the Feed Surface carries a single occupant — the Simplified
+   * Purchase Surface, presented as a plain centered panel inside the
+   * column, not as a Post Card."
    *
    * The center column's content: the Post Card scroll on the landing
-   * roots, the purchase panel on the purchase route. The column's
+   * roots, the purchase panel on the Product Page routes. The column's
    * measure and rhythm are shared across both routes.
    */
   children: ReactNode;

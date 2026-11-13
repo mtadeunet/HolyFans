@@ -1,15 +1,18 @@
 /**
  * Implements ADR 03-002: Landing Page Composition — Three-Column Feed
- * Shell with Simplified Purchase Surface - "The landing page of each
- * Locale is composed as a Feed Shell — a three-column layout consisting
- * of a Nav Rail (left), a Feed Surface (center), and a Suggestions Rail
- * (right)", "the Suggestions Rail is the first element to drop below
- * desktop widths, the Nav Rail narrows to an icon strip on medium
- * viewports and collapses to a compact bottom navigation band on small
- * viewports ... while a minimal top band retains brand and language
- * switching", and "Small-viewport bottom chrome is a single consolidated
- * band: the Inbound Contact Surface floats above it and must never
- * occlude navigation or purchase actions."
+ * Shell with Simplified Purchase Surface - "The Locale landing roots
+ * and the Product Page routes are composed as a Feed Shell — a
+ * three-column layout consisting of a Nav Rail (left), a Feed Surface
+ * (center), and a Suggestions Rail (right)", "The composition scales
+ * up from a single-column baseline (ADR 00-012): on small viewports
+ * the shell is the Feed Surface with a compact bottom navigation band
+ * — carrying navigation and the purchase affordance — under a minimal
+ * top band retaining brand and language switching. Wider viewports add
+ * the Nav Rail, first as an icon strip on medium viewports and at full
+ * width on desktop, where the Suggestions Rail also joins — it renders
+ * at wider viewports only", and "Small-viewport bottom chrome is a
+ * single consolidated band: the Inbound Contact Surface floats above
+ * it and must never occlude navigation or purchase actions."
  *
  * Implements ADR 03-002 - the Interaction Row is "real but bounded — a
  * like control with its count and a share control": "When the store is
@@ -19,13 +22,14 @@
  * Unconfigured CI exercises the degraded path; the live-path assertions
  * skip themselves when the GET reports `live: false`.
  *
- * Implements ADR 03-002 - "on the purchase route, entries that target
- * landing feed units return the shopper to that unit on the landing
- * within the same Locale" (Nav Rail and bottom-band entries resolve to
- * `/{locale}#<anchor>` on `/checkout`), "the collapse is identical on
- * every route the shell composes — the purchase route gets the same
- * bands", and "an available Variant suggestion selects that Variant on
- * the surface" (the Suggestions Rail cards carry `?fit=<variantId>`).
+ * Implements ADR 03-002 - "on the Product Page routes, entries that
+ * target landing feed units return the shopper to that unit on the
+ * landing within the same Locale" (Nav Rail and bottom-band entries
+ * resolve to `/{locale}#<anchor>` on `/checkout`), "the collapse is
+ * identical on every route the shell composes — the Product Page
+ * routes get the same bands", and "an available Variant suggestion
+ * selects that Variant on the surface" (the Suggestions Rail cards
+ * carry `?fit=<variantId>`).
  *
  * Runs in BOTH Playwright projects — the shell's composition is identical
  * under either gate state; only the purchase-route and media-slot
@@ -210,10 +214,11 @@ test.describe('Feed Shell — responsive collapse', () => {
     await expect(postCards(page).first()).toBeVisible();
   });
 
-  // Implements ADR 03-002 - "the Suggestions Rail is the first element
-  // to drop below desktop widths, the Nav Rail narrows to an icon strip
-  // on medium viewports".
-  test('at medium width the Nav Rail stays as an icon strip and the Suggestions Rail drops', async ({
+  // Implements ADR 03-002 - "Wider viewports add the Nav Rail, first
+  // as an icon strip on medium viewports and at full width on desktop,
+  // where the Suggestions Rail also joins — it renders at wider
+  // viewports only".
+  test('at medium width the Nav Rail renders as an icon strip and the Suggestions Rail does not join', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 800, height: 600 });
@@ -227,9 +232,9 @@ test.describe('Feed Shell — responsive collapse', () => {
   });
 
   // Implements ADR 03-002 - on small viewports "a minimal top band
-  // retains brand and language switching" and "the Feed Surface is the
-  // primary column at every width".
-  test('on small viewports the minimal top band renders and both rails drop', async ({
+  // retaining brand and language switching" and "the Feed Surface is
+  // the primary column at every width".
+  test('on small viewports the minimal top band renders and both rails are absent', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
@@ -240,8 +245,9 @@ test.describe('Feed Shell — responsive collapse', () => {
     await expect(postCards(page).first()).toBeVisible();
   });
 
-  // Implements ADR 03-002 - the Nav Rail "collapses to a compact bottom
-  // navigation band" governed by the `mobileStickyCta` chrome key. The
+  // Implements ADR 03-002 - on small viewports "a compact bottom
+  // navigation band — carrying navigation and the purchase
+  // affordance", governed by the `mobileStickyCta` chrome key. The
   // key is operator-controlled Site Config: when it is off the band is
   // intentionally absent, so an absent band is reported as a skip, not a
   // failure.
@@ -305,7 +311,7 @@ test.describe('Feed Shell — purchase path (flag enabled)', () => {
 
   for (const locale of ['pt', 'en']) {
     // Implements ADR 03-002 - "Every Media Slot is a link to the
-    // Simplified Purchase Surface within the same Locale."
+    // Product Page of the product it features within the same Locale".
     test(`/${locale} media slot navigates to /${locale}/checkout`, async ({
       page,
     }) => {
@@ -320,11 +326,11 @@ test.describe('Feed Shell — purchase path (flag enabled)', () => {
   }
 
   for (const locale of ['pt', 'en']) {
-    // Implements ADR 03-002 - "on the purchase route, entries that
-    // target landing feed units return the shopper to that unit on the
-    // landing within the same Locale": the Nav Rail's feed-unit entries
-    // resolve to `/{locale}#<anchor>`; the purchase entry keeps pointing
-    // at the same-Locale checkout.
+    // Implements ADR 03-002 - "on the Product Page routes, entries
+    // that target landing feed units return the shopper to that unit
+    // on the landing within the same Locale": the Nav Rail's feed-unit
+    // entries resolve to `/{locale}#<anchor>`; the purchase entry keeps
+    // pointing at the same-Locale checkout.
     test(`/${locale}/checkout Nav Rail feed entries return to the landing's feed units`, async ({
       page,
     }) => {
@@ -381,9 +387,9 @@ test.describe('Feed Shell — purchase path (flag enabled)', () => {
   }
 
   // Implements ADR 03-002 - "the collapse is identical on every route
-  // the shell composes — the purchase route gets the same bands": on
-  // small viewports `/checkout` shows the minimal top band and drops
-  // both rails exactly like the landing.
+  // the shell composes — the Product Page routes get the same bands":
+  // on small viewports `/checkout` shows the minimal top band and
+  // leaves both rails absent exactly like the landing.
   test('on small viewports the purchase route renders the same top band and rail collapse', async ({
     page,
   }) => {

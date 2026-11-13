@@ -185,15 +185,16 @@ composition obeys.
   search bar are explicitly excluded by the owner: the feed is editorial
   store content, not user-generated, and the catalog is too small to
   merit search.
-- **Responsive collapse.** The shell degrades gracefully by column:
-  the Suggestions Rail is the first element to drop below desktop
-  widths, the Nav Rail narrows to an icon strip on medium viewports and
-  collapses to a compact bottom navigation band on small viewports —
-  carrying navigation and the purchase affordance — while a minimal top
-  band retains brand and language switching. The Feed Surface is the
-  primary column at every width, and the collapse is identical on every
-  route the shell composes — the Product Page routes get the same
-  bands.
+- **Responsive collapse.** The composition scales up from a single-
+  column baseline (ADR 00-012): on small viewports the shell is the
+  Feed Surface with a compact bottom navigation band — carrying
+  navigation and the purchase affordance — under a minimal top band
+  retaining brand and language switching. Wider viewports add the Nav
+  Rail, first as an icon strip on medium viewports and at full width on
+  desktop, where the Suggestions Rail also joins — it renders at wider
+  viewports only. The Feed Surface is the primary column at every
+  width, and the collapse is identical on every route the shell
+  composes — the Product Page routes get the same bands.
   Small-viewport bottom chrome is a single consolidated band: the
   Inbound Contact Surface floats above it and must never occlude
   navigation or purchase actions (the ADR 00-009 presentation
@@ -300,9 +301,10 @@ composition obeys.
   Product Page routes: feed-unit entries navigate back to the landing — an
   accepted wayfinding trade-off that keeps one entry set across the
   shell.
-- The Suggestions Rail's suggestion, discovery, and legal content is
-  desktop-only; small viewports lose those surfaces entirely (the feed
-  and purchase path remain full).
+- The Suggestions Rail's suggestion, discovery, and legal content
+  appears at wider viewports only; the single-column baseline does not
+  carry those surfaces (the feed and purchase path remain full at every
+  width).
 - Section-toggle semantics drift: operators must relearn that toggles
   now hide feed units rather than page sections; the header/footer
   toggles silently doing nothing on the routes the shell composes can

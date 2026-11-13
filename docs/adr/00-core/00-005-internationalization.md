@@ -39,9 +39,10 @@ a **prefix-per-Locale** URL strategy and exactly two Locales:
 - Each Locale is a complete statically generated page tree; SEO parity is
   provided through per-Locale metadata and hreflang cross-linking (with an
   `x-default` entry pointing at the Primary Locale tree).
-- The QR Redirect Route (ADR 00-003) is locale-neutral, sits outside the
-  Locale tree, and forwards to the site root; the Admin Console is likewise
-  outside localization.
+- The QR Redirect Route (ADR 00-003) is locale-neutral and sits outside
+  the Locale tree: its destination is operator-configured, with a
+  site-root fallback that forwards to the detected Locale per the rule
+  above; the Admin Console is likewise outside localization.
 - Only the two real Locales ship. A development-only pseudo-locale is not
   part of the architecture — no `dev` locale is generated or deployed.
 - Translations are maintained as versioned message catalogs alongside the

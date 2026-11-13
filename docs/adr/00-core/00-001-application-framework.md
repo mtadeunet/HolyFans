@@ -8,6 +8,7 @@ Proposed
 
 ADR 00-002 (Rendering and Hosting Model)
 ADR 00-005 (Internationalization)
+ADR 00-006 (Media and Asset Pipeline)
 ADR 03-001 (Design System and Visual Identity)
 
 ## Context

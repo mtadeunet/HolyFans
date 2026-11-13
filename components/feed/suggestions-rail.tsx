@@ -18,7 +18,7 @@ interface SuggestionsRailProps {
  * Shell with Simplified Purchase Surface - "A column of product and
  * Variant suggestion cards with a discovery call-to-action and the
  * legal links (privacy, terms) at its foot." and "the Suggestions Rail
- * is the first element to drop below desktop widths."
+ * also joins — it renders at wider viewports only."
  *
  * The Feed Shell's right column: a suggestion card per fit (fit name,
  * EUR price, Availability Flag badge — sold-out shown but never

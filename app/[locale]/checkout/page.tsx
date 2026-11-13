@@ -21,8 +21,8 @@ export const dynamic = 'force-dynamic';
  * the Feed Shell.
  *
  * Implements ADR 03-002: Landing Page Composition — Three-Column Feed
- * Shell with Simplified Purchase Surface - "On the purchase route the
- * Feed Surface carries a single occupant — the Simplified Purchase
+ * Shell with Simplified Purchase Surface - "On a Product Page route
+ * the Feed Surface carries a single occupant — the Simplified Purchase
  * Surface, presented as a plain centered panel inside the column, not
  * as a Post Card." Nav Rail section entries get `returnToFeed` so they
  * resolve back to the landing's feed units within the same Locale.
