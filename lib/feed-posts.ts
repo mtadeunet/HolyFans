@@ -12,16 +12,20 @@ import type { SectionKey } from './site-config';
  * unit(s) with no configuration migration.
  *
  * Media uses only in-repo masters (`public/images/product-female-1..4.jpg`);
- * content-domain posts without a master render branded placeholder
- * compositions instead (ADR 00-006).
+ * content-domain posts without a master carry no media and render no
+ * Media Slot (ADR 03-002's Imagery rule).
  */
 
-/** A Post Card's media descriptor — a real master image or a branded
- *  placeholder composition rendered by the Media Slot. `altKey` resolves
- *  under the `feed` message namespace (ADR 00-005). */
-export type FeedMedia =
-  | { kind: 'image'; src: string; altKey: string }
-  | { kind: 'placeholder'; altKey: string };
+/** A Post Card's media descriptor — an in-repo image master rendered by
+ *  the Media Slot through the framework's image optimization (ADR
+ *  00-006). `altKey` resolves under the `feed` message namespace (ADR
+ *  00-005). */
+export interface FeedMedia {
+  /** Path to the image master under `public/`. */
+  src: string;
+  /** Message key for the localized alt text, under `feed`. */
+  altKey: string;
+}
 
 /** One authored Post Card entry in the Feed Surface. */
 export interface FeedPost {
@@ -37,8 +41,11 @@ export interface FeedPost {
   section: SectionKey;
   /** Message key for the localized caption, under `feed.posts.<key>`. */
   captionKey: string;
-  /** Media Slot content — image master or branded placeholder. */
-  media: FeedMedia;
+  /** Media Slot content — an in-repo image master. Absent when the
+   *  post's content domain carries no imagery: the card then renders no
+   *  Media Slot at all (ADR 03-002's Imagery rule — media is earned
+   *  product photography, never stand-in filler). */
+  media?: FeedMedia;
   /** Implements ADR 03-002 - "The displayed like count is the sum of an
    *  authored base count — part of the Post Card's code-managed content —
    *  and a shared delta persisted server-side in the managed store of
@@ -51,7 +58,7 @@ export interface FeedPost {
 /**
  * The authored Feed Surface posts. The four existing product masters are
  * distributed across the hero and product posts; the remaining content
- * domains carry branded placeholder media.
+ * domains carry no media, so their cards render without a Media Slot.
  */
 export const FEED_POSTS: FeedPost[] = [
   {
@@ -59,7 +66,6 @@ export const FEED_POSTS: FeedPost[] = [
     section: 'hero',
     captionKey: 'post-hero',
     media: {
-      kind: 'image',
       src: '/images/product-female-1.jpg',
       altKey: 'posts.post-hero.alt',
     },
@@ -71,7 +77,6 @@ export const FEED_POSTS: FeedPost[] = [
     section: 'products',
     captionKey: 'post-product-1',
     media: {
-      kind: 'image',
       src: '/images/product-female-2.jpg',
       altKey: 'posts.post-product-1.alt',
     },
@@ -82,7 +87,6 @@ export const FEED_POSTS: FeedPost[] = [
     section: 'products',
     captionKey: 'post-product-2',
     media: {
-      kind: 'image',
       src: '/images/product-female-3.jpg',
       altKey: 'posts.post-product-2.alt',
     },
@@ -93,7 +97,6 @@ export const FEED_POSTS: FeedPost[] = [
     section: 'products',
     captionKey: 'post-product-3',
     media: {
-      kind: 'image',
       src: '/images/product-female-4.jpg',
       altKey: 'posts.post-product-3.alt',
     },
@@ -103,28 +106,24 @@ export const FEED_POSTS: FeedPost[] = [
     id: 'post-craft',
     section: 'craftsmanship',
     captionKey: 'post-craft',
-    media: { kind: 'placeholder', altKey: 'placeholder.alt' },
     likes: 96,
   },
   {
     id: 'post-social-proof',
     section: 'socialProof',
     captionKey: 'post-social-proof',
-    media: { kind: 'placeholder', altKey: 'placeholder.alt' },
     likes: 351,
   },
   {
     id: 'post-faq',
     section: 'faq',
     captionKey: 'post-faq',
-    media: { kind: 'placeholder', altKey: 'placeholder.alt' },
     likes: 54,
   },
   {
     id: 'post-closing',
     section: 'finalCta',
     captionKey: 'post-closing',
-    media: { kind: 'placeholder', altKey: 'placeholder.alt' },
     likes: 203,
   },
 ];

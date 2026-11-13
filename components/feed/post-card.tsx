@@ -27,8 +27,8 @@ interface PostCardProps {
  * Shell with Simplified Purchase Surface - "Each Post Card is a
  * self-contained unit: a header carrying the brand avatar, name, and a
  * decorative handle string (own brand only, never a third-party account
- * reference and never a link); localized caption copy; a Media Slot; and
- * an Interaction Row."
+ * reference and never a link); localized caption copy; a Media Slot for
+ * posts carrying imagery; and an Interaction Row."
  *
  * The Feed Surface's repeating unit. The article carries the stable
  * anchor `id={post.id}` (`post-hero`, `post-faq`, …) so Nav Rail entries
@@ -120,10 +120,17 @@ export default function PostCard({
           is needed. */}
       <div className="relative">{children}</div>
 
-      <MediaSlot
-        media={post.media}
-        purchaseSurfaceEnabled={purchaseSurfaceEnabled}
-      />
+      {/* Implements ADR 03-002: Landing Page Composition — "a Media
+          Slot for posts carrying imagery" — the media region mounts
+          only when the post carries an in-repo image master; posts
+          without imagery render no Media Slot markup at all rather
+          than substituting stand-in media. */}
+      {post.media && (
+        <MediaSlot
+          media={post.media}
+          purchaseSurfaceEnabled={purchaseSurfaceEnabled}
+        />
+      )}
 
       {/* Same layering: the like and share controls sit above the
           stretched link and never trigger navigation. */}

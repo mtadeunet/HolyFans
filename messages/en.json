@@ -205,20 +205,16 @@
         "alt": "Nossa Senhora da Rosa — worn look"
       },
       "post-craft": {
-        "caption": "Every piece is meticulously crafted — from the finest materials to the final quality check.",
-        "alt": "HolyFans craftsmanship"
+        "caption": "Every piece is meticulously crafted — from the finest materials to the final quality check."
       },
       "post-social-proof": {
-        "caption": "Join thousands of customers who have discovered the perfect blend of tradition and innovation.",
-        "alt": "HolyFans community"
+        "caption": "Join thousands of customers who have discovered the perfect blend of tradition and innovation."
       },
       "post-faq": {
-        "caption": "Questions about sizing, shipping, or care? Find quick answers below.",
-        "alt": "HolyFans FAQ"
+        "caption": "Questions about sizing, shipping, or care? Find quick answers below."
       },
       "post-closing": {
-        "caption": "Limited edition — launch offer €90 instead of €120. Don't miss the opportunity to own this exclusive piece.",
-        "alt": "HolyFans limited edition"
+        "caption": "Limited edition — launch offer €90 instead of €120. Don't miss the opportunity to own this exclusive piece."
       }
     },
     "faq": {
@@ -233,9 +229,6 @@
       "discover_body": "Premium Christian clothing — faith you'll want to share.",
       "discover_cta": "Shop now",
       "sold_out": "Coming Soon"
-    },
-    "placeholder": {
-      "alt": "HolyFans brand imagery"
     }
   }
 }

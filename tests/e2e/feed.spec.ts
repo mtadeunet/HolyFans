@@ -81,7 +81,7 @@ test.describe('Feed Shell — Post Cards', () => {
     });
   }
 
-  test('a Post Card carries the brand header, a non-link decorative handle, a Media Slot, and the Interaction Row', async ({
+  test('a Post Card with imagery carries the brand header, a non-link decorative handle, a Media Slot, and the Interaction Row', async ({
     page,
   }) => {
     await page.goto('/en');
@@ -106,6 +106,30 @@ test.describe('Feed Shell — Post Cards', () => {
     await expect(
       card.getByRole('button', { name: 'Share this post' })
     ).toBeVisible();
+  });
+
+  // Implements ADR 03-002's Imagery rule — "a Post Card whose content
+  // domain has no in-repo master renders no Media Slot rather than
+  // substituting stand-in imagery": the media region is absent from
+  // the markup entirely, not collapsed or placeholder-filled.
+  // `post-craft` is image-less in the authored list; the card may be
+  // section-toggled off in Site Config, so an absent card is reported
+  // as a skip per this spec's convention.
+  test('an image-less Post Card renders no Media Slot markup', async ({
+    page,
+  }) => {
+    await page.goto('/en');
+    const card = page.locator('article#post-craft');
+    test.skip(
+      (await card.count()) === 0,
+      'craftsmanship section toggle is off in Site Config — the image-less Post Card is intentionally not rendered'
+    );
+    await expect(card).toBeVisible();
+    expect(await card.locator('div.aspect-square').count()).toBe(0);
+    // The card's other regions are unaffected — the media region alone
+    // is absent.
+    await expect(card.locator('header p').first()).toHaveText('HolyFans');
+    await expect(card.locator('button[aria-pressed]')).toBeVisible();
   });
 
   // Implements ADR 03-002 - "When the store is unconfigured or

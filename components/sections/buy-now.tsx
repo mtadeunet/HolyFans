@@ -378,9 +378,11 @@ export default function BuyNow({
             className="space-y-6 rounded-2xl border border-border bg-surface p-6 shadow-xl"
           >
             {/* Product image — the selected Variant's first master, or
-                the branded placeholder composition (the Media Slot's
-                convention, ADR 03-001) when Product Data carries no
-                imagery for it. */}
+                the branded placeholder composition (Brand Palette
+                gradient with the centered logo mark, ADR 03-001) when
+                Product Data carries no imagery for it. Unlike a feed
+                Post Card, the purchase surface keeps the image region
+                mounted so the panel's layout holds. */}
             <div className="relative aspect-square overflow-hidden rounded-xl bg-background">
               {variant.images[0] ? (
                 <Image

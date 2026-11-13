@@ -111,8 +111,10 @@ user-facing documentation.
   Simplified Purchase Surface (ADR 03-002, ADR 00-011).
 - **Post Card** — the repeating content unit of the landing's feed: a
   brand header (avatar, name, decorative handle), localized caption
-  copy, a Media Slot, and an Interaction Row (ADR 03-002).
-- **Media Slot** — the Post Card's media region; every Media Slot links
+  copy, a Media Slot when the post carries imagery, and an Interaction
+  Row (ADR 03-002).
+- **Media Slot** — the Post Card's media region, present only on posts
+  carrying an in-repo image master; every Media Slot links
   to the Product Page of the product it features within the same Locale
   (ADR 00-011).
 - **Interaction Row** — the social affordance row on a Post Card: a

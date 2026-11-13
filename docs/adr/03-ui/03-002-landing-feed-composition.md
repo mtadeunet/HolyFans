@@ -106,7 +106,8 @@ composition obeys.
   self-contained unit: a header carrying the brand avatar, name, and a
   decorative handle string (own brand only, never a third-party
   account reference and never a link); localized caption copy; a
-  **Media Slot**; and an **Interaction Row**. On a Product Page
+  **Media Slot** for posts carrying imagery; and an **Interaction
+  Row**. On a Product Page
   route the Feed Surface carries a single occupant — the Simplified
   Purchase Surface, presented as a plain centered panel inside the
   column, not as a Post Card: the conversion surface carries no
@@ -229,9 +230,10 @@ composition obeys.
   on the brand mark and headings — expressed through bespoke
   components, with no generic feed-kit look.
 - **Imagery.** Post Card media uses in-repo masters through the
-  framework's image optimization (ADR 00-006); product photography
-  first, branded placeholder compositions where masters do not yet
-  exist.
+  framework's image optimization (ADR 00-006) — product photography
+  first. A Post Card whose content domain has no in-repo master
+  renders no Media Slot rather than substituting stand-in imagery:
+  the media region is earned photography, not filler.
 - **Localization.** Every user-facing string in the shell — navigation,
   captions, card chrome, rail content, the Simplified Purchase Surface —
   is authored in both Locales through the versioned message catalogs

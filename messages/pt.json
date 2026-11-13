@@ -205,20 +205,16 @@
         "alt": "Nossa Senhora da Rosa — peça vestida"
       },
       "post-craft": {
-        "caption": "Cada peça é meticulosamente confecionada — dos melhores materiais à verificação final de qualidade.",
-        "alt": "Artesanato HolyFans"
+        "caption": "Cada peça é meticulosamente confecionada — dos melhores materiais à verificação final de qualidade."
       },
       "post-social-proof": {
-        "caption": "Junte-se a milhares de clientes que descobriram a combinação perfeita entre tradição e inovação.",
-        "alt": "Comunidade HolyFans"
+        "caption": "Junte-se a milhares de clientes que descobriram a combinação perfeita entre tradição e inovação."
       },
       "post-faq": {
-        "caption": "Dúvidas sobre tamanhos, envio ou cuidados? Encontre respostas rápidas abaixo.",
-        "alt": "FAQ HolyFans"
+        "caption": "Dúvidas sobre tamanhos, envio ou cuidados? Encontre respostas rápidas abaixo."
       },
       "post-closing": {
-        "caption": "Edição limitada — oferta de lançamento de 90 € em vez de 120 €. Não perca a oportunidade de ter esta peça exclusiva.",
-        "alt": "Edição limitada HolyFans"
+        "caption": "Edição limitada — oferta de lançamento de 90 € em vez de 120 €. Não perca a oportunidade de ter esta peça exclusiva."
       }
     },
     "faq": {
@@ -233,9 +229,6 @@
       "discover_body": "Roupa cristã premium — fé que vai querer partilhar.",
       "discover_cta": "Comprar agora",
       "sold_out": "Em Breve"
-    },
-    "placeholder": {
-      "alt": "Imagem de marca HolyFans"
     }
   }
 }

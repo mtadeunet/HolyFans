@@ -11,9 +11,10 @@
  * reference and never a link" (identifier hygiene, ADR 00-007).
  *
  * Verifies `FEED_POSTS` integrity: every post maps to a real SectionKey
- * (so Site Config toggles govern it), every image master exists on disk,
- * media/likes fields are well-formed, and the decorative handle carries
- * no URL and no third-party reference.
+ * (so Site Config toggles govern it), each media descriptor — present
+ * only on posts carrying imagery — references an image master that
+ * exists on disk, like counts are well-formed, and the decorative
+ * handle carries no URL and no third-party reference.
  */
 import { existsSync } from 'fs';
 import path from 'path';
@@ -43,22 +44,33 @@ describe('FEED_POSTS', () => {
   );
 
   it.each(FEED_POSTS)(
-    'post $id carries a media descriptor and a non-negative like count',
+    'post $id carries a non-negative like count',
     (post) => {
-      expect(['image', 'placeholder']).toContain(post.media.kind);
-      expect(typeof post.media.altKey).toBe('string');
-      expect(post.media.altKey.length).toBeGreaterThan(0);
       expect(Number.isFinite(post.likes)).toBe(true);
       expect(post.likes).toBeGreaterThanOrEqual(0);
     }
   );
 
-  it.each(FEED_POSTS.filter((post) => post.media.kind === 'image'))(
-    'post $id references an image master that exists under public/',
-    (post) => {
-      if (post.media.kind !== 'image') return;
-      expect(post.media.src.startsWith('/')).toBe(true);
-      expect(existsSync(path.join(PUBLIC_DIR, post.media.src))).toBe(true);
+  // Implements ADR 03-002's Imagery rule — posts without an in-repo
+  // master carry no media descriptor and render no Media Slot; the
+  // authored list must contain both shapes so the image-less path is
+  // exercised.
+  it('contains at least one post with media and one without', () => {
+    expect(FEED_POSTS.some((post) => post.media !== undefined)).toBe(true);
+    expect(FEED_POSTS.some((post) => post.media === undefined)).toBe(true);
+  });
+
+  it.each(
+    FEED_POSTS.flatMap((post) =>
+      post.media ? ([[post.id, post.media]] as const) : []
+    )
+  )(
+    'post %s carries a media descriptor referencing an image master that exists under public/',
+    (_id, media) => {
+      expect(media.src.startsWith('/')).toBe(true);
+      expect(existsSync(path.join(PUBLIC_DIR, media.src))).toBe(true);
+      expect(typeof media.altKey).toBe('string');
+      expect(media.altKey.length).toBeGreaterThan(0);
     }
   );
 

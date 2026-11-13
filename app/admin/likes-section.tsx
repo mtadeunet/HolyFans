@@ -78,7 +78,10 @@ export default function LikesSection({
               key={post.id}
               className="flex items-center gap-3 rounded-lg border border-border bg-background px-4 py-3"
             >
-              {post.media.kind === 'image' ? (
+              {/* Post thumbnail — rendered only when the post carries
+                  an in-repo image master; image-less posts get no
+                  stand-in tile (ADR 03-002's Imagery rule). */}
+              {post.media && (
                 <Image
                   src={post.media.src}
                   alt=""
@@ -86,18 +89,6 @@ export default function LikesSection({
                   height={48}
                   className="h-12 w-12 rounded-md object-cover"
                 />
-              ) : (
-                /* Branded placeholder thumbnail — matches the Media
-                   Slot's placeholder composition (ADR 03-001). */
-                <div className="flex h-12 w-12 items-center justify-center rounded-md bg-gradient-to-br from-primary via-primary/90 to-accent/50">
-                  <Image
-                    src="/logo/logo-mark.png"
-                    alt=""
-                    width={24}
-                    height={24}
-                    className="h-6 w-6 object-contain opacity-90"
-                  />
-                </div>
               )}
               <div className="min-w-0 flex-1">
                 <code className="block truncate text-sm font-medium text-text-primary">
