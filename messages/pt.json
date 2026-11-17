@@ -55,7 +55,7 @@
   },
   "purchase": {
     "title": "Conclua a Sua Compra",
-    "subtitle": "Reveja a sua encomenda — o envio, os impostos e o pagamento são tratados no nosso checkout seguro",
+    "subtitle": "Reveja a sua encomenda — o envio e o pagamento são tratados no nosso checkout seguro",
     "drift": {
       "title": "O seu carrinho foi atualizado",
       "description": "Alguns artigos mudaram desde que os adicionou. Corrigimos o seu carrinho — por favor reveja-o e tente novamente.",

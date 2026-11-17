@@ -166,7 +166,8 @@ composition obeys.
   state (ADR 00-010).
 - **Simplified Purchase Surface.** The Product Page presents the single
   decision the shopper must make: Variant selection,
-  quantity, the VAT-inclusive EUR price, and one purchase action that
+  quantity, the VAT-inclusive EUR price (display-only per ADR 00-004,
+  not PSP tax semantics), and one purchase action that
   submits the selection into the existing checkout path — server-side
   re-validation and the PSP's Hosted Checkout per ADR 00-004, including
   its drift and degradation behaviors. There is no cart-review

@@ -23,7 +23,8 @@ the site has a landing page and a product page for each product. With
 a one-product catalog the "product page" is the existing Simplified
 Purchase Surface itself — the owner names that surface the product
 page: it carries Variant selection, quantity, the VAT-inclusive
-price, the purchase or Pre-order action (ADR 00-010), and the
+price (a display-only pricing decision per ADR 00-004, not tax
+semantics), the purchase or Pre-order action (ADR 00-010), and the
 Outbound Share Surface (ADR 00-009).
 
 "A product page for each product" also settles the multi-product
@@ -54,7 +55,8 @@ Product Data.
   in the Product Catalog and is the conversion page for that product.
 - **The Product Page IS the Simplified Purchase Surface.** The
   surface defined by ADR 03-002 does not change semantically —
-  Variant selection, quantity, the VAT-inclusive EUR price, the
+  Variant selection, quantity, the VAT-inclusive EUR price
+  (display-only per ADR 00-004), the
   purchase action or the Pre-order state, and the Outbound Share
   Surface. The composition's conversion route is the Product Page
   route: the surface's canonical host is per-product, and its

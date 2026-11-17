@@ -236,11 +236,21 @@ export function purchasableRepresentative(
  * Implements ADR 00-007: Quality Tooling and CI - "tracked files carry no
  * real-world identifiers".
  *
- * The public base URL is environment-driven: set `NEXT_PUBLIC_BASE_URL` in
- * the Hosting Platform's environment configuration (or an untracked local
- * env file). The fallback is the localhost dev origin — a placeholder, never
- * a real-world identifier — so the constant stays usable when the variable
- * is unset in local development.
+ * The public base URL is canonical-only (ADR 00-009): the explicit
+ * `NEXT_PUBLIC_BASE_URL` set in the Hosting Platform's environment
+ * configuration (or an untracked local env file) is the canonical
+ * production origin; otherwise the localhost dev origin — a
+ * placeholder, never a real-world identifier — keeps the constant
+ * usable in local development. Deployment-specific URLs are
+ * deliberately NOT consulted here: `NEXT_PUBLIC_*` variables are
+ * inlined into client bundles, so share surfaces (WhatsApp share,
+ * clipboard copy) must never emit preview deployment origins — they
+ * carry the canonical URL only. `||` is used rather than `??` so a
+ * set-but-empty `NEXT_PUBLIC_BASE_URL` (the `.env.example` default)
+ * falls through to the localhost placeholder instead of producing
+ * relative share URLs. Server-side consumers that need the real
+ * per-deployment origin (e.g. the checkout Route Handler) resolve
+ * the server-only `VERCEL_URL` system variable themselves.
  *
  * Social links are intentionally empty placeholder-neutral values: real
  * profile URLs are owner-supplied configuration and must not be hard-coded
@@ -252,7 +262,7 @@ export const SITE_CONFIG = {
   tagline: "Faith You'll Want to Share",
   description:
     'Premium Christian clothing with discrete but meaningful designs. High quality t-shirts for believers who want to share their faith.',
-  url: process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000',
+  url: process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000',
   ogImage: '/images/og-image.jpg',
   links: {
     twitter: '',

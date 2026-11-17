@@ -241,10 +241,20 @@ export async function POST(request: NextRequest) {
     ? COMPLIMENTARY_SHIPPING_OPTIONS
     : SHIPPING_OPTIONS;
 
-  // Absolute URLs are built from the configured Site base URL
-  // (`NEXT_PUBLIC_BASE_URL`, localhost fallback) — never the
-  // client-controlled Host header in `request.nextUrl.origin`.
-  const origin = SITE_CONFIG.url;
+  // Absolute URLs are resolved server-side with per-deployment
+  // precedence: `NEXT_PUBLIC_BASE_URL` > the server-only `VERCEL_URL`
+  // system variable (auto-exposed on every deployment, never inlined
+  // into client bundles — so share surfaces keep the canonical URL
+  // while checkout gets the real deployment origin) > `SITE_CONFIG.url`
+  // (canonical/localhost fallback; see lib/constants.ts) — never the
+  // client-controlled Host header in `request.nextUrl.origin`. `||` is
+  // used rather than `??` so a set-but-empty `NEXT_PUBLIC_BASE_URL`
+  // falls through.
+  const origin =
+    process.env.NEXT_PUBLIC_BASE_URL ||
+    (process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : SITE_CONFIG.url);
 
   /**
    * Implements ADR 00-004: Commerce and Checkout - "creates a Checkout
@@ -252,13 +262,14 @@ export async function POST(request: NextRequest) {
    * PSP must collect (shipping address and shipping options, so total
    * cost is shown before payment)".
    *
-   * `automatic_tax` + `tax_behavior: 'inclusive'` implements ADR 00-004's
-   * "Tax computation is delegated to the PSP: the checkout Route Handler
-   * creates Checkout Sessions with automatic tax enabled and line items
-   * marked with inclusive tax behavior, so the PSP computes the VAT
-   * portion inside the displayed total rather than adding tax at payment
-   * time." Tax only computes once the owner activates a tax registration
-   * in the Stripe Dashboard (ADR 00-004's hard operational dependency).
+   * Implements ADR 00-004: Commerce and Checkout - "No tax is computed
+   * or collected at checkout: the checkout Route Handler creates
+   * Checkout Sessions with automatic tax disabled, and no PSP tax
+   * service is used". Sessions carry no
+   * `automatic_tax` and line items/shipping rates carry no
+   * `tax_behavior`; VAT determination, reporting, and remittance are an
+   * out-of-band accounting responsibility handled by the owner's
+   * accountant outside the PSP.
    *
    * Note (owner decision): Checkout Sessions cannot scope shipping
    * options per country — both rates are offered to every allowed
@@ -277,7 +288,6 @@ export async function POST(request: NextRequest) {
             price_data: {
               currency: 'eur',
               unit_amount: unitCents,
-              tax_behavior: 'inclusive',
               product_data: {
                 name: `${PRODUCT.name} — ${variant.name} (${variant.size})`,
                 images: variant.images[0]
@@ -287,7 +297,6 @@ export async function POST(request: NextRequest) {
             },
           };
     }),
-    automatic_tax: { enabled: true },
     shipping_address_collection: {
       allowed_countries: SHIPPING_COUNTRIES.map(
         (country) =>
@@ -299,7 +308,6 @@ export async function POST(request: NextRequest) {
         display_name: option.displayName,
         type: 'fixed_amount',
         fixed_amount: { amount: option.amountCents, currency: 'eur' },
-        tax_behavior: 'inclusive',
         delivery_estimate: {
           minimum: { unit: 'business_day', value: option.minBusinessDays },
           maximum: { unit: 'business_day', value: option.maxBusinessDays },

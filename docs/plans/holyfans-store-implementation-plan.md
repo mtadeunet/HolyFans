@@ -609,13 +609,12 @@ surface of ADR 00-002.
 - External — owner-supplied shipping data: countries served, shipping
   options/rates, and any free-shipping threshold; feeds the Checkout
   Session shipping configuration (unresolved).
-- **OWNER DECISION — unresolved:** tax calculation mode. ADR 00-004's
-  default is VAT-inclusive pricing (prices presented and charged include
-  VAT, as required for EU consumer sales). The alternative — a PSP tax
-  service such as Stripe Tax computing tax at checkout — is a PSP
-  capability not covered by ADR 00-004; if chosen, ADR 00-004's pricing
-  statement must be revisited before implementation. Blocks final checkout
-  configuration.
+- **OWNER DECISION — resolved:** tax calculation mode. Per ADR 00-004,
+  no tax is computed or collected at checkout — a PSP tax service
+  (Stripe Tax) is rejected, Checkout Sessions are created with
+  automatic tax disabled, and VAT determination/reporting is an
+  out-of-band accounting responsibility handled by the owner's
+  accountant outside the PSP. No longer blocks checkout configuration.
 
 ### Build and Launch Verification
 
@@ -897,9 +896,10 @@ full verification sweep.
 4. Provide shipping data — countries served, rates/options, any
    free-shipping threshold — for Checkout Session configuration (blocks
    M3). `[ADR 00-004]`
-5. Decide tax calculation mode: VAT-inclusive pricing (ADR 00-004 default)
-   vs a PSP tax service such as Stripe Tax; choosing the latter requires
-   revisiting ADR 00-004 first. `[ADR 00-004]`
+5. Tax calculation mode — resolved, no owner action needed: per
+   ADR 00-004 no tax is computed or collected at checkout, the Stripe
+   Tax option is rejected, and VAT reporting is handled by the owner's
+   accountant out-of-band. `[ADR 00-004]`
 6. Decide the invoicing path: PSP invoicing vs PT-certified invoicing
    software — PT law requires a certified invoice (fatura) per sale; launch
    gate. `[ADR 00-004]`

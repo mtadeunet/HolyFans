@@ -9,6 +9,7 @@ Proposed
 ADR 00-001 (Application Framework — Next.js)
 ADR 00-002 (Rendering and Hosting Model)
 ADR 00-006 (Media and Asset Pipeline)
+ADR 00-009 (WhatsApp Deep-Link Channels)
 ADR 00-010 (Pre-order and Stock Notification)
 ADR 00-011 (Page Model and Product Routes)
 
@@ -56,6 +57,16 @@ PSP Hosted Checkout**:
   - creates a Checkout Session describing the validated Cart and the
     fulfillment details the PSP must collect (shipping address and shipping
     options, so total cost is shown before payment);
+  - resolves the origin of every URL the Session hands the PSP — the
+    shopper's post-payment return destinations and the Storefront asset
+    references embedded in line items — server-side and deployment-aware:
+    the configured canonical base URL, else the Hosting Platform's
+    per-deployment origin, so a checkout started on a preview deployment
+    returns the shopper to that same deployment. The resolution never
+    trusts request-supplied headers and never enters client bundles,
+    which emit only the canonical URL on the Store Domain — deliberately
+    deployment-unaware so every client-visible and shared link stays
+    canonical (ADR 00-009);
   - creates Sessions idempotently — retries never produce duplicate
     Checkout Sessions;
   - refuses checkout on any Cart/Product Data divergence, surfacing a
@@ -87,19 +98,18 @@ PSP Hosted Checkout**:
   Stock Flag in Site Config — while server-side re-validation keeps
   Product Data the hard purchase backstop.
 - **Pricing and tax:** all prices are presented and charged in EUR, and the
-  displayed price remains VAT-inclusive — the shopper always sees the
-  final total before payment, as required for EU consumer sales. The
-  Compare-At Price, when present, follows the same VAT-inclusive display
-  convention but is presentation-only — it is never part of the charged
-  total. Tax
-  computation is delegated to the PSP: the checkout Route Handler creates
-  Checkout Sessions with automatic tax enabled and line items marked with
-  inclusive tax behavior, so the PSP computes the VAT portion inside the
-  displayed total rather than adding tax at payment time. This carries a
-  hard operational dependency: an active Stripe Tax registration covering
-  the applicable jurisdiction(s) MUST exist in the PSP Dashboard — without
-  it, no tax is computed or recorded. That registration is an owner
-  prerequisite, configured and maintained outside the codebase.
+  displayed price is the final total — the shopper always sees the full
+  amount before payment, as required for EU consumer sales. The
+  Compare-At Price, when present, follows the same display convention but
+  is presentation-only — it is never part of the charged total. **No tax
+  is computed or collected at checkout:** the checkout Route Handler
+  creates Checkout Sessions with automatic tax disabled, and no PSP tax
+  service is used — there is no Stripe Tax registration requirement or
+  dependency. Any VAT-inclusive framing of displayed prices is purely a
+  pricing and display decision, not tax semantics: the checkout produces
+  no tax data and PSP receipts carry no tax line. VAT determination,
+  reporting, and remittance are an out-of-band accounting responsibility
+  handled by the owner's accountant outside the PSP.
 - **Purchase-Surface Gate (interim).** Until launch, the purchase
   surface — the Product Page routes (ADR 00-011) — and its endpoints
   stay hidden behind a code-level **Purchase-Surface Gate** — a
@@ -125,9 +135,13 @@ PSP Hosted Checkout**:
   render the catalog.
 - The payment dynamic surface is exactly one checkout Route Handler plus
   the post-checkout session-status read — minimal attack area, minimal ops.
-- Automatic tax keeps displayed prices VAT-inclusive while the PSP
-  computes and reports the VAT portion — no rate tables or tax logic in
-  the codebase.
+- Preview deployments run the complete checkout flow end-to-end: Session
+  URLs resolve to the deployment's own origin server-side, so
+  hosted-payment returns and Session-embedded assets work per preview —
+  while the canonical URL stays the only client-emittable origin.
+- No tax logic, rate tables, or tax-service registration exists in the
+  codebase or the PSP configuration — the charged amount is exactly the
+  displayed price, and tax compliance never gates checkout availability.
 - The PSP's hosted payment page carries brand-consistent styling, keeping
   the premium experience coherent.
 - Promotional pricing ships entirely inside Product Data: the Compare-At
@@ -151,6 +165,10 @@ PSP Hosted Checkout**:
   outbound payment work; it must be hardened (input caps, rate limiting,
   graceful failure) and its runtime requirement (Node) fixes part of the
   dynamic surface.
+- Origin resolution is two-track: the canonical base URL is deliberately
+  deployment-unaware, so any request-time consumer needing the real
+  deployment origin must resolve it server-side itself and keep it out
+  of client bundles and shared surfaces.
 - Manual Fulfillment does not scale to high order volume; a future ADR would
   be needed to introduce inventory/order management.
 - Any PSP outage blocks purchases entirely (single-provider dependency);
@@ -159,9 +177,11 @@ PSP Hosted Checkout**:
   shopper leaves; without an event receiver the operator must rely on
   PSP-native notifications — a deliberately accepted constraint, since the
   alternative would violate the ADR 00-002 boundary.
-- Automatic tax depends on an owner-maintained Stripe Tax registration in
-  the PSP Dashboard; a missing or lapsed registration means no tax is
-  computed — an operational prerequisite the codebase cannot enforce.
+- No tax is computed or recorded on the payment: PSP receipts show no
+  tax line and the payment record carries no tax data. VAT reporting and
+  remittance rest entirely on the owner's accountant outside the PSP —
+  an out-of-band process the architecture neither supports nor enforces,
+  and one the storefront produces no data to assist.
 - A Compare-At Price is a legal price-reduction claim under EU consumer
   rules — the operator must keep it truthful (a genuine regular or prior
   price); the mechanism cannot verify the claim.
@@ -207,9 +227,9 @@ PSP Hosted Checkout**:
   recurring cost and an external service dependency to edit a handful of
   products a few times a year; the code-managed catalog is simpler and more
   reviewable.
-- **VAT-inclusive pricing without a PSP tax service** — Rejected: presents
-  VAT-inclusive prices but leaves the VAT portion uncomputed and
-  unrecorded on the payment — no tax data is produced for the business's
-  obligations. Delegating tax computation to the PSP preserves the required
-  VAT-inclusive display while the tax portion is computed and reported by
-  the provider.
+- **PSP tax service (Stripe Tax automatic tax)** — Rejected: requires an
+  owner-maintained Stripe Tax registration covering the applicable
+  jurisdiction(s) — an operational prerequisite the codebase cannot
+  enforce — and adds a PSP service dependency the business does not
+  need, since VAT reporting is discharged by the owner's accountant
+  outside the PSP.

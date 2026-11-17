@@ -91,8 +91,10 @@ user-facing documentation.
   origin of Media Slot links (ADR 03-002, ADR 00-011).
 - **Product Page** — the per-product conversion route carrying the
   Simplified Purchase Surface inside the Feed Shell — Variant
-  selection, quantity, the VAT-inclusive EUR price, the purchase
-  action or the Pre-order state, and the Outbound Share Surface;
+  selection, quantity, the final displayed EUR price (VAT-inclusive
+  framing is display-only per ADR 00-004, not a PSP tax concept),
+  the purchase action or the Pre-order state, and the Outbound
+  Share Surface;
   served at a Locale-prefixed, product-namespaced path whose final
   segment is the product's canonical slug from Product Data (ADR
   00-011, ADR 03-002).
@@ -131,7 +133,9 @@ user-facing documentation.
   Variant suggestion cards, a discovery call-to-action, and the legal
   links at its foot; present only on wider viewports (ADR 03-002).
 - **Simplified Purchase Surface** — the reduced checkout surface:
-  Variant selection, quantity, the VAT-inclusive EUR price, and a single
+  Variant selection, quantity, the final displayed EUR price
+  (VAT-inclusive framing is display-only per ADR 00-004, not a PSP
+  tax concept), and a single
   purchase action into the existing checkout path — replaced by the
   Pre-order state when the selected Variant is not purchasable (ADR
   00-010); no cart-review presentation; rendered inside the Feed

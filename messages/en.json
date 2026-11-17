@@ -55,7 +55,7 @@
   },
   "purchase": {
     "title": "Complete Your Purchase",
-    "subtitle": "Review your order — shipping, taxes and payment are handled on our secure checkout",
+    "subtitle": "Review your order — shipping and payment are handled on our secure checkout",
     "drift": {
       "title": "Your cart was updated",
       "description": "Some items changed since you added them. We've corrected your cart — please review it and try again.",
