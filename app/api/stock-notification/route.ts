@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { allowRequest, clientIp, readCappedJson } from '@/lib/api-guard';
-import { locales } from '@/lib/i18n';
+import { findVariant, PRODUCT } from '@/lib/constants';
+import { getEmailConfig, sendEmail } from '@/lib/email';
+import { captureAckEmail } from '@/lib/email-templates';
+import { locales, type Locale } from '@/lib/i18n';
 import { getManagedStore } from '@/lib/managed-store';
 import { isPurchaseSurfaceEnabled } from '@/lib/purchase-surface';
 import {
@@ -8,6 +11,7 @@ import {
   stockNotificationKey,
   type StockNotificationRecord,
 } from '@/lib/stock-notification';
+import { variantLabel } from '@/lib/stock-notification-server';
 
 /**
  * Implements ADR 00-002: Rendering and Hosting Model - "the
@@ -63,6 +67,18 @@ const requestLog = new Map<string, number[]>();
  * against an in-stock Variant is harmless. The email is never logged
  * (ADR 00-008).
  *
+ * Implements ADR 00-015: Transactional Notifications — "the
+ * stock-notification Route Handler's success path sends the visitor a
+ * localized acknowledgment — the product and Variant identified, the
+ * promise that the Restock Notification follows — in the submission's
+ * own Locale ... best-effort by design: the stored list entry is the
+ * record, the send happens after the store write, and a failed
+ * acknowledgment never loses or reports against a capture." The
+ * Capture Acknowledgment adds no branch to the error contract below:
+ * a failed send or an unconfigured channel is logged (the failure
+ * fact only, never the address or content — ADR 00-008's no-PII
+ * posture) and the response stays `{ok: true}`.
+ *
  * Error contract (consumed by `components/sections/buy-now.tsx`):
  * - `404 {error: 'stock_notification_unavailable'}` — Purchase-Surface
  *   Gate closed (fail-closed, same as the checkout Route Handler).
@@ -78,7 +94,9 @@ const requestLog = new Map<string, number[]>();
  *   Pre-order UI — honest failure, never a fake success (ADR 00-010).
  *
  * @param request - The POST request.
- * @returns `{ok: true}` once the email is persisted.
+ * @returns `{ok: true}` once the email is persisted — the best-effort
+ *   Capture Acknowledgment is attempted after the write and never
+ *   changes the response (ADR 00-015).
  */
 export async function POST(request: NextRequest) {
   // Purchase-Surface Gate (ADR 00-004 / ADR 00-010): while the gate is
@@ -136,7 +154,6 @@ export async function POST(request: NextRequest) {
     await store.hset(stockNotificationKey(body.variantId), {
       [body.email]: JSON.stringify(record),
     });
-    return NextResponse.json({ ok: true });
   } catch (error) {
     // The email is deliberately not logged — only the store failure.
     console.error('[stock-notification] capture write failed:', error);
@@ -145,4 +162,43 @@ export async function POST(request: NextRequest) {
       { status: 502 }
     );
   }
+
+  // Capture Acknowledgment (ADR 00-015), deliberately outside the
+  // write's try/catch: "the stored list entry is the record, the send
+  // happens after the store write, and a failed acknowledgment never
+  // loses or reports against a capture." Every accepted POST writes —
+  // hash-field dedupe still refreshes the record — so a reached write
+  // means a stored capture and the acknowledgment follows it.
+  const emailConfig = getEmailConfig();
+  if (!emailConfig) {
+    // Same degrade posture as the channel's other consumers: the
+    // capture stands, the courtesy send is skipped.
+    console.warn(
+      '[stock-notification] email channel unconfigured — capture stored without acknowledgment'
+    );
+  } else {
+    // `findVariant` cannot miss — the parser already required a real
+    // Product Data Variant — but the type stays honest.
+    const variant = findVariant(body.variantId);
+    if (variant) {
+      // `sendEmail` resolves `false` on every failure path rather than
+      // throwing (`lib/email.ts`), so a bare `await` suffices — a
+      // `false` here means the courtesy send was attempted and failed.
+      const delivered = await sendEmail({
+        to: body.email,
+        replyTo: emailConfig.operatorInbox,
+        ...captureAckEmail(body.locale as Locale, {
+          productName: PRODUCT.name,
+          variantLabel: variantLabel(variant),
+        }),
+      });
+      if (!delivered) {
+        // The failure fact only — never the address or the content
+        // (ADR 00-008's no-PII logging posture).
+        console.error('[stock-notification] acknowledgment send failed');
+      }
+    }
+  }
+
+  return NextResponse.json({ ok: true });
 }

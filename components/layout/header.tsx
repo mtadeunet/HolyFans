@@ -3,7 +3,6 @@
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/lib/navigation';
-import { whatsappChatUrl } from '@/lib/whatsapp';
 import { useEffect, useState } from 'react';
 import LanguageToggle from './language-toggle';
 
@@ -32,14 +31,14 @@ interface HeaderProps {
  * Since the header now only renders off the landing, its entries are
  * locale-aware Links pointing back at the landing's Feed Shell anchors
  * (`#products`, `#post-faq`) rather than scroll targets on the current
- * page. The Contact entry opens the Inbound Contact Surface's
- * click-to-chat deep link (ADR 00-009) and fails closed — it is omitted
- * when no Store Messaging Number is configured. All links go through
+ * page. The Contact entry links to the Contact Page — the Inbound
+ * Contact Surface's click-to-chat channel is withdrawn (ADR 00-009,
+ * ADR 00-014), so there is no deep link to build or
+ * fail-closed omission to gate. All links go through
  * `lib/navigation.ts` so the Locale prefix is preserved (ADR 00-005).
  */
 export default function Header({ purchaseSurfaceEnabled }: HeaderProps) {
   const t = useTranslations('navigation');
-  const tWhatsApp = useTranslations('whatsapp');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -49,13 +48,6 @@ export default function Header({ purchaseSurfaceEnabled }: HeaderProps) {
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
-
-  // Inbound Contact Surface deep link (ADR 00-009): `null` when the
-  // Store Messaging Number is unconfigured — the entry fails closed.
-  const contactUrl = whatsappChatUrl(
-    process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '',
-    tWhatsApp('prefilled_message')
-  );
 
   const navLinkClass =
     'text-text-secondary hover:text-primary transition-colors';
@@ -109,16 +101,9 @@ export default function Header({ purchaseSurfaceEnabled }: HeaderProps) {
             <Link href="/#post-faq" className={navLinkClass}>
               {t('faq')}
             </Link>
-            {contactUrl && (
-              <a
-                href={contactUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={navLinkClass}
-              >
-                {t('contact')}
-              </a>
-            )}
+            <Link href="/contact" className={navLinkClass}>
+              {t('contact')}
+            </Link>
             {/* Purchase-surface gate (ADR 00-004 / plan M0): the cart nav
                 CTA to /checkout only exists while
                 PURCHASE_SURFACE_ENABLED is 'true'. */}
@@ -175,17 +160,13 @@ export default function Header({ purchaseSurfaceEnabled }: HeaderProps) {
               >
                 {t('faq')}
               </Link>
-              {contactUrl && (
-                <a
-                  href={contactUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => setIsMenuOpen(false)}
-                  className={mobileNavLinkClass}
-                >
-                  {t('contact')}
-                </a>
-              )}
+              <Link
+                href="/contact"
+                onClick={() => setIsMenuOpen(false)}
+                className={mobileNavLinkClass}
+              >
+                {t('contact')}
+              </Link>
               {/* Purchase-surface gate (ADR 00-004 / plan M0): same
                   suppression as the desktop nav above. */}
               {purchaseSurfaceEnabled && (

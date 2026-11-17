@@ -40,14 +40,14 @@ interface ChromeFrameProps {
  *
  * The single decision point for which chrome system renders: the
  * locale-stripped `usePathname()` from `lib/navigation.ts` returns `/`
- * on each Locale landing root and `/checkout` on the purchase route —
- * both Feed Shell compositions, so the header/footer mounts are
- * suppressed there. The post-checkout success/cancel paths are
- * deliberately outside the set: they are PSP-return endpoints that keep
- * the classic chrome. Global mounts (CartProvider, Inbound Contact
- * Surface, Analytics) stay outside this frame.
+ * on each Locale landing root, `/checkout` on the purchase route, and
+ * `/contact` on the Contact Page (ADR 00-014) — all Feed Shell
+ * compositions, so the header/footer mounts are suppressed there. The
+ * post-checkout success/cancel paths are deliberately outside the set:
+ * they are PSP-return endpoints that keep the classic chrome. Global
+ * mounts (CartProvider, Analytics) stay outside this frame.
  */
-const SHELL_ROUTES = new Set(['/', '/checkout']);
+const SHELL_ROUTES = new Set(['/', '/checkout', '/contact']);
 
 export default function ChromeFrame({
   promotion,

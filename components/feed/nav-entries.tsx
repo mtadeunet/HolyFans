@@ -1,15 +1,12 @@
 import type { ReactNode } from 'react';
-import WhatsAppGlyph from '@/components/ui/whatsapp-glyph';
 import { Link } from '@/lib/navigation';
-import { whatsappChatUrl } from '@/lib/whatsapp';
 
 /**
  * Implements ADR 03-002: Landing Page Composition — Three-Column Feed
  * Shell with Simplified Purchase Surface - the Nav Rail holds "a
  * store-adapted list of icon-and-label navigation entries ... Entries
  * are store-purpose only — landing sections, the purchase surface, and
- * the contact channel through the Inbound Contact Surface's deep-link
- * mechanism (ADR 00-009). Social-platform concepts (profiles, messages,
+ * the contact channel. Social-platform concepts (profiles, messages,
  * notifications) are not carried over."
  *
  * Shared definition and rendering of the shell's navigation entries so
@@ -21,13 +18,15 @@ import { whatsappChatUrl } from '@/lib/whatsapp';
 export interface FeedNavEntry {
   /** Message key under `feed.nav` resolving the localized label. */
   key: 'home' | 'shop' | 'faq' | 'contact' | 'cart';
-  /** In-feed anchor (`#…`), the checkout path, or an external deep link. */
+  /** In-feed anchor (`#…`), an internal Locale-routed path, or an
+   *  external deep link. */
   href: string;
-  /** `true` for the external WhatsApp deep link (opens in a new tab). */
+  /** `true` for an external link (opens in a new tab). */
   external?: boolean;
   /** `true` marks an internal locale-routed path (the purchase surface,
-   *  or a `/{locale}#<anchor>` return link on the purchase route),
-   *  rendered through the localized `Link` rather than a raw anchor. */
+   *  the Contact Page, or a `/{locale}#<anchor>` return link on the
+   *  purchase/contact routes), rendered through the localized `Link`
+   *  rather than a raw anchor. */
   internal?: boolean;
   /** `true` marks the entry as purchase-surface gated — filtered out by
    *  `buildFeedNavEntries` while the gate is closed. */
@@ -44,34 +43,32 @@ export interface FeedNavEntry {
 /**
  * Build the shell's navigation entries.
  *
- * Resolves the Inbound Contact Surface's click-to-chat deep link
- * (ADR 00-009) from `NEXT_PUBLIC_WHATSAPP_NUMBER` — the Contact entry
- * fails closed (absent) when the Store Messaging Number is unconfigured.
+ * Implements ADR 00-014: Contact Channel — "The shell's `contact`
+ * navigation entry becomes an internal Locale-routed link to the
+ * Contact Page and is always rendered — it no longer depends on the
+ * Store Messaging Number's availability. The shared entry definition
+ * keeps the desktop Nav Rail and the mobile bottom band identical."
+ * (The WhatsApp deep-link entry is withdrawn per the ADR 00-014
+ * amendment of ADR 00-009; the form is the channel.)
+ *
  * The cart entry is filtered by the fail-closed purchase-surface gate
  * (ADR 00-004 / plan M0): absent entirely while
  * `PURCHASE_SURFACE_ENABLED` is not `'true'`.
  *
- * @param prefilledMessage - Localized text preloaded into the visitor's
- *   chat composer (`whatsapp.prefilled_message`).
  * @param purchaseSurfaceEnabled - Server-evaluated gate; `false` removes
  *   the cart entry so no `/checkout` anchor renders.
- * @param returnToFeed - `true` on the purchase route: in-feed anchor
- *   entries become `/{locale}#<anchor>` Links back to the landing's feed
- *   units (ADR 03-002) instead of same-page anchors.
+ * @param returnToFeed - `true` off the landing (purchase and contact
+ *   routes): in-feed anchor entries become `/{locale}#<anchor>` Links
+ *   back to the landing's feed units (ADR 03-002) instead of same-page
+ *   anchors.
  * @returns The ordered, fully gated navigation entries.
  */
 export function buildFeedNavEntries(
-  prefilledMessage: string,
   purchaseSurfaceEnabled: boolean,
   returnToFeed = false
 ): FeedNavEntry[] {
-  const contactUrl = whatsappChatUrl(
-    process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '',
-    prefilledMessage
-  );
-
-  // On the purchase route, same-page anchors have no target — entries
-  // that point at landing feed units resolve to `/{locale}#<anchor>`
+  // Off the landing, same-page anchors have no target — entries that
+  // point at landing feed units resolve to `/{locale}#<anchor>`
   // through the localized Link (Locale prefix preserved, ADR 00-005).
   const feedHref = (anchor: string): Pick<FeedNavEntry, 'href' | 'internal'> =>
     returnToFeed
@@ -139,46 +136,58 @@ export function buildFeedNavEntries(
         </svg>
       ),
     },
-  ];
-
-  // Inbound Contact Surface (ADR 00-009): the vendor's click-to-chat
-  // deep link, fail-closed — absent entirely when the Store Messaging
-  // Number is unconfigured.
-  if (contactUrl) {
-    entries.push({
+    // Contact channel (ADR 00-014): the internal Locale-routed Contact
+    // Page link, always rendered — an envelope glyph in place of the
+    // withdrawn WhatsApp deep-link entry.
+    {
       key: 'contact',
-      href: contactUrl,
-      external: true,
-      icon: <WhatsAppGlyph className="h-6 w-6" />,
-    });
-  }
-
-  // Purchase surface (ADR 00-004 / plan M0 gate): the prominent item on
-  // the mobile bottom band; filtered out below while the gate is closed.
-  entries.push({
-    key: 'cart',
-    href: '/checkout',
-    gated: true,
-    internal: true,
-    prominent: true,
-    testId: 'nav-cart',
-    icon: (
-      <svg
-        className="h-6 w-6"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={2}
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-        />
-      </svg>
-    ),
-  });
+      href: '/contact',
+      internal: true,
+      icon: (
+        <svg
+          className="h-6 w-6"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
+          />
+        </svg>
+      ),
+    },
+    // Purchase surface (ADR 00-004 / plan M0 gate): the prominent item
+    // on the mobile bottom band; filtered out below while the gate is
+    // closed.
+    {
+      key: 'cart',
+      href: '/checkout',
+      gated: true,
+      internal: true,
+      prominent: true,
+      testId: 'nav-cart',
+      icon: (
+        <svg
+          className="h-6 w-6"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+          />
+        </svg>
+      ),
+    },
+  ];
 
   return entries.filter((entry) => !entry.gated || purchaseSurfaceEnabled);
 }
@@ -196,10 +205,11 @@ interface FeedNavLinkProps {
 
 /**
  * Implements ADR 03-002 - the shared rendering of a shell navigation
- * entry: external deep links open in a new tab with `noopener
- * noreferrer`, the gated purchase entry routes through the localized
- * `Link` (Locale prefix preserved, ADR 00-005), and in-feed anchors use
- * a plain anchor. `data-testid` and `aria-label` are driven by the
+ * entry: external links open in a new tab with `noopener noreferrer`,
+ * internal locale-routed entries (purchase surface, Contact Page, and
+ * `/{locale}#<anchor>` return links) route through the localized `Link`
+ * (Locale prefix preserved, ADR 00-005), and in-feed anchors use a
+ * plain anchor. `data-testid` and `aria-label` are driven by the
  * entry, so the Nav Rail and the mobile bottom band can't drift apart.
  */
 export function FeedNavLink({

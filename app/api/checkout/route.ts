@@ -280,6 +280,15 @@ export async function POST(request: NextRequest) {
     integration_identifier: integrationIdentifier(),
     locale: body.locale,
     /**
+     * Implements ADR 00-015: Transactional Notifications — "The
+     * Thank-You Email renders in the Checkout Session's Locale." The
+     * shopper's Locale is recorded on the Session so the PSP event
+     * receiver (`app/api/webhooks/stripe/route.ts`) can render the
+     * customer-facing email in it without a lookup table — the
+     * receiver validates it against the supported set.
+     */
+    metadata: { locale: body.locale },
+    /**
      * Implements ADR 00-004: Commerce and Checkout - "all payment
      * notifications are PSP-native — the PSP confirms the order and
      * delivers the receipt to the customer, and notifies the operator of

@@ -12,6 +12,8 @@ ADR 00-005 (Internationalization)
 ADR 00-007 (Quality Tooling and CI)
 ADR 00-008 (Analytics and Consent)
 ADR 00-011 (Page Model and Product Routes)
+ADR 00-013 (Email Delivery Channel)
+ADR 00-015 (Transactional Notifications)
 ADR 03-002 (Landing Page Composition)
 
 ## Context
@@ -38,9 +40,9 @@ explicitly: a stored email is personal data — the first the Storefront
 persists — so collection must be consented, purpose-bound, retained
 only as long as needed, and deletable by the operator. ADR 00-005
 requires every user-facing string, including the consent statement, in
-both Locales. Email sending is a deferred dependency: the owner will
-choose a provider later, so this decision delivers the captured list,
-not the notification.
+both Locales. The notification send rides the delivery channel of
+ADR 00-013; this decision delivers the captured list that send
+consumes, and the send itself is ADR 00-015's.
 
 ## Decision
 
@@ -51,14 +53,17 @@ List** — instead of hiding the item. Operator control is a **Stock
 Flag per Variant** in Site Config composing with the Availability
 Flags in Product Data. Capture flows through one new hardened
 stock-notification Route Handler into the managed Redis store; the
-notification email send is a deferred dependency.
+operator-triggered Restock Notification send over that list is
+ADR 00-015's.
 
 - **Pre-order state.** When the visitor's selected Variant is not
   purchasable, the Simplified Purchase Surface keeps rendering in
   place: a localized sold-out message, and the purchase action replaced
   by a notify-me control that asks for the visitor's email. Submitting
-  stores the email and shows an in-page confirmation that the visitor
-  will be notified when stock returns. A Pre-order is an expression of
+  stores the email, shows an in-page confirmation that the visitor
+  will be notified when stock returns, and sends the localized Capture
+  Acknowledgment email of ADR 00-015 — a best-effort courtesy that never
+  blocks or loses a stored capture. A Pre-order is an expression of
   interest — it creates no payment, no Checkout Session, no
   reservation, and no inventory commitment; the Cart and the checkout
   contract of ADR 00-004 are untouched.
@@ -129,14 +134,14 @@ notification email send is a deferred dependency.
   anonymous Like Token, or any analytics surface. Repeat submissions of
   the same email for the same Variant dedupe naturally; the list is an
   operator-held record the operator can export and clear.
-- **Email sending is deferred — explicitly out of scope.** No
-  confirmation or notification email is sent under this decision; the
-  confirmation the visitor sees is an in-page state only. Sending
-  requires its own follow-up decision covering provider choice (Resend
-  is the likely candidate), a verified sender domain, and
-  unsubscribe/legal-footer obligations. The stored Stock Notification
-  List is the deliverable; a notification campaign or automated send
-  consumes it later.
+- **Email sending.** Two sends ride the delivery channel of ADR 00-013
+  (both ADR 00-015): the **Capture Acknowledgment** — sent at capture,
+  in the submission's Locale, confirming the request landed — and the
+  **Restock Notification** — the operator-triggered send that consumes
+  the list and clears each successfully sent address, the send-and-clear
+  retention mechanism this decision promises. The acknowledgment is
+  best-effort: the stored list entry is the record and a failed
+  acknowledgment never loses a capture.
 - **Privacy posture.** The Stock Notification List is the first
   personal data the Storefront persists and is collected under the
   expanded per-feature consent posture of ADR 00-008: consent language
@@ -172,9 +177,10 @@ notification email send is a deferred dependency.
   boundary, on the same store and under the same hardening norm as its
   siblings — minimal new attack surface and no new platform
   dependency.
-- Capture first, send later: the feature ships its measurable value
-  (the operator-held list) without blocking on the email-provider
-  decision, verified sender domain, or legal-footer work.
+- Capture and notify are separated in time: the operator-held list
+  ships its measurable value at capture, while both sends ride the
+  established delivery channel of ADR 00-013 — the capture never
+  depends on a send succeeding.
 - Consent rendered at the capture point keeps GDPR defensible without a
   consent banner: single stated purpose, minimal data, operator-held
   records with a clear deletion path.
@@ -197,10 +203,11 @@ notification email send is a deferred dependency.
   re-validation, are a hard stop. A fail-open Site Config read likewise
   resolves to purchasable during an Edge Config outage; the Product
   Data backstop bounds both cases.
-- The captured list is inert until the deferred email-send decision
-  lands — Pre-order confirmations are in-page only, and the "we'll
-  notify you" promise is an operator obligation the code cannot
-  fulfill alone.
+- The "we'll notify you" promise is fulfilled by the operator-
+  triggered Restock Notification of ADR 00-015, which consumes the
+  list and clears each successfully sent address; the capture itself
+  is confirmed by the best-effort Capture Acknowledgment — a failed
+  acknowledgment never loses the stored subscription.
 - The key-value store offers no schema or expiry for the list:
   retention enforcement (clear on send, purge on demand) is an
   operator process, not a mechanism.
@@ -237,11 +244,13 @@ notification email send is a deferred dependency.
   Cookieless Analytics posture of ADR 00-008 and hand visitor personal
   data to an intermediary; the in-house endpoint keeps the list
   operator-held.
-- **Send the confirmation/notification email now** — Deferred as a
-  capability, rejected as part of this decision: provider choice
-  (Resend likely), a verified sender domain, and unsubscribe/legal-
-  footer obligations are a separate decision requiring its own ADR;
-  shipping capture first delivers the list without blocking on them.
+- **Silent capture (no acknowledgment email)** — Rejected: the
+  in-page state confirms the submission, but the visitor deserves a
+  durable confirmation the request landed — the Capture
+  Acknowledgment of ADR 00-015 stays inside the single consent
+  purpose (it is about the stock notification itself, never
+  marketing) and is best-effort so delivery can never gate the
+  capture.
 - **Stock Flag as an environment variable or a Product Data field** —
   Rejected: both require a rebuild and redeploy to flip; an operator
   toggle that applies within seconds without a deploy is exactly Site
@@ -267,10 +276,10 @@ notification email send is a deferred dependency.
   per-Variant flags keep each sellable item's toggle and capture
   independent at no extra mechanism cost.
 - **Double opt-in (a confirmation email before listing an address)** —
-  Rejected as the launch posture: it depends on the deferred
-  email-send capability, and single-purpose consent rendered at the
-  capture point suffices for a notification list of this risk level.
-  May be revisited by the email-provider ADR.
+  Rejected: single-purpose consent rendered at the capture point
+  suffices for a notification list of this risk level, and the send
+  of ADR 00-015 carries the purpose statement. May be revisited if the
+  list's use ever widens.
 - **Pre-order surface rendered while the Purchase-Surface Gate is
   closed** — Rejected: the gate exists to keep the unlaunched purchase
   flow invisible; an ungated capture would expose a purchase-adjacent

@@ -11,6 +11,7 @@ ADR 00-004 (Commerce and Checkout)
 ADR 00-005 (Internationalization)
 ADR 00-009 (WhatsApp Deep-Link Channels)
 ADR 00-010 (Pre-order and Stock Notification)
+ADR 00-014 (Contact Channel)
 ADR 03-002 (Landing Page Composition)
 
 ## Context
@@ -49,10 +50,14 @@ Surface; its canonical path is a Locale-prefixed, product-namespaced
 URL whose final segment is the product's canonical slug carried in
 Product Data.
 
-- **Two page kinds.** The Landing Page is the Locale landing root —
+- **Page kinds.** The Landing Page is the Locale landing root —
   the front door carrying the Post Card feed (ADR 03-002); it is
   unchanged by this decision. A Product Page exists for every product
   in the Product Catalog and is the conversion page for that product.
+  A third page kind joins the model — the auxiliary in-shell page, of
+  which the Contact Page (`/<Locale>/contact`, the Feed Surface
+  carrying the Contact Form while the shell's navigation chrome
+  persists, ADR 00-014) is the standing instance.
 - **The Product Page IS the Simplified Purchase Surface.** The
   surface defined by ADR 03-002 does not change semantically —
   Variant selection, quantity, the VAT-inclusive EUR price

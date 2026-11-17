@@ -101,7 +101,7 @@
       "sold_out_description": "Esta variante está esgotada de momento. Deixe o seu email e avisamos assim que estiver de volta.",
       "email_label": "Endereço de email",
       "email_placeholder": "O seu email",
-      "consent": "Ao submeter, concorda que guardemos o seu email apenas para o avisar quando esta variante estiver novamente em stock — nada mais.",
+      "consent": "Ao submeter, concorda que guardemos o seu email apenas para confirmar o seu pedido e o avisar quando esta variante estiver novamente em stock — nada mais.",
       "notify_cta": "Avise-me quando estiver disponível",
       "submitting": "A guardar…",
       "confirmed_title": "Está na lista",
@@ -110,6 +110,26 @@
       "unavailable_description": "A lista de notificações está indisponível neste momento — tente novamente dentro de instantes.",
       "badge": "Esgotado"
     }
+  },
+  "contact": {
+    "heading": "Fale connosco",
+    "intro": "Tem uma questão sobre uma encomenda, tamanhos ou outro assunto? Escreva-nos — respondemos a todas as mensagens.",
+    "name_label": "Nome (opcional)",
+    "name_placeholder": "O seu nome",
+    "email_label": "Email",
+    "email_placeholder": "O seu email",
+    "subject_label": "Assunto (opcional)",
+    "subject_placeholder": "Sobre o que é a sua mensagem?",
+    "message_label": "Mensagem",
+    "message_placeholder": "Escreva a sua mensagem…",
+    "website_label": "Website",
+    "consent": "Ao submeter, concorda que a sua mensagem e o seu endereço de email sejam usados apenas para responder a este contacto — nada mais.",
+    "submit": "Enviar mensagem",
+    "submitting": "A enviar…",
+    "sent_title": "Mensagem enviada",
+    "sent_description": "Obrigado — recebemos a sua mensagem e vamos responder para o seu email em breve.",
+    "unavailable_title": "Não foi possível enviar a sua mensagem",
+    "unavailable_description": "O canal de contacto está indisponível neste momento — tente novamente dentro de instantes."
   },
   "not_found": {
     "title": "Página Não Encontrada",

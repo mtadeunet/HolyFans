@@ -101,7 +101,7 @@
       "sold_out_description": "This variant is currently sold out. Leave your email and we'll let you know as soon as it's back.",
       "email_label": "Email address",
       "email_placeholder": "Your email",
-      "consent": "By submitting, you agree that we store your email only to notify you when this variant is back in stock — nothing else.",
+      "consent": "By submitting, you agree that we store your email only to confirm your request and notify you when this variant is back in stock — nothing else.",
       "notify_cta": "Notify me when it's back",
       "submitting": "Saving…",
       "confirmed_title": "You're on the list",
@@ -110,6 +110,26 @@
       "unavailable_description": "The notification list is unavailable right now — please try again in a moment.",
       "badge": "Sold out"
     }
+  },
+  "contact": {
+    "heading": "Contact us",
+    "intro": "A question about an order, sizing, or anything else? Write to us — we answer every message.",
+    "name_label": "Name (optional)",
+    "name_placeholder": "Your name",
+    "email_label": "Email",
+    "email_placeholder": "Your email",
+    "subject_label": "Subject (optional)",
+    "subject_placeholder": "What is your message about?",
+    "message_label": "Message",
+    "message_placeholder": "Write your message…",
+    "website_label": "Website",
+    "consent": "By submitting, you agree that your message and email address are used only to answer this inquiry — nothing else.",
+    "submit": "Send message",
+    "submitting": "Sending…",
+    "sent_title": "Message sent",
+    "sent_description": "Thank you — we've received your message and will reply to your email soon.",
+    "unavailable_title": "Couldn't send your message",
+    "unavailable_description": "The contact channel is unavailable right now — please try again in a moment."
   },
   "not_found": {
     "title": "Page Not Found",

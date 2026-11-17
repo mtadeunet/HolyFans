@@ -1,5 +1,6 @@
 import type { VariantStockNotifications } from '@/lib/stock-notification-server';
 import ClearListButton from './clear-list-button';
+import NotifyListButton from './notify-list-button';
 import { formatStoreTimestamp } from './format-timestamp';
 import type { StoreStatus } from './types';
 
@@ -94,7 +95,16 @@ export default function StockNotificationsSection({
                 {list.entries.length === 1 ? '' : 's'}
               </span>
               {status === 'connected' && list.entries.length > 0 && (
-                <ClearListButton variantId={list.variantId} />
+                <>
+                  {/* Implements ADR 00-015: the operator-triggered
+                      Restock Notification send-and-clear beside the
+                      purge control (ADR 00-010). */}
+                  <NotifyListButton
+                    variantId={list.variantId}
+                    count={list.entries.length}
+                  />
+                  <ClearListButton variantId={list.variantId} />
+                </>
               )}
             </div>
             {/* The export view: each captured email with the consent

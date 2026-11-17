@@ -10,6 +10,8 @@ ADR 00-002 (Rendering and Hosting Model)
 ADR 00-003 (Permanent QR Redirect Route)
 ADR 00-004 (Commerce and Checkout)
 ADR 00-010 (Pre-order and Stock Notification)
+ADR 00-013 (Email Delivery Channel)
+ADR 00-015 (Transactional Notifications)
 ADR 03-002 (Landing Page Composition)
 
 ## Context
@@ -67,7 +69,11 @@ is the purpose-bound capture below.
   export-and-clear path exists as the deletion mechanism, and it joins
   to no feature token, identity, or analytics surface. The Stock
   Notification List's visitor emails (ADR 00-010) are the sanctioned
-  instance — the first personal data the Storefront persists.
+  instance — the first personal data the Storefront persists. A
+  consented record's stored fields may serve their stated purpose
+  mechanically — the captured Locale may drive the localized Restock
+  Notification the consent was given for (ADR 00-015) — without
+  widening the purpose.
 - No consent-management platform, cookie banner, or tag manager is part of
   the architecture. If a future requirement ever demands identified or
   cross-session tracking, it requires a new ADR and a consent mechanism.

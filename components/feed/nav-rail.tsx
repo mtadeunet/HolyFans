@@ -40,9 +40,7 @@ export default function NavRail({
   returnToFeed = false,
 }: NavRailProps) {
   const t = useTranslations('feed.nav');
-  const tWhatsApp = useTranslations('whatsapp');
   const entries = buildFeedNavEntries(
-    tWhatsApp('prefilled_message'),
     purchaseSurfaceEnabled,
     returnToFeed
   );

@@ -13,6 +13,9 @@ ADR 00-005 (Internationalization)
 ADR 00-007 (Quality Tooling and CI)
 ADR 00-008 (Analytics and Consent)
 ADR 00-010 (Pre-order and Stock Notification)
+ADR 00-013 (Email Delivery Channel)
+ADR 00-014 (Contact Channel)
+ADR 00-015 (Transactional Notifications)
 ADR 03-002 (Landing Page Composition)
 
 ## Context
@@ -29,9 +32,12 @@ reads of the like store's aggregate state and the Stock Notification
 List — including its per-Variant purge path — the creation of
 Checkout Sessions with the PSP, a request-time read of the created
 Session's payment status on the post-checkout success page (ADR 00-004),
-shared like counters for the feed's Interaction Row (ADR 03-002), and
+shared like counters for the feed's Interaction Row (ADR 03-002),
 consented email capture for the purchase surface's Pre-order state
-(ADR 00-010).
+(ADR 00-010), the Contact Form's relay to the Operator Inbox
+(ADR 00-014), the PSP event receiver feeding the order-lifecycle
+emails (ADR 00-015), and the Admin Console's Restock Notification
+send (ADR 00-015).
 Hosting must be inexpensive, low-
 operations, able to serve the QR Redirect Route indefinitely, and present in
 Europe for the primary market.
@@ -76,7 +82,10 @@ The Storefront runs a **hybrid model on the Vercel Hosting Platform**:
     export-and-clear path (ADR 00-010); and a per-Variant purge
     write that deletes a Variant's Stock Notification List on the
     operator's clear action, the clear half of that path
-    (ADR 00-010);
+    (ADR 00-010); and a per-Variant email-send action that delivers
+    the Restock Notification to a Variant's list through the
+    delivery channel and removes each successfully sent address —
+    the send-and-clear half of ADR 00-015;
   - the single checkout Route Handler on the **Node runtime** (required by
     the PSP SDK), which creates Checkout Sessions (ADR 00-004) and reads
     Site Config at request time for the free-shipping threshold it
@@ -110,6 +119,20 @@ The Storefront runs a **hybrid model on the Vercel Hosting Platform**:
     limiting, fail-closed) and sharing the Purchase-Surface Gate
     posture of ADR 00-004: it answers unavailable while the gate is
     closed.
+  - the **contact Route Handler** on the Node runtime, which relays a
+    Contact Form submission to the Operator Inbox through the
+    Transactional Email Provider (ADR 00-013, ADR 00-014) — hardened
+    like its siblings (input caps, IP rate limiting, a honeypot
+    check, fail-closed), ungated by the Purchase-Surface Gate, and
+    persisting nothing;
+  - the **PSP event receiver** on the Node runtime — the sole inbound
+    channel the boundary admits beyond visitor-facing endpoints: a
+    signature-verified webhook endpoint the PSP calls with order
+    lifecycle events, which sends the order emails of ADR 00-015
+    through the delivery channel and deduplicates sends against the
+    managed store. The verified signature is its hardening; it
+    answers promptly and acknowledges undeliverable work rather than
+    failing the PSP's retries.
 - **Small shared request-time state persists in a managed Redis store
   provisioned through the Hosting Platform's marketplace** — the
   platform-native choice for small shared request-time state beyond
@@ -118,7 +141,8 @@ The Storefront runs a **hybrid model on the Vercel Hosting Platform**:
   and the Admin Console's aggregate likes view only (ADR 03-002, ADR
   00-008) and, in a dedicated per-Variant keyspace never joined to
   them, the Stock Notification List of consented visitor emails
-  (ADR 00-010) —
+  (ADR 00-010), and the PSP event receiver's per-session send-dedupe
+  records (ADR 00-015) —
   the Storefront's first persisted personal data, held under the
   per-feature consent posture of ADR 00-008. When the store is
   unconfigured or unreachable, the Interaction Row degrades to
@@ -127,7 +151,8 @@ The Storefront runs a **hybrid model on the Vercel Hosting Platform**:
   health — while the Pre-order
   capture answers a graceful unavailable state rather than failing.
 - No other inbound request-time capability exists or may be added without a
-  new ADR — this boundary forecloses webhook receivers, additional
+  new ADR — beyond the single enumerated PSP event receiver, this
+  boundary forecloses further webhook receivers, additional
   middleware duties beyond the three enumerated, any additional dynamic
   endpoints, and any other request-time page rendering or data reads
   beyond those enumerated above.

@@ -11,6 +11,7 @@ ADR 00-004 (Commerce and Checkout)
 ADR 00-005 (Internationalization)
 ADR 00-007 (Quality Tooling and CI)
 ADR 00-008 (Analytics and Consent)
+ADR 00-014 (Contact Channel)
 ADR 03-002 (Landing Page Composition)
 
 ## Context
@@ -52,7 +53,14 @@ widget service — the Storefront never sends, receives, or stores a message.
   nothing — it fails closed, matching the Storefront's fail-closed posture.
   The surface is operator-toggleable through Site Config and the Admin
   Console like other global chrome, reusing the existing Edge Config read
-  path — it introduces no new request-time capability.
+  path — it introduces no new request-time capability. **The surface is
+  currently withdrawn:** the operator cannot staff a chat channel, so
+  the Store Messaging Number is left unconfigured — the control renders
+  nothing (its fail-closed posture is the withdrawal) — and the shell's
+  contact navigation entry targets the Contact Page of ADR 00-014
+  instead. The component, its Site Config toggle, and the deep-link
+  code remain dormant in the tree; the surface returns purely by
+  configuration when the channel can be answered.
 - **Outbound Share Surface:** a control on the canonical purchase block lets
   a visitor compose a message containing the Storefront's canonical URL on
   the Store Domain to send to their own contacts. It shares only the
@@ -86,9 +94,10 @@ widget service — the Storefront never sends, receives, or stores a message.
 **Negative / trade-offs:**
 - Inbound-only: visitors can start a conversation, but the Storefront cannot
   send automated order confirmations, shipping updates, or re-engagement
-  messages over WhatsApp — order lifecycle signals remain PSP-native per
-  ADR 00-004. Automated order messaging would require a future server-side
-  integration under a new ADR.
+  messages over WhatsApp — order lifecycle email rides the delivery
+  channel of ADR 00-013 and the transactional notifications of
+  ADR 00-015 instead. Automated order messaging over this channel would
+  require a future server-side integration under a new ADR.
 - The Store Messaging Number is build-inlined public configuration: changing
   it requires a rebuild and redeploy — it cannot be retargeted at request
   time through Site Config the way the QR Redirect Route destination can.

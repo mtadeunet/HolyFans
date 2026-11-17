@@ -39,9 +39,7 @@ export default function MobileBottomNav({
   returnToFeed = false,
 }: MobileBottomNavProps) {
   const t = useTranslations('feed.nav');
-  const tWhatsApp = useTranslations('whatsapp');
   const entries = buildFeedNavEntries(
-    tWhatsApp('prefilled_message'),
     purchaseSurfaceEnabled,
     returnToFeed
   );

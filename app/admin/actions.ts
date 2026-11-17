@@ -2,7 +2,10 @@
 
 import { revalidatePath } from 'next/cache';
 import { writeSiteConfig } from '@/lib/edge-config-write';
-import { findVariant } from '@/lib/constants';
+import { findVariant, PRODUCT, SITE_CONFIG } from '@/lib/constants';
+import { getEmailConfig, sendEmail } from '@/lib/email';
+import { restockEmail } from '@/lib/email-templates';
+import { defaultLocale, locales, type Locale } from '@/lib/i18n';
 import { getManagedStore } from '@/lib/managed-store';
 import { getSiteConfig } from '@/lib/site-config-server';
 import {
@@ -13,6 +16,10 @@ import {
 } from '@/lib/site-config';
 import { normalizeCampaigns } from '@/lib/promotions';
 import { stockNotificationKey } from '@/lib/stock-notification';
+import {
+  parseRecord,
+  variantLabel,
+} from '@/lib/stock-notification-server';
 
 export type SaveResult = { ok: true } | { ok: false; error: string };
 
@@ -183,4 +190,109 @@ export async function clearStockNotificationList(
 
   revalidatePath('/admin');
   return { ok: true };
+}
+
+export type NotifyResult =
+  | { ok: true; sent: number; failed: number }
+  | { ok: false; error: string };
+
+/**
+ * Implements ADR 00-015: Transactional Notifications — the
+ * "operator-triggered Restock Notification send ... reads that
+ * Variant's Stock Notification List, sends each entry the localized
+ * Restock Notification ... in the Locale stored in its consent
+ * record, and **deletes each successfully sent address**. Send-and-
+ * clear is the deletion mechanism completing ADR 00-010's retention
+ * rule ... Failed sends keep their entries so the action is
+ * retryable; the action reports per-Variant sent/failed counts.
+ * Captured emails are never logged."
+ *
+ * `HGETALL stock-notifications:<variantId>` — the product link is
+ * `<canonical>/<locale>/checkout`, the working purchase URL today;
+ * the ADR 00-011 `product/<slug>` redirect keeps it valid when routes
+ * migrate. Fail-closed on both dependencies: an unconfigured store or
+ * delivery channel reports an error rather than a send it did not
+ * perform. One send per list entry — a solicited single-purpose
+ * notification, never marketing (ADR 00-013's transactional-only
+ * constraint).
+ *
+ * @param variantId - The Variant whose list is notified; must name a
+ *   real Product Data Variant.
+ * @returns `{ok: true, sent, failed}` with per-entry counts;
+ *   `{ok: false, error}` when the Variant is unknown, a dependency is
+ *   unconfigured, or the list read fails.
+ */
+export async function sendRestockNotifications(
+  variantId: string
+): Promise<NotifyResult> {
+  const variant = findVariant(variantId);
+  if (!variant) {
+    return { ok: false, error: 'Unknown variant' };
+  }
+
+  const store = getManagedStore();
+  if (!store) {
+    return { ok: false, error: 'Store not configured' };
+  }
+  const emailConfig = getEmailConfig();
+  if (!emailConfig) {
+    return { ok: false, error: 'Email delivery not configured' };
+  }
+
+  const key = stockNotificationKey(variantId);
+  let entries: Record<string, unknown>;
+  try {
+    // The SDK auto-deserializes HASH values — entries arrive as
+    // objects or JSON strings; `parseRecord` narrows either way.
+    entries = (await store.hgetall<Record<string, unknown>>(key)) ?? {};
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : 'Unknown read error';
+    return { ok: false, error: message };
+  }
+
+  let sent = 0;
+  let failed = 0;
+  for (const [email, value] of Object.entries(entries)) {
+    // The consent record's Locale drives the template's language —
+    // an unreadable record falls back to the Primary Locale (ADR
+    // 00-005), never blocking the send.
+    const record = parseRecord(value);
+    const locale: Locale =
+      record && (locales as readonly string[]).includes(record.locale)
+        ? (record.locale as Locale)
+        : defaultLocale;
+
+    const delivered = await sendEmail({
+      to: email,
+      replyTo: emailConfig.operatorInbox,
+      ...restockEmail(locale, {
+        productName: PRODUCT.name,
+        variantLabel: variantLabel(variant),
+        productUrl: `${SITE_CONFIG.url}/${locale}/checkout`,
+      }),
+    });
+
+    if (delivered) {
+      // Send-and-clear (ADR 00-015): `HDEL` this field only — sibling
+      // entries are untouched, and failures keep their entries for
+      // retry. An `HDEL` failure leaves the entry for retry (a
+      // possible duplicate send on the next run — bounded, and the
+      // send itself already happened).
+      try {
+        await store.hdel(key, email);
+      } catch (error) {
+        console.error(
+          `[admin] restock HDEL failed for ${variantId}:`,
+          error
+        );
+      }
+      sent += 1;
+    } else {
+      failed += 1;
+    }
+  }
+
+  revalidatePath('/admin');
+  return { ok: true, sent, failed };
 }

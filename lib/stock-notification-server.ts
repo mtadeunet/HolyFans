@@ -33,12 +33,14 @@ function allVariants(): ProductVariant[] {
 }
 
 /**
- * The Variant's operator-facing display label (name + size).
+ * The Variant's operator-facing display label (name + size) — shared
+ * by the Admin Console's list view and the Restock Notification send
+ * (ADR 00-015) so the Variant is identified the same way everywhere.
  *
  * @param variant - A Product Data Variant.
- * @returns The `'<name> — <size>'` label shown in the Admin Console.
+ * @returns The `'<name> — <size>'` label.
  */
-function variantLabel(variant: ProductVariant): string {
+export function variantLabel(variant: ProductVariant): string {
   return `${variant.name} — ${variant.size}`;
 }
 
@@ -138,7 +140,7 @@ export function baseVariantStockNotifications(): VariantStockNotifications[] {
  * @returns The `StockNotificationRecord`, or `null` when the value is
  *   not a well-formed record.
  */
-function parseRecord(value: unknown): StockNotificationRecord | null {
+export function parseRecord(value: unknown): StockNotificationRecord | null {
   let parsed: unknown = value;
   if (typeof value === 'string') {
     try {

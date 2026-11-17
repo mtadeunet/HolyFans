@@ -12,6 +12,7 @@ ADR 00-006 (Media and Asset Pipeline)
 ADR 00-009 (WhatsApp Deep-Link Channels)
 ADR 00-010 (Pre-order and Stock Notification)
 ADR 00-011 (Page Model and Product Routes)
+ADR 00-015 (Transactional Notifications)
 
 ## Context
 
@@ -81,15 +82,16 @@ PSP Hosted Checkout**:
   hosted PCI-compliant payment pages with strong premium branding controls,
   and first-rate developer tooling — with no platform markup beyond standard
   processing fees.
-- **Order receipt and Fulfillment:** all payment notifications are
-  PSP-native — the PSP confirms the order and delivers the receipt to the
-  customer, and notifies the operator of new orders and of asynchronous
-  payment outcomes (delayed-confirmation methods such as Multibanco). The
-  operator performs Fulfillment manually at the expected volumes. Webhook
-  or event-receiving endpoints are out of scope: no inbound communication
-  channel exists beyond the enumerated Route Handlers in ADR 00-002, and all
-  payment lifecycle signals are consumed through the PSP's own notification
-  and reporting surfaces.
+- **Order receipt and Fulfillment:** the PSP confirms the order and
+  delivers the receipt to the customer — the payment record stays
+  PSP-native. Branded post-payment communication is NOT PSP-native:
+  the customer Thank-You Email and the Operator Order Alert are sent
+  by the Storefront's PSP event receiver (ADR 00-015), an enumerated
+  signature-verified webhook endpoint admitted to the dynamic
+  surface of ADR 00-002 and covering delayed-confirmation Multibanco
+  settlement. The operator performs Fulfillment manually at the
+  expected volumes, reading the Operator Order Alert and the PSP's
+  own reporting surfaces.
 - **Availability:** sold-out state is expressed through Availability Flags in
   Product Data (small handmade runs); no automated stock counters at launch.
   A non-purchasable item is never hidden from the purchase surface: it
@@ -174,9 +176,9 @@ PSP Hosted Checkout**:
 - Any PSP outage blocks purchases entirely (single-provider dependency);
   checkout must degrade gracefully.
 - Delayed-confirmation methods (Multibanco) can complete or fail after the
-  shopper leaves; without an event receiver the operator must rely on
-  PSP-native notifications — a deliberately accepted constraint, since the
-  alternative would violate the ADR 00-002 boundary.
+  shopper leaves; settlement reaches the Storefront through the enumerated
+  event receiver of ADR 00-015, which fires the customer Thank-You Email
+  and keeps the Operator Order Alert honest about payment state.
 - No tax is computed or recorded on the payment: PSP receipts show no
   tax line and the payment record carries no tax data. VAT reporting and
   remittance rest entirely on the owner's accountant outside the PSP —
@@ -215,11 +217,13 @@ PSP Hosted Checkout**:
   mechanism: per-product links cannot express a multi-Variant Cart or a
   coherent premium basket flow; acceptable only as a temporary launch
   expedient, never as the architecture.
-- **PSP webhooks / a Storefront event receiver for order lifecycle
-  signals** — Rejected: a webhook endpoint is an additional inbound
-  request-time channel and dynamic surface, contradicting the enumerated-
-  Route-Handler boundary of ADR 00-002; PSP-native notifications cover order
-  confirmation and asynchronous payment outcomes without one.
+- **PSP webhooks / a general Storefront event receiver for order
+  lifecycle signals** — Rejected here, narrowly admitted by ADR 00-015:
+  this decision keeps the checkout path itself free of inbound PSP
+  calls and general-purpose event handling; the branded post-payment
+  emails are served by the single enumerated signature-verified
+  receiver ADR 00-015 admits to the ADR 00-002 boundary for that
+  purpose alone.
 - **Self-hosted commerce (WooCommerce or similar)** — Rejected: introduces a
   server, database, security patching, and plugin maintenance — the opposite
   of the low-operations hybrid model in ADR 00-002.

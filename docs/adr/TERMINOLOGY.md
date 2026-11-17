@@ -46,8 +46,9 @@ user-facing documentation.
   aggregate state — per-post totals, per-post last-like timestamps,
   and store health — and to read and purge the Stock Notification
   List: a per-Variant view of the captured consented emails and their
-  consent records plus the per-Variant clear action (ADR 00-002,
-  ADR 00-008, ADR 00-010).
+  consent records plus the per-Variant clear action and the
+  per-Variant Restock Notification send (ADR 00-002, ADR 00-008,
+  ADR 00-010, ADR 00-015).
 - **Store Messaging Number** — the operator-supplied WhatsApp contact number
   the Inbound Contact Surface opens a chat to; provided via Hosting Platform
   environment configuration and never committed to tracked files (identifier
@@ -78,6 +79,46 @@ user-facing documentation.
   notification, retained until the notification sends or the operator
   purges it, and never joined to Like Tokens or analytics (ADR 00-010,
   ADR 00-008).
+- **Transactional Email Provider** — the outbound-only email sending
+  service the Storefront uses for transactional mail (Zoho CPaaS /
+  ZeptoMail): sends originate from a provider-verified domain using
+  a server-side API token; it is transactional-only by contract —
+  no marketing sends (ADR 00-013).
+- **Operator Inbox** — the operator-held mailbox (env-configured,
+  never committed) that receives Contact Form relays and the
+  Operator Order Alert; app-sent mail carries it or the visitor's
+  address as `Reply-To`, so replies land where the operator reads
+  (ADR 00-013, ADR 00-014, ADR 00-015).
+- **Contact Page** — the Locale-prefixed auxiliary route
+  (`/<Locale>/contact`) inside the Feed Shell whose Feed Surface
+  carries the Contact Form while the shell's navigation chrome
+  persists (ADR 00-014).
+- **Contact Form** — the in-shell Island that collects the
+  visitor's name, email, optional subject, and message plus a
+  honeypot under purpose-bound consent copy, posting to the
+  contact Route Handler which relays it to the Operator Inbox;
+  nothing is persisted or logged (ADR 00-014).
+- **PSP Event Receiver** — the enumerated signature-verified
+  webhook Route Handler the PSP calls with order lifecycle events;
+  the sole inbound channel admitted beyond visitor-facing
+  endpoints (ADR 00-002, ADR 00-015).
+- **Thank-You Email** — the branded post-payment email sent to the
+  customer in the Checkout Session's Locale once payment settles,
+  complementing the PSP's native receipt (ADR 00-015).
+- **Operator Order Alert** — the owner-facing order email sent to
+  the Operator Inbox carrying the line items, quantities, shipping
+  details, and payment state manual Fulfillment needs
+  (ADR 00-015).
+- **Capture Acknowledgment** — the localized email the
+  stock-notification Route Handler sends a visitor after a capture
+  is stored, confirming the request landed; best-effort — the
+  stored list entry is the record and a failed acknowledgment
+  never loses a capture (ADR 00-010, ADR 00-015).
+- **Restock Notification** — the localized email sent to a Stock
+  Notification List entry when the operator triggers the
+  per-Variant send in the Admin Console; each successfully sent
+  address is deleted — send-and-clear as the retention mechanism
+  (ADR 00-010, ADR 00-015).
 - **Purchase-Surface Gate** — the interim, code-level environment
   switch that keeps the unlaunched purchase surface and its endpoints
   hidden until launch; fail-closed and deliberately not a Site Config
@@ -151,17 +192,21 @@ user-facing documentation.
   and provides preview deployments driven by the repository's Git integration.
 - **Route Handler** — a request-time HTTP endpoint provided by the application
   framework on the Hosting Platform. The Storefront's enumerated dynamic
-  compute surface consists of the Request-Time Middleware, five Route
+  compute surface consists of the Request-Time Middleware, seven Route
   Handlers — the QR Redirect Route read, the Admin Console write path,
   the single checkout endpoint, the like counter endpoint serving the
-  Interaction Row, and the stock-notification endpoint serving the
-  Pre-order state (the last two backed by the Hosting Platform's
-  marketplace-provisioned Redis store) — and the dynamic post-checkout
+  Interaction Row, the stock-notification endpoint serving the
+  Pre-order state, the contact endpoint relaying the Contact Form to
+  the Operator Inbox, and the PSP Event Receiver (the managed Redis
+  store backing the like, stock-notification, and send-dedupe
+  keyspaces) — and the dynamic post-checkout
   success page, which performs a read-only retrieval of the Checkout
-  Session's payment status at render time (ADR 00-002). The Admin
+  Session's payment status at render time (ADR 00-002, ADR 00-014,
+  ADR 00-015). The Admin
   Console page likewise reads the like store's aggregate state at
   request time — a page-render read, not a Route Handler. The checkout,
-  Admin Console write, like counter, and stock-notification paths run
+  Admin Console write, like counter, stock-notification, contact, and
+  PSP event receiver paths run
   on the Node runtime; the QR Redirect Route is Edge-capable.
 - **Request-Time Middleware** — the single middleware layer that runs on every
   inbound request to a non-static path and performs exactly three duties:
