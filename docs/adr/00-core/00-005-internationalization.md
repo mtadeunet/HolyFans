@@ -20,7 +20,10 @@ appropriate formatting (EUR prices, dates), SEO signals so each Locale ranks
 in its market (hreflang, per-Locale URLs, translated metadata), and a clear,
 persistent way for visitors to switch language. The Storefront's framework-
 integrated internationalization layer already implements this via middleware
-that performs Locale routing and browser-language detection at request time.
+that performs Locale routing and country-signal Locale resolution at
+request time: the Hosting Platform's per-request country signal decides
+the Locale, with browser-language detection as the fallback for requests
+carrying no country signal.
 A development pseudo-locale is not part of the product's public surface.
 
 ## Decision
@@ -31,9 +34,18 @@ a **prefix-per-Locale** URL strategy and exactly two Locales:
 - **`pt` — Primary Locale**, the default; **`en` — secondary Locale**. Both
   are served under their own path prefix: `/pt/` and `/en/`. Every page URL
   carries its Locale explicitly.
-- The site root resolves the visitor's Locale by **browser-language
-  detection** at request time and forwards them to the matching prefixed
-  tree, defaulting to `pt` — the primary market's Locale.
+- The site root resolves the visitor's Locale at request time from the
+  Hosting Platform's per-request **country signal** and forwards them to
+  the matching prefixed tree:
+  - a visitor geolocated in one of the **Portuguese-Speaking Markets**
+    (Portugal, Brazil, Angola, Mozambique, Cape Verde, Guinea-Bissau,
+    São Tomé and Príncipe, Timor-Leste, Equatorial Guinea, Macau) is
+    forwarded to the `pt` tree outright;
+  - a visitor geolocated in any other country is forwarded to the `en`
+    tree outright;
+  - only requests carrying **no country signal** (e.g., local
+    development) fall through to **browser-language detection**, which
+    defaults to `pt` — the Primary Locale — for undetectable languages.
 - A visible language switcher lets visitors move between Locales; the choice
   is expressed by the URL itself (prefixes), not by hidden state.
 - Each Locale is a complete statically generated page tree; SEO parity is
@@ -54,8 +66,11 @@ a **prefix-per-Locale** URL strategy and exactly two Locales:
 **Positive:**
 - Uniform prefixing makes every URL's Locale explicit — shareable,
   bookmarkable, canonical for search engines, and unambiguous for caching.
-- Browser detection at the root routes international visitors correctly
-  while always landing Portuguese-first visitors on `pt`.
+- Country-of-origin detection lands visitors from the
+  Portuguese-Speaking Markets on `pt` and all other visitors on `en`
+  deterministically, independent of their browser settings, while
+  browser-language detection still resolves requests carrying no
+  country signal and defaults to `pt`.
 - Symmetric trees keep sitemap, hreflang, and canonical logic uniform
   across both Locales.
 - Adding a third Locale later is an additive change (new prefix + new
@@ -67,8 +82,15 @@ a **prefix-per-Locale** URL strategy and exactly two Locales:
 - Portuguese loses bare-root URLs: the root is now a redirect hop into
   `/pt/` — a small SEO/UX cost accepted for routing uniformity (the
   redirect is server-side and cacheable).
-- Detection correctness matters: a misbehaving detector could misroute
-  visitors; the `pt` default bounds the damage.
+- Detection correctness matters: a misbehaving country signal or
+  browser-language detector could misroute visitors; the `pt` default
+  bounds the damage.
+- The country signal overrides language preference as the Locale
+  decider: a Portuguese speaker visiting from outside the
+  Portuguese-Speaking Markets is routed to `en`, and an English speaker
+  inside one is routed to `pt`; either must correct the routing via the
+  language switcher — accepted because country of origin is a stronger
+  market signal than browser language.
 - Every content change must be authored in two languages — ongoing editorial
   cost — and message-catalog parity must be enforced by tooling.
 - Dropping the development pseudo-locale removes a developer convenience;
@@ -82,6 +104,16 @@ a **prefix-per-Locale** URL strategy and exactly two Locales:
   detected-language redirects), and gives shared URLs ambiguous Locale
   semantics. Uniform prefixes keep every URL explicit and match the
   working middleware configuration.
+- **Browser-language detection alone (no country signal)** — Rejected:
+  browser language is a weaker market signal than country of origin; the
+  Hosting Platform's per-request country signal lands
+  Portuguese-Speaking-Market visitors on `pt` and all other visitors on
+  `en` deterministically, without depending on their browser language
+  settings.
+- **Country signal alone (no browser-language fallback)** — Rejected: it
+  provides no resolution path for requests carrying no country signal
+  (e.g., local development); browser-language detection covers that
+  residual case and defaults to `pt`.
 - **No prefix with browser-negotiated language (content negotiation /
   cookie-based)** — Rejected: produces one URL serving different content,
   which is bad for SEO, sharing, and caching; the URL must identify the

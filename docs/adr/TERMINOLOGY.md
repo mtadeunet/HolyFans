@@ -165,7 +165,11 @@ user-facing documentation.
   on the Node runtime; the QR Redirect Route is Edge-capable.
 - **Request-Time Middleware** — the single middleware layer that runs on every
   inbound request to a non-static path and performs exactly three duties:
-  Locale routing and browser-language detection, the fail-closed password gate
+  Locale routing and country-signal Locale resolution (the Hosting
+  Platform's per-request country signal decides — Portuguese-Speaking
+  Markets route to `pt`, all other countries to `en` — with
+  browser-language detection as the fallback for requests carrying no
+  country signal), the fail-closed password gate
   on the Admin Console, and canonicalization of Locale-prefixed QR paths to
   the bare QR Redirect Route. Enumerated as part of the dynamic surface in
   ADR 00-002.
@@ -178,7 +182,17 @@ user-facing documentation.
   is Portuguese (`pt`); the secondary supported Locale is English (`en`).
 - **Primary Locale** — the default Locale (`pt`). Both Locales are served
   under their own URL prefix (`/pt/`, `/en/`); the site root resolves the
-  visitor's Locale by browser-language detection, defaulting to `pt`.
+  visitor's Locale from the Hosting Platform's per-request country
+  signal — visitors in the Portuguese-Speaking Markets are forwarded to
+  `pt`, visitors in all other countries to `en` — with browser-language
+  detection as the fallback for requests carrying no country signal,
+  defaulting to `pt`.
+- **Portuguese-Speaking Markets** — the set of countries and regions
+  whose Hosting Platform per-request country signal routes visitors to
+  the `pt` Locale tree: Portugal, Brazil, Angola, Mozambique, Cape Verde,
+  Guinea-Bissau, São Tomé and Príncipe, Timor-Leste, Equatorial Guinea,
+  and Macau. Visitors from all other countries route to `en` (ADR
+  00-005).
 - **Primary Platform** — mobile: the small-viewport, touch-first form is
   the canonical baseline the Storefront is designed, built, and verified
   for first, then scaled up to wider viewports. Desktop remains fully

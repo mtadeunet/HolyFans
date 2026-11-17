@@ -34,9 +34,11 @@ Governing documents:
   Checkout via the single checkout Route Handler with server-side
   re-validation; EUR; PT payment methods; PSP-native notifications only —
   no webhook receiver. `[ADR 00-004]` `[ADR 00-002]`
-- **i18n:** `pt` Primary Locale + `en`, both under URL prefixes; root resolves
-  by browser-language detection defaulting to `pt`; no `dev` pseudo-locale.
-  `[ADR 00-005]`
+- **i18n:** `pt` Primary Locale + `en`, both under URL prefixes; root
+  resolves by Hosting Platform country signal — Portuguese-Speaking
+  Markets → `pt` tree, all other countries → `en` tree; browser-language
+  detection only for requests carrying no country signal, defaulting to
+  `pt`; no `dev` pseudo-locale. `[ADR 00-005]`
 - **Media:** in-repo masters incl. brand assets; framework image
   optimization; QR Generator is local operator tooling outside tracked
   source, its artifacts never committed. `[ADR 00-006]`
@@ -84,8 +86,10 @@ greenfield premise (total source loss) is void; this plan modernizes and
 completes the existing codebase.
 
 Verified stack: Next.js 16 App Router, React 19, TypeScript 5.9 strict,
-Tailwind 3.4, next-intl 4 (locales `pt`+`en`, both prefixed, root detection
-defaulting `pt`), `@vercel/edge-config` (Site Config + QR target),
+Tailwind 3.4, next-intl 4 (locales `pt`+`en`, both prefixed, root resolved
+by country signal — Portuguese-Speaking Markets → `pt`, all other
+countries → `en`; browser-language fallback for requests carrying no
+country signal, defaulting `pt`), `@vercel/edge-config` (Site Config + QR target),
 `@vercel/analytics` (wired). Working surfaces: single-product landing in
 `app/[locale]/`, Cart context, `/qrcoderedirect` Route Handler, password-gated
 `/admin` writing Site Config via the platform API.
@@ -314,11 +318,15 @@ branded and correct — all without changing what shoppers see.
   *somewhere* — so the write path is the control point for the
   printed-QR contract. `[ADR 00-003]` `[ADR 00-002]`
 - i18n audit: middleware behavior verified against ADR 00-005 — both
-  Locales prefixed, root detection defaults to `pt`, `en` visitors land on
-  `/en/`; message-catalog parity unit test (every `pt` key exists in `en`
-  and vice versa); internal links/route generation audited for unprefixed
-  leaks; canonical + hreflang presence including `x-default` verified or
-  scheduled for M4. `[ADR 00-005]` `[ADR 00-007]`
+  Locales prefixed; root resolution country-decided: the Hosting Platform
+  country signal forwards Portuguese-Speaking-Market visitors to the `pt`
+  tree and all other visitors to the `en` tree outright; browser-language
+  detection is the fallback for requests carrying no country signal
+  (defaults to `pt`); message-catalog parity unit test
+  (every `pt` key exists in `en` and vice versa); internal links/route
+  generation audited for unprefixed leaks; canonical + hreflang presence
+  including `x-default` verified or scheduled for M4. `[ADR 00-005]`
+  `[ADR 00-007]`
 - Design-token audit: sweep components for hard-coded palette values
   outside the token layer and correct to Design Tokens; confirm a single
   canonical global stylesheet (duplicate stylesheet cleanup completed per
@@ -367,7 +375,10 @@ branded and correct — all without changing what shoppers see.
   self-check shows the current target and its resolution status.
 - Admin auth: fail-closed without password, `noindex` present, brute-force
   throttle/lockout engages on repeated failures.
-- i18n: prefix routing, root detection default, message parity, link audit.
+- i18n: prefix routing, country-signal root detection
+  (Portuguese-Speaking Markets → `pt`, all other countries → `en`;
+  browser-language fallback for signal-less requests defaulting `pt`),
+  message parity, link audit.
 - Tokens: no off-token hard-coded colors; single global stylesheet.
 - 404/indexing: branded 404 in both Locales; previews `noindex`.
 

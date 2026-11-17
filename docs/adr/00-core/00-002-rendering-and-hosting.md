@@ -60,7 +60,7 @@ The Storefront runs a **hybrid model on the Vercel Hosting Platform**:
   Handlers and one dynamic page, and nothing else:
   - the **Request-Time Middleware**, which runs on every inbound request
     to a non-static path and performs exactly three duties: Locale routing
-    and browser-language detection (ADR 00-005), the fail-closed password
+    and country-signal Locale resolution (ADR 00-005), the fail-closed password
     gate on the Admin Console, and canonicalization of Locale-prefixed QR
     paths to the bare QR Redirect Route (ADR 00-003);
   - the QR Redirect Route read (ADR 00-003), Edge-capable;

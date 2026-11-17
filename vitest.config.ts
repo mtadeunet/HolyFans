@@ -20,5 +20,13 @@ export default defineConfig({
   test: {
     include: ['tests/unit/**/*.test.ts'],
     environment: 'node',
+    server: {
+      deps: {
+        // next-intl's ESM build imports `next/server`, which only resolves
+        // through Next's package-exports map — inlining routes it through
+        // Vite's resolver instead of Node's file-path resolution.
+        inline: ['next-intl'],
+      },
+    },
   },
 });
