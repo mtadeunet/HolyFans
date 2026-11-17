@@ -279,6 +279,21 @@ export async function POST(request: NextRequest) {
     mode: 'payment',
     integration_identifier: integrationIdentifier(),
     locale: body.locale,
+    /**
+     * Implements ADR 00-004: Commerce and Checkout - "all payment
+     * notifications are PSP-native — the PSP confirms the order and
+     * delivers the receipt to the customer, and notifies the operator of
+     * new orders". `customer_creation: 'always'` upgrades every
+     * payment-mode Session from a guest checkout to a persisted Stripe
+     * Customer carrying the email collected on the hosted page, so the
+     * PSP-native receipt has a deterministic recipient — Stripe's
+     * automatic-receipt path falls back to the Customer's email when no
+     * `receipt_email` is set — for immediate methods and for
+     * delayed-confirmation methods (e.g. Multibanco) whose receipt is
+     * emitted when the async payment settles, and so orders group under
+     * Customers in the Dashboard for the operator's manual Fulfillment.
+     */
+    customer_creation: 'always',
     line_items: validation.lines.map(({ variant, quantity }) => {
       const priceId = STRIPE_PRICE_IDS[variant.id];
       return priceId
