@@ -70,7 +70,12 @@ export default function SuggestionsRail({
 
   return (
     // Width mirrored by the Promotion Bar's `FeedColumn` — keep in sync.
-    <aside className="sticky top-0 hidden h-screen w-80 flex-shrink-0 flex-col overflow-y-auto border-l border-border bg-background px-6 py-6 lg:flex">
+    // `top`/`height` resolve through `--promotion-bar-offset`, the
+    // collapsed-row height the pinned Promotion Bar publishes while it
+    // renders: the rail sticks directly beneath the bar, and the height
+    // subtraction keeps its bottom-anchored legal links inside the
+    // viewport. `0px` fallback = original `top-0 h-screen` layout.
+    <aside className="sticky top-[var(--promotion-bar-offset,0px)] hidden h-[calc(100vh_-_var(--promotion-bar-offset,0px))] w-80 flex-shrink-0 flex-col overflow-y-auto border-l border-border bg-background px-6 py-6 lg:flex">
       <h2 className="text-lg font-semibold text-text-primary">{t('title')}</h2>
 
       <div className="mt-4 space-y-3">

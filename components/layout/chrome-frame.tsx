@@ -29,9 +29,14 @@ interface ChromeFrameProps {
  * existing Site Config chrome toggles."
  *
  * Implements ADR 03-003: Promotion Bar — the bar "renders above all
- * other chrome on every route": the `promotion` mount is the first
- * child of the frame and is deliberately NOT suppressed on shell
+ * other chrome on every route": the `promotion` mount leads the frame's
+ * pinned top-chrome block and is deliberately NOT suppressed on shell
  * routes — unlike header/footer it belongs to neither chrome system.
+ * The block is `sticky top-0` so the bar remains visible while the page
+ * scrolls (owner requirement) while staying in normal document flow —
+ * the bar's expansion still pushes the Header down rather than sliding
+ * under it, and document scroll (and `window.scrollY` observers) are
+ * preserved.
  *
  * The single decision point for which chrome system renders: the
  * locale-stripped `usePathname()` from `lib/navigation.ts` returns `/`
@@ -55,8 +60,23 @@ export default function ChromeFrame({
 
   return (
     <div className="flex min-h-screen flex-col">
-      {promotion}
-      {!isShellRoute && header}
+      {/* Pinned top-chrome block (owner requirement: the Promotion Bar
+          stays visible at the top of the viewport while the feed
+          scrolls). `sticky` keeps the whole unit in normal flow, so the
+          bar's in-flow expansion still pushes the Header down exactly as
+          ADR 03-003 specifies — the pair simply pins as one block instead
+          of scrolling away. The Header's own `sticky top-0` becomes inert
+          here (its containing block ends at its own box), so it always
+          rides directly beneath the bar with no z-fight. `z-[45]` sits
+          above the z-40 fixed bands (MobileTopBar, MobileBottomNav,
+          Inbound Contact Surface) and below the z-50 overlay tier
+          (modals), regardless of paint order. When `promotion` renders
+          `null` (toggle off or no eligible campaign) the block holds only
+          the Header — behavior identical to before. */}
+      <div className="sticky top-0 z-[45]">
+        {promotion}
+        {!isShellRoute && header}
+      </div>
       {children}
       {!isShellRoute && footer}
     </div>

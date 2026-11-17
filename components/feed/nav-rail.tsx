@@ -49,7 +49,12 @@ export default function NavRail({
 
   return (
     // Width mirrored by the Promotion Bar's `FeedColumn` — keep in sync.
-    <aside className="sticky top-0 hidden h-screen w-16 flex-shrink-0 flex-col border-r border-border bg-background px-2 py-6 md:flex lg:w-64 lg:px-4">
+    // `top`/`height` resolve through `--promotion-bar-offset`, the
+    // collapsed-row height the pinned Promotion Bar publishes while it
+    // renders: the rail sticks directly beneath the bar, and the height
+    // subtraction keeps the rail's bottom (LanguageToggle) inside the
+    // viewport. `0px` fallback = original `top-0 h-screen` layout.
+    <aside className="sticky top-[var(--promotion-bar-offset,0px)] hidden h-[calc(100vh_-_var(--promotion-bar-offset,0px))] w-16 flex-shrink-0 flex-col border-r border-border bg-background px-2 py-6 md:flex lg:w-64 lg:px-4">
       <a
         href="#feed"
         aria-label={t('logo_aria')}

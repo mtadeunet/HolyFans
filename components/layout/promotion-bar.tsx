@@ -70,6 +70,13 @@ interface ClientState {
  * background, and `ring` keeps `focus-visible` rings visible on the
  * theme's own background — a `surface` ring where the band itself is
  * dark or brand-colored.
+ *
+ * Every `section` background must be OPAQUE: the bar is pinned to the
+ * viewport top while the page scrolls beneath it, so a translucent
+ * band would let feed content show through. `soft` therefore composes
+ * its `primary/5` wash as a flat gradient layer over `bg-surface`
+ * (background-image over background-color) — the same tint, fully
+ * opaque — rather than a bare `bg-primary/5`.
  */
 const THEME_CLASSES: Record<
   PromotionTheme,
@@ -91,7 +98,8 @@ const THEME_CLASSES: Record<
     ring: 'focus-visible:ring-surface',
   },
   soft: {
-    section: 'bg-primary/5 text-text-primary border-b border-primary/10',
+    section:
+      'bg-surface text-text-primary border-b border-primary/10 bg-gradient-to-b from-primary/5 to-primary/5',
     panel: '',
     ring: 'focus-visible:ring-primary',
   },
@@ -105,6 +113,19 @@ const THEME_CLASSES: Record<
  * globals.css); one item at a time, slow, no flashing.
  */
 const CYCLE_HOLD_MS = 4000;
+
+/**
+ * The collapsed row's height — `h-9` (36px) on the row wrapper below —
+ * published as `--promotion-bar-offset` on the root element while the
+ * bar renders. The bar pins to the viewport top via ChromeFrame's
+ * sticky block (owner requirement), and the shell's own pinned chrome
+ * lives outside this Island's subtree, so the offset travels through a
+ * root-level CSS variable: `MobileTopBar`, `NavRail`, and
+ * `SuggestionsRail` consume it as `var(--promotion-bar-offset,0px)` to
+ * park directly beneath the bar instead of sliding under it. If the
+ * collapsed row's height ever changes, this value must change with it.
+ */
+const PROMOTION_BAR_OFFSET = '2.25rem';
 
 /**
  * Shared stacking/typography classes for the collapsed row's two
@@ -167,6 +188,15 @@ function FeedColumn({ children }: { children: ReactNode }) {
  * The bar is permanent chrome while a campaign is eligible — there is
  * no dismiss control; the row toggle is the only expand/collapse
  * affordance (Escape collapses too).
+ *
+ * The bar stays pinned at the top of the viewport while the page
+ * scrolls (owner requirement): `ChromeFrame` wraps it and the classic
+ * Header in a `sticky top-0` block, keeping everything in normal flow —
+ * expansion still pushes content down per ADR 03-003 — and publishing
+ * `--promotion-bar-offset` (below) lets the shell's separate pinned
+ * chrome sit beneath it. `max-h-dvh overflow-y-auto` on the section
+ * caps the pinned unit at the viewport: an expanded block taller than
+ * the screen scrolls internally rather than walling off the page.
  *
  * Analytics: `promo_displayed` fires once per campaign id per session;
  * `promo_expanded` / `promo_collapsed` / `promo_cta_clicked` carry
@@ -309,6 +339,22 @@ export default function PromotionBar({
     return () => window.clearInterval(id);
   }, [expanded, reducedMotion]);
 
+  // Implements the pinned-bar owner requirement: while a campaign
+  // renders, the bar publishes its collapsed-row height as
+  // `--promotion-bar-offset` so the shell's separate pinned chrome
+  // (outside this subtree) offsets beneath the bar; every consumer
+  // falls back to `0px`, so clearing the variable — whenever the bar
+  // renders `null` (no eligible campaign) or unmounts — restores the
+  // flush `top-0` layout with no dead gap.
+  useEffect(() => {
+    if (!selected) return;
+    const root = document.documentElement;
+    root.style.setProperty('--promotion-bar-offset', PROMOTION_BAR_OFFSET);
+    return () => {
+      root.style.removeProperty('--promotion-bar-offset');
+    };
+  }, [selected]);
+
   if (!client.mounted || !selected) return null;
 
   const theme = THEME_CLASSES[selected.theme];
@@ -373,7 +419,7 @@ export default function PromotionBar({
     <section
       aria-label={t('aria_label')}
       data-testid="promotion-bar"
-      className={theme.section}
+      className={`max-h-dvh overflow-y-auto ${theme.section}`}
     >
       {/* Collapsed row: one thin line — the campaign micro-label and
           the campaign headline cycling in a width-stable text slot
