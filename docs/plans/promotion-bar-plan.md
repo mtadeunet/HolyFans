@@ -47,8 +47,8 @@ Governing documents:
   `[ADR 00-002]`
 - **Selection:** pure helpers in `lib/promotions.ts` implement the
   ordered pipeline — enabled → schedule → surface → visitor → Cart →
-  not dismissed → priority → fallback — fed by on-device state
-  (`hf-visited`, `hf-promo-dismissed`, `hf-promo-expanded`) and
+  Purchase-Surface Gate → priority → fallback — fed by on-device state
+  (`hf-visited`, `hf-promo-expanded`, `hf-promo-displayed`) and
   `useCart()` gated on `hydrated`. No new dynamic surface; no new
   dependencies. `[ADR 03-003]` `[ADR 00-002]` `[ADR 00-008]`
 - **Copy split:** visitor-facing chrome strings stay in
@@ -62,10 +62,10 @@ Governing documents:
   complimentary PT/EU rate pair (amount 0) when the server-validated
   subtotal meets it — the bar's `{remaining}` message interpolates
   from the same Site Config value. `[ADR 03-003]` `[ADR 00-004]`
-- **Measurement:** five enumerated aggregate events via `track()` from
+- **Measurement:** four enumerated aggregate events via `track()` from
   `@vercel/analytics` (already a dependency): `promo_displayed`,
-  `promo_expanded`, `promo_collapsed`, `promo_cta_clicked`,
-  `promo_dismissed` — `{campaignId, surface}` payloads only, inside
+  `promo_expanded`, `promo_collapsed`, `promo_cta_clicked` —
+  `{campaignId, surface}` payloads only, inside
   the ADR 00-008 posture. `[ADR 03-003]` `[ADR 00-008]`
 - **Gate & hygiene:** CTAs resolving to the purchase surface degrade
   fail-closed while `PURCHASE_SURFACE_ENABLED` is off; all tracked
@@ -160,7 +160,7 @@ with Site Config Campaigns - "<quoted ADR 03-003 requirement>"
 | 3 | Promotion Bar Component, Mount & i18n | 03-003, 03-001, 03-002, 00-001, 00-005 | `components/layout/promotion-bar.tsx` Island, `ChromeFrame` slot, layout mount, header `fixed`→`sticky`, `promotion.*` catalogs, on-device persistence |
 | 4 | Admin Console Campaigns Editor | 03-003, 00-002 | Promotions section in `admin-form.tsx`, strict validated `promotion.campaigns` write path in `actions.ts` |
 | 5 | Free-Shipping Threshold & Checkout Swap | 03-003, 00-004 | `FREE_SHIPPING_THRESHOLD_CENTS`, `FREE_SHIPPING_OPTIONS`, `shippingOptionsForSubtotal()`, Route Handler swap, unit tests |
-| 6 | Analytics Events & Accessibility Polish | 03-003, 00-008 | Five enumerated `track()` events, dedup per session, a11y audit (aria, Escape, focus, reduced motion, contrast) |
+| 6 | Analytics Events & Accessibility Polish | 03-003, 00-008 | Four enumerated `track()` events, dedup per session, a11y audit (aria, Escape, focus, reduced motion, contrast) |
 | 7 | E2E Coverage & Quality Gate | 03-003, 00-007 | `tests/fixtures/site-config-promo.json`, `tests/e2e/promotion-bar.spec.ts`, code-quality + ADR compliance gates |
 
 Milestones are sequential: M3 needs M1's schema and M2's selector; M4
@@ -343,14 +343,16 @@ consumes it.
 - **Schedule — `isWithinSchedule(campaign, now)`:** `startDate`/`endDate`
   bounds inclusive; `null` bound is open-ended. `[ADR 03-003]`
 - **Eligibility — `selectCampaign({campaigns, pathname, now, visitor,
-  cartSubtotalCents, cartHydrated, dismissedIds,
+  cartSubtotalCents, cartHydrated,
   purchaseSurfaceEnabled})`:** ordered pipeline —
   `enabled` → schedule → `conditions.surfaces` contains the classified
   surface → `visitor` matches (`'any'` always matches) → Cart
   conditions (`minCartCents` present ⇒ requires `cartHydrated` AND
   `cartSubtotalCents >= minCartCents`; until hydrated the campaign is
-  ineligible — conservative, never optimistic) → campaign id not in
-  `dismissedIds`. Eligible campaigns sort by `priority` descending;
+  ineligible — conservative, never optimistic) → Purchase-Surface
+  Gate (a campaign conditioned on the purchase surface only is
+  ineligible while the gate is closed). Eligible campaigns sort by
+  `priority` descending;
   ties keep array order for determinism (the operator's list order
   is the tie-break). When nothing is
   eligible, the enabled fallback campaign (the lowest-priority
@@ -373,7 +375,8 @@ consumes it.
 - **Unit tests — `tests/unit/promotions.test.ts` (new):** every
   pipeline stage in isolation; ordering and tie-break; fallback
   selection; hydrated gating (pre-hydration exclusion of
-  `minCartCents` campaigns); dismissal filtering; schedule boundaries;
+  `minCartCents` campaigns); Purchase-Surface Gate exclusion; schedule
+  boundaries;
   surface classification incl. unknown and nested paths; gate
   degradation (`['purchase']`-only ineligible, `isPurchasePath`
   true/false cases); `interpolateRemaining` EUR output per Locale;
@@ -465,8 +468,9 @@ and the `promotion.*` message namespace in both catalogs.
   - Visitor class: `hf-visited` localStorage marker — absent ⇒ `'new'`
     then written on mount; present ⇒ `'returning'`. Anonymous,
     client-held, never transmitted (Like Token posture). `[ADR 00-008]`
-  - Dismissal: `hf-promo-dismissed` localStorage JSON array of
-    campaign ids — dismissing A never hides B.
+  - Permanence: no dismiss affordance and no dismissal state — the
+    bar stays mounted while a campaign is eligible; the row toggle is
+    the only control. `[ADR 03-003]`
   - Expansion memory: `hf-promo-expanded` sessionStorage — stores the
     expanded campaign id; a selected campaign renders expanded again
     on navigation within the session.
@@ -474,14 +478,19 @@ and the `promotion.*` message namespace in both catalogs.
     `cartSubtotalCents = Math.round(getTotal() * 100)`.
   - Selection via `selectCampaign`; once expanded, the displayed
     campaign is frozen — the switcher never swaps it until collapsed.
-  - Collapsed line: semantic `section` (aria-label from
-    `promotion.region_aria`), micro-label + headline inside an
-    `aria-live="polite"` region, and a `button` toggler with
-    `aria-expanded`/`aria-controls`.
-  - Expanded block: two-column editorial layout on `md+` (micro-label
-    + `font-serif` headline left, description + CTA right), stacked on
-    mobile; dismiss control (persists `hf-promo-dismissed`, closes the
-    campaign); Escape collapses and returns focus to the toggler.
+  - Collapsed line: semantic `section` (`aria-label` from
+    `promotion.aria_label`) containing a single `button` toggler with
+    `aria-expanded`/`aria-controls`; the toggler's accessible name
+    comes from its `aria-label` (`promotion.expand` /
+    `promotion.collapse`). Its centered text slot cycles between the
+    campaign micro-label and the campaign headline on a ~4s cadence —
+    collapsed-only, static under `prefers-reduced-motion` — and the
+    cycling texts are `aria-hidden` (decorative only). The row toggle
+    is the row's only control — no dismiss affordance.
+  - Expanded block: a single centered vertical stack — `font-serif`
+    headline, body-copy description, CTA — held to the Feed Surface's
+    column track (the micro-label lives only in the collapsed row);
+    Escape collapses and returns focus to the toggler.
   - CTA: internal `ctaUrl` → locale-aware `Link` (`lib/navigation`);
     absolute `https://` → `<a target="_blank" rel="noopener
     noreferrer">`; `↗` arrow micro-interaction; suppressed when
@@ -497,7 +506,9 @@ and the `promotion.*` message namespace in both catalogs.
     no new colors. `[ADR 03-001]`
   - Motion: subtle height/opacity transition gated behind
     `motion-safe:` variants — `prefers-reduced-motion` renders an
-    instant swap; no flashing or auto-rotation. `[ADR 03-003]`
+    instant swap; no flashing, rotating, or banner-style motion beyond
+    the collapsed hook cycle, the ADR's single enumerated exception.
+    `[ADR 03-003]`
 - **ChromeFrame slot — `components/layout/chrome-frame.tsx`:** new
   `promotionBar?: ReactNode` prop rendered as the first child inside
   `flex min-h-screen flex-col`, before the header mount — on ALL
@@ -517,9 +528,9 @@ and the `promotion.*` message namespace in both catalogs.
   page-level leading padding so the rendered top spacing is visually
   identical with the bar absent. `[ADR 03-003]`
 - **i18n — `messages/{en,pt}.json`:** new `promotion` namespace,
-  key-for-key parity: `region_aria` (section accessible name),
-  `expand_aria`, `collapse_aria`, `dismiss_aria`. `[ADR 00-005]`
-  `[ADR 03-003]`
+  key-for-key parity: `aria_label` (section accessible name),
+  `expand` / `collapse` (toggler `aria-label`s), `discover` (CTA
+  fallback label). `[ADR 00-005]` `[ADR 03-003]`
 
 ### Dependencies
 
@@ -556,9 +567,11 @@ and the `promotion.*` message namespace in both catalogs.
 
 #### What to Test
 
-- Mount position per chrome system; expand/collapse in-flow; dismiss
-  persistence per campaign; `hf-promo-expanded` session memory;
-  `hf-visited` new→returning transition; hydrated-gated cart
+- Mount position per chrome system; expand/collapse in-flow; the
+  collapsed-row text cycle (label ↔ headline cadence, collapsed-only,
+  static under reduced motion); no dismiss affordance — the bar stays
+  mounted while a campaign is eligible; `hf-promo-expanded` session
+  memory; `hf-visited` new→returning transition; hydrated-gated cart
   conditions; locale copy selection; CTA suppression under a closed
   gate; keyboard operation and Escape; reduced-motion rendering;
   header `sticky` audit.
@@ -566,7 +579,8 @@ and the `promotion.*` message namespace in both catalogs.
 #### How to Test
 
 1. Manual pass on `/pt`, `/en`, `/pt/checkout`, a legal route —
-   expand, dismiss, reload, re-navigate (session memory).
+   watch the collapsed row cycle label ↔ headline; expand, collapse,
+   reload, re-navigate (session memory).
 2. DevTools → clear site storage → first visit reads as `new`.
 3. Add a cart item, reload → `minCartCents` campaigns become
    eligible only after hydration.
@@ -820,7 +834,7 @@ subtotal qualifies. (Independent of M3/M4 — may run in parallel.)
 
 `[ADR 03-003]`
 
-Wire the five enumerated aggregate events through `track()` and
+Wire the four enumerated aggregate events through `track()` and
 complete the accessibility pass on the bar.
 
 ### Features Implemented
@@ -836,16 +850,17 @@ complete the accessibility pass on the bar.
   - `promo_expanded` / `promo_collapsed` — on each toggler
     activation; `promo_collapsed` also fires on the other collapse
     paths (Escape key, expanded-region close) — every collapse is
-    measured (not on dismiss or navigation).
+    measured (not on navigation).
   - `promo_cta_clicked` — on CTA activation, before navigation.
-  - `promo_dismissed` — on dismiss control activation.
   - Payloads are `{campaignId, surface}` exactly — no copy, no
     visitor class, no Cart value, no identity. These are the
     enumerated events the ADR rules within the ADR 00-008 posture;
     per-visitor funnels remain out of scope.
 - **Accessibility pass:** verify `section` + `button` toggler with
-  `aria-expanded`/`aria-controls`; `aria-live="polite"` on the
-  collapsed message; visible `focus-visible` rings on all controls;
+  `aria-expanded`/`aria-controls` and the toggler's accessible name
+  carried by `aria-label` (`promotion.expand`/`promotion.collapse`);
+  the cycling collapsed texts `aria-hidden`; visible `focus-visible`
+  rings on all controls;
   Escape collapses and returns focus to the toggler; full keyboard
   operability; token-based contrast across all themes; `motion-safe:`
   gating confirmed. `[ADR 03-003]` `[ADR 03-001]`
@@ -882,8 +897,8 @@ complete the accessibility pass on the bar.
 
 #### How to Test
 
-1. Interact: display → expand → collapse → CTA → dismiss; assert the
-   five events and payloads.
+1. Interact: display → expand → collapse → CTA; assert the
+   four events and payloads.
 2. Keyboard-only pass across the bar in all themes and both Locales.
 3. Emulate reduced motion → instant transition.
 
@@ -931,7 +946,8 @@ gates.
   campaigns only (identifier hygiene): a `classic`-surface campaign, a
   `purchase`-surface campaign with `ctaUrl: '/checkout'`, a scheduled
   out-of-window campaign, and a second eligible campaign for the
-  per-campaign dismissal check — consumed via `SITE_CONFIG_LOCAL_PATH`
+  priority ordering and session expanded-state-restore checks —
+  consumed via `SITE_CONFIG_LOCAL_PATH`
   per the existing per-server fixture pattern. `[ADR 03-003]`
   `[ADR 00-007]`
 - **E2E — `tests/e2e/promotion-bar.spec.ts` (new):** `[ADR 03-003]`
@@ -940,7 +956,8 @@ gates.
     off.
   - Expansion is in-flow (header/content shift down; no fixed
     overlay) and stacks on the mobile project.
-  - Dismissal persists across reload for that campaign id only.
+  - The collapsed row carries no dismiss control; the expanded state
+    restores across reload within the session (`hf-promo-expanded`).
   - With the gate closed, the `/checkout` CTA is suppressed — zero
     `a[href*="/checkout"]` inside the bar, consistent with the
     existing purchase-surface specs.
@@ -1030,7 +1047,7 @@ gates.
   `@vercel/analytics`; storage keys are client-local Web Storage.
   `[ADR 00-008]` `[ADR 03-003]`
 - **Cookieless posture preserved:** on-device keys are never
-  transmitted; events are the five enumerated aggregate signals only.
+  transmitted; events are the four enumerated aggregate signals only.
   `[ADR 00-008]` `[ADR 03-003]`
 - **Fail-closed gates:** closed `promotionBar` toggle → no bar; closed
   Purchase-Surface Gate → no `/checkout` CTA; `0` threshold →
@@ -1049,7 +1066,7 @@ gates.
 | Hand-edited Edge Config breaks the bar | Medium | `normalizeSiteConfig` drops malformed campaigns individually; the fallback campaign keeps the bar truthful; the write path validates strictly. |
 | Header `sticky` change regresses classic pages | Medium | M3 audit checklist; visual pass on every classic-chrome route; e2e covers mount order. |
 | Free-shipping copy lies if operator copy mismatches the threshold | Medium | Threshold is one Site Config value enforced server-side at Session creation; `{remaining}` interpolates from it; operator docs name the bound. |
-| Bar layout shift annoys on every route | Low | Single thin collapsed line; per-campaign dismissal; per-session expansion memory. |
+| Bar layout shift annoys on every route | Low | Single thin collapsed line held to the feed column track; per-session expansion memory. |
 | `hf-visited` misclassifies after storage clears | Low | Coarse presentation hint by design — never a business metric; aggregate events carry no visitor class. |
 | `ctaUrl` operator input becomes an unsafe link | Low | Validation restricts to internal paths and `https://`; locale-aware `Link` preserves the Locale prefix. |
 | Analytics events over-collect | Low | Payloads are enumerated `{campaignId, surface}` — review gate verifies; anything more needs a future ADR. |

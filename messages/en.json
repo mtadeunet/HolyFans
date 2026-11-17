@@ -234,8 +234,6 @@
     "aria_label": "Promotion",
     "discover": "Discover",
     "expand": "Show offer",
-    "collapse": "Hide offer",
-    "dismiss": "Dismiss promotion",
-    "close": "Close"
+    "collapse": "Hide offer"
   }
 }

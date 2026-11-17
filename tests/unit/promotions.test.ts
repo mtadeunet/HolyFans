@@ -6,10 +6,10 @@
  * normalization posture (malformed entries drop out, garbage input never
  * throws), the Smart Offer Switcher's ordered eligibility pipeline
  * (enabled → schedule → surface → visitor → Cart conditions failing
- * closed → dismissed → the `/checkout` CTA gate → priority), surface
+ * closed → the `/checkout` CTA gate → priority), surface
  * classification in parity with ChromeFrame's SHELL_ROUTES, `{remaining}`
- * interpolation, and the on-device persistence keys (`hf-visited` /
- * `hf-promo-dismissed` in localStorage, `hf-promo-expanded` in
+ * interpolation, and the on-device persistence keys (`hf-visited` in
+ * localStorage, `hf-promo-expanded` / `hf-promo-displayed` in
  * sessionStorage) whose guarded access must degrade to defaults, never
  * crash.
  *
@@ -26,17 +26,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { saveSiteConfig } from '@/app/admin/actions';
 import { POST as checkoutPost } from '@/app/api/checkout/route';
 import {
-  dismissCampaign,
   interpolateRemaining,
   isVisitorNew,
   markDisplayed,
   markVisited,
   normalizeCampaigns,
   PROMOTION_THEMES,
-  PROMO_DISMISSED_KEY,
   PROMO_EXPANDED_KEY,
   PROMO_VISITED_KEY,
-  readDismissedIds,
   readDisplayedIds,
   readExpandedId,
   selectCampaign,
@@ -137,7 +134,6 @@ function makeContext(
     visitor: 'new',
     cartCents: null,
     freeShippingThresholdCents: FREE_SHIPPING_THRESHOLD_CENTS,
-    dismissedIds: [],
     now: NOW,
     purchaseSurfaceEnabled: true,
     ...overrides,
@@ -388,7 +384,7 @@ describe('normalizeCampaigns', () => {
 /**
  * Implements ADR 03-003: Promotion Bar — the Smart Offer Switcher:
  * "an ordered pipeline: enabled → schedule → surface match → visitor
- * match → Cart conditions → not dismissed → highest priority → the
+ * match → Cart conditions → highest priority → the
  * fallback campaign." Each `it` pins one eligibility rule in isolation.
  */
 describe('selectCampaign', () => {
@@ -543,17 +539,6 @@ describe('selectCampaign', () => {
     ).toBeNull();
   });
 
-  it('excludes dismissed campaign ids', () => {
-    const dismissed = makeCampaign({ id: 'dismissed', priority: 10 });
-    const visible = makeCampaign({ id: 'visible', priority: 0 });
-    expect(
-      selectCampaign(
-        [dismissed, visible],
-        makeContext({ dismissedIds: ['dismissed'] })
-      )?.id
-    ).toBe('visible');
-  });
-
   it('keeps a /checkout-CTA campaign eligible while the gate is closed — the CTA is suppressed at render (ADR 03-003)', () => {
     const checkoutCta = makeCampaign({
       id: 'checkout-cta',
@@ -654,8 +639,8 @@ describe('interpolateRemaining', () => {
 
 /**
  * Implements ADR 03-003: Promotion Bar — per-visitor state lives on the
- * device (`hf-visited` / `hf-promo-dismissed` in localStorage,
- * `hf-promo-expanded` in sessionStorage) and "all access is
+ * device (`hf-visited` in localStorage, `hf-promo-expanded` /
+ * `hf-promo-displayed` in sessionStorage) and "all access is
  * try/catch-guarded — storage full, blocked, or absent degrades to the
  * default posture, never a crash." Vitest runs in a Node environment, so
  * the Web Storage API is stubbed with a minimal in-memory implementation.
@@ -693,31 +678,6 @@ describe('on-device persistence helpers', () => {
     expect(localStorage.getItem(PROMO_VISITED_KEY)).toBe('1');
   });
 
-  it.each([undefined, 'not-json{{{', '"a string"', '{"a":1}', '42'])(
-    'reads corrupt or absent dismissed ids %j as an empty list',
-    (stored) => {
-      if (stored !== undefined) {
-        localStorage.setItem(PROMO_DISMISSED_KEY, stored);
-      }
-      expect(readDismissedIds()).toEqual([]);
-    }
-  );
-
-  it('reads stored dismissed ids and filters non-string entries', () => {
-    localStorage.setItem(
-      PROMO_DISMISSED_KEY,
-      JSON.stringify(['promo-a', 7, null, 'promo-b'])
-    );
-    expect(readDismissedIds()).toEqual(['promo-a', 'promo-b']);
-  });
-
-  it('dismissCampaign appends the id and is idempotent', () => {
-    dismissCampaign('promo-a');
-    dismissCampaign('promo-a');
-    dismissCampaign('promo-b');
-    expect(readDismissedIds()).toEqual(['promo-a', 'promo-b']);
-  });
-
   it('round-trips the per-session expanded campaign id and clears it on null', () => {
     expect(readExpandedId()).toBeNull();
     writeExpandedId('promo-a');
@@ -753,11 +713,9 @@ describe('on-device persistence helpers', () => {
     // The bounded direction: failures report "new" so returning-targeted
     // campaigns stay hidden rather than flashing at first-time visitors.
     expect(isVisitorNew()).toBe(true);
-    expect(readDismissedIds()).toEqual([]);
     expect(readExpandedId()).toBeNull();
     expect(readDisplayedIds()).toEqual([]);
     expect(() => markVisited()).not.toThrow();
-    expect(() => dismissCampaign('promo-a')).not.toThrow();
     expect(() => writeExpandedId('promo-a')).not.toThrow();
     expect(() => markDisplayed('promo-a')).not.toThrow();
   });

@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import ChevronGlyph from '@/components/ui/chevron-glyph';
 
 /**
  * Implements ADR 03-002: Landing Page Composition — Three-Column Feed
@@ -53,22 +54,10 @@ export default function FeedFaq() {
                 <span className="text-sm font-medium text-text-primary">
                   {tFaq(item.question)}
                 </span>
-                <svg
-                  className={`mt-0.5 h-4 w-4 flex-shrink-0 text-text-secondary transition-transform duration-300 ${
-                    isOpen ? 'rotate-180' : ''
-                  }`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
+                <ChevronGlyph
+                  expanded={isOpen}
+                  className="mt-0.5 h-4 w-4 text-text-secondary"
+                />
               </button>
               <div
                 className={`overflow-hidden transition-all duration-500 ${

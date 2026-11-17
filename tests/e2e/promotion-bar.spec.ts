@@ -6,20 +6,20 @@
  * Implements ADR 03-003: Promotion Bar — "a thin, editorial, top-of-site
  * campaign unit rendered on every route the Locale tree composes",
  * selected client-side by the Smart Offer Switcher, expanded in normal
- * document flow, dismissed per campaign id, and unmounted entirely by
- * the `promotionBar` chrome toggle.
+ * document flow, permanent while a campaign is eligible, and unmounted
+ * entirely by the `promotionBar` chrome toggle.
  *
  * The spec runs in three Playwright projects; each describe skips unless
  * its project matches the Site Config posture it exercises (the same
  * convention as `checkout.spec.ts`):
  * - `promotions` — `SITE_CONFIG_LOCAL_PATH` points at the promotions
- *   fixture: `promo-lead` (priority 20) wins by default, `promo-runner-up`
- *   (10) appears once the lead is dismissed, and `promo-free-shipping`
- *   (30, `belowFreeShipping`) wins only under a seeded below-threshold
- *   Cart — where its `{remaining}` copy must interpolate off the same
- *   Site Config free-shipping threshold the checkout Route Handler
- *   enforces (the fixture carries the 10000-cent default, equal to
- *   `FREE_SHIPPING_THRESHOLD_CENTS`).
+ *   fixture: `promo-lead` (priority 20) wins by default over
+ *   `promo-runner-up` (10, eligible but outranked), and
+ *   `promo-free-shipping` (30, `belowFreeShipping`) wins only under a
+ *   seeded below-threshold Cart — where its `{remaining}` copy must
+ *   interpolate off the same Site Config free-shipping threshold the
+ *   checkout Route Handler enforces (the fixture carries the
+ *   10000-cent default, equal to `FREE_SHIPPING_THRESHOLD_CENTS`).
  * - `promotions-off` — the `chrome.promotionBar` toggle is off: no bar
  *   may render even though the always-on default campaign stays
  *   eligible (the toggle governs the mount, not the selection).
@@ -40,9 +40,9 @@ const PROMOTIONS_OFF_PROJECT = 'promotions-off';
 const STOREFRONT_PROJECT = 'storefront';
 
 /** Fixture campaign labels (tests/fixtures/site-config-promotions.json). */
-const FIXTURE_LABEL: Record<string, { lead: string; runnerUp: string }> = {
-  pt: { lead: 'EDIÇÃO DE TESTE', runnerUp: 'SEGUNDA CAMPANHA' },
-  en: { lead: 'TEST EDITION', runnerUp: 'RUNNER-UP CAMPAIGN' },
+const FIXTURE_LABEL: Record<string, { lead: string }> = {
+  pt: { lead: 'EDIÇÃO DE TESTE' },
+  en: { lead: 'TEST EDITION' },
 };
 
 /** Seed one Product line in the persisted Cart before app code runs. */
@@ -143,29 +143,31 @@ test.describe('Promotion Bar — fixture campaigns', () => {
     await expect(page.getByTestId('promotion-bar-expanded')).not.toBeVisible();
   });
 
-  // Implements ADR 03-003 - "localStorage key `hf-promo-dismissed`
-  // records dismissal per campaign id — dismissing campaign A never
-  // hides campaign B": the runner-up takes over after the lead is
-  // dismissed, and once every eligible campaign is dismissed the bar is
-  // gone — persisting across reload on the same device.
-  test('dismissal falls through to the next campaign, then hides the bar across reload', async ({
+  // Implements ADR 03-003 - the bar is permanent chrome while a campaign
+  // is eligible: there is no dedicated dismiss control, the row toggle
+  // is the only expand/collapse affordance, and the per-session
+  // expanded state (`hf-promo-expanded` in sessionStorage) restores the
+  // open panel across reload.
+  test('the bar has no dismiss control and restores the expanded state across reload', async ({
     page,
   }) => {
     await page.goto('/pt');
     const toggle = page.getByTestId('promotion-bar-toggle');
     await expect(toggle).toContainText(FIXTURE_LABEL.pt.lead);
+    // The collapsed row carries only the toggle — no dismiss affordance.
+    await expect(page.getByTestId('promotion-bar-dismiss')).toHaveCount(0);
 
-    await page.getByTestId('promotion-bar-dismiss').click();
-    // Campaign A dismissed — campaign B still shows.
-    await expect(toggle).toContainText(FIXTURE_LABEL.pt.runnerUp);
+    await toggle.click();
+    await expect(page.getByTestId('promotion-bar-expanded')).toBeVisible();
 
-    // Every eligible campaign dismissed (the free-shipping campaign is
-    // ineligible on an empty Cart): the bar leaves entirely.
-    await page.getByTestId('promotion-bar-dismiss').click();
-    await expect(page.getByTestId('promotion-bar')).toHaveCount(0);
-
+    // Session memory restores the expanded panel keyed to the campaign
+    // id — a reload re-opens the same offer rather than re-collapsing.
     await page.reload();
-    await expect(page.getByTestId('promotion-bar')).toHaveCount(0);
+    await expect(page.getByTestId('promotion-bar-toggle')).toHaveAttribute(
+      'aria-expanded',
+      'true'
+    );
+    await expect(page.getByTestId('promotion-bar-expanded')).toBeVisible();
   });
 
   // Implements ADR 03-003 - "Free-shipping truthfulness": with one

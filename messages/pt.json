@@ -234,8 +234,6 @@
     "aria_label": "Promoção",
     "discover": "Descobrir",
     "expand": "Ver oferta",
-    "collapse": "Ocultar oferta",
-    "dismiss": "Ignorar promoção",
-    "close": "Fechar"
+    "collapse": "Ocultar oferta"
   }
 }

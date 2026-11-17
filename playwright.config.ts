@@ -27,9 +27,9 @@
  * - port 3103 — the same server with `PURCHASE_SURFACE_ENABLED=true` and
  *   `SITE_CONFIG_LOCAL_PATH` pointing at the promotions fixture, so
  *   `promotion-bar.spec.ts` exercises fixture campaigns: a lead
- *   campaign, a runner-up for per-campaign dismissal, and a
- *   `belowFreeShipping` campaign for `{remaining}` interpolation
- *   (ADR 03-003).
+ *   campaign, an eligible-but-outranked runner-up for priority
+ *   selection coverage, and a `belowFreeShipping` campaign for
+ *   `{remaining}` interpolation (ADR 03-003).
  * - port 3104 — the same server with `PURCHASE_SURFACE_ENABLED=true` and
  *   `SITE_CONFIG_LOCAL_PATH` pointing at the no-promotion-bar fixture
  *   (`chrome.promotionBar: false`), so the spec verifies the chrome
@@ -130,8 +130,9 @@ export default defineConfig({
       command: `npx next start -p ${PROMO_PORT}`,
       url: promoBaseURL,
       // Gate open + the promotions fixture: the Promotion Bar selects
-      // among the fixture campaigns — lead by default, runner-up after
-      // dismissal, free-shipping under a seeded below-threshold Cart.
+      // among the fixture campaigns by priority — lead wins over the
+      // eligible-but-outranked runner-up, free-shipping under a
+      // seeded below-threshold Cart.
       env: {
         PURCHASE_SURFACE_ENABLED: 'true',
         SITE_CONFIG_LOCAL_PATH: 'tests/fixtures/site-config-promotions.json',

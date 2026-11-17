@@ -48,6 +48,7 @@ export default function NavRail({
   );
 
   return (
+    // Width mirrored by the Promotion Bar's `FeedColumn` — keep in sync.
     <aside className="sticky top-0 hidden h-screen w-16 flex-shrink-0 flex-col border-r border-border bg-background px-2 py-6 md:flex lg:w-64 lg:px-4">
       <a
         href="#feed"

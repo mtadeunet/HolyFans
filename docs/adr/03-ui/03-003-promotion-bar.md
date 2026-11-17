@@ -59,16 +59,34 @@ by a **Smart Offer Switcher**. One decision: the promotional chrome
 unit and the rules the campaign system obeys.
 
 - **Composition and behavior.** The bar renders collapsed as a single
-  line. Activating it expands it **in normal document flow** — never a
-  modal, overlay, or popover — into a richer promotional block carrying
-  an uppercase campaign micro-label, a serif headline, a description, a
-  call-to-action link, and a close control. The expanded block is a
-  two-column editorial layout on `md` and wider (micro-label plus
-  headline in one column, description plus call to action in the other)
-  and stacks on the small-viewport baseline (ADR 00-012). Expand and
-  collapse use subtle transitions, honor `prefers-reduced-motion`, and
-  carry no flashing, rotating, or banner-style motion — the unit reads
-  as editorial chrome, not ad-tech.
+  centered row: a **hook text** centered and flanked by a
+  disclosure chevron on each side, so the row itself reads as the
+  expand affordance — the toggle is the row's only control; the bar
+  carries no dedicated dismiss affordance and stays mounted while a
+  campaign is eligible. The hook text **cycles between the campaign
+  micro-label and the campaign headline** on a slow editorial cadence
+  of roughly four seconds — the outgoing text slides up and out as
+  the incoming slides up into place with a gentle cross-fade — while
+  the disclosure chevrons hold position and flank whichever text is
+  showing. The cycle runs in the collapsed state only.
+  Activating the row expands it **in normal
+  document flow** — never a modal, overlay, or popover — into a richer
+  promotional block: a single centered vertical stack of a serif
+  headline, a description in body copy, and a call-to-action link —
+  the campaign micro-label appears only in the
+  collapsed row, never repeated inside the expanded stack, and the
+  expanded block never cycles. Collapse
+  happens by re-activating the row toggle or pressing Escape. Both
+  states hold
+  their content to the Feed Surface's column track rather than
+  spanning the viewport, so the unit reads as an extension of the
+  feed's centered composition. Expand and collapse use subtle
+  transitions and honor `prefers-reduced-motion` — under reduced
+  motion the hook cycle degrades to a static, instant presentation
+  with no slide or fade — and the unit carries no flashing,
+  rotating, or banner-style motion: the collapsed hook cycle is the
+  single enumerated exception to that posture, so the unit reads as
+  editorial chrome, not ad-tech.
 - **Mount and scope.** The bar is a client **Island** (ADR 00-001)
   fed by the server-side Site Config read the Locale layout already
   performs (ADR 00-002). It mounts as the first child of
@@ -88,15 +106,15 @@ unit and the rules the campaign system obeys.
   text, the expanded block shading into `accent`), and `soft` (a quiet
   `primary` wash). The micro-label is uppercase secondary
   text; the headline uses the serif display face, which stays inside
-  its headings-only whitelist; the call to action carries the `↗`
-  arrow micro-interaction.
+  its headings-only whitelist; the call to action carries a static
+  `↗` affordance glyph.
 - **Campaigns live in Site Config.** The campaign list is stored
   wholly in Site Config — Edge Config, with the dev local-JSON
   fallback — so the operator edits, schedules, enables, and retires
   campaigns through the Admin Console without a redeploy. This
   deviates deliberately from the ADR 00-005 message-catalog
-  convention: visitor-facing **chrome strings** (toggle labels, aria
-  names, dismiss text) still come from `messages/{en,pt}.json` under a
+  convention: visitor-facing **chrome strings** (toggle labels and aria
+  names) still come from `messages/{en,pt}.json` under a
   `promotion.*` namespace, while **campaign marketing copy** — the
   per-Locale `{pt, en}` label, headline, description, and CTA label —
   lives in the campaign record itself. The trade-off is recorded:
@@ -132,7 +150,9 @@ unit and the rules the campaign system obeys.
   `returning` derived from the client-local `hf-visited` localStorage
   marker — anonymous, self-generated, never transmitted, the same
   posture as the Like Token) → Cart conditions via `useCart()` gated
-  on `hydrated` → not dismissed → highest `priority` → the fallback
+  on `hydrated` → Purchase-Surface Gate (a campaign
+  conditioned on the purchase surface only is ineligible while the
+  gate is closed) → highest `priority` → the fallback
   campaign. The switcher **never switches the displayed campaign while
   the bar is expanded**.
 - **Free-shipping truthfulness.** The merchandise subtotal that earns
@@ -148,19 +168,17 @@ unit and the rules the campaign system obeys.
   creation — truthful, never decorative. Campaign copy may contain a
   `{remaining}` placeholder interpolated client-side with EUR
   formatting against the same configured value.
-- **Persistence on device.** `localStorage` key `hf-promo-dismissed`
-  records dismissal per campaign id — dismissing campaign A never
-  hides campaign B. `localStorage` key `hf-visited` marks the visitor
-  as returning for `visitor` conditions. `sessionStorage` key
+- **Persistence on device.** `localStorage` key `hf-visited` marks the
+  visitor as returning for `visitor` conditions. `sessionStorage` key
   `hf-promo-expanded` remembers the expanded state per campaign id
   within the browsing session, and `sessionStorage` key
   `hf-promo-displayed` dedups the `promo_displayed` event to once per
   campaign per session.
-- **Measurement, enumerated.** The bar emits exactly five aggregate
+- **Measurement, enumerated.** The bar emits exactly four aggregate
   custom events through `track()` from `@vercel/analytics` — an
   existing dependency, so zero new dependencies: `promo_displayed`,
-  `promo_expanded`, `promo_collapsed`, `promo_cta_clicked`, and
-  `promo_dismissed`, each with a payload of `{campaignId, surface}`
+  `promo_expanded`, `promo_collapsed`, and `promo_cta_clicked`, each
+  with a payload of `{campaignId, surface}`
   only. These events are RULED to be within ADR 00-008's posture: the
   native Hosting Platform mechanism, cookieless, aggregate-only, no
   cookies, no identity, no cross-session stitching, no third-party
@@ -174,9 +192,11 @@ unit and the rules the campaign system obeys.
   the existing gate handling on navigation CTAs. The server passes
   `purchaseSurfaceEnabled` to the Island.
 - **Accessibility.** The unit is a semantic `section` region with a
-  `button` toggler (`aria-expanded`, `aria-controls`); the collapsed
-  message sits in an `aria-live` region; all states are
-  keyboard-operable with visible `focus-visible` styles; Escape
+  `button` toggler (`aria-expanded`, `aria-controls`) whose accessible
+  name comes from its `aria-label` (`promotion.expand` /
+  `promotion.collapse`); the collapsed row's cycling hook texts are
+  decorative and `aria-hidden` from assistive technology; all states
+  are keyboard-operable with visible `focus-visible` styles; Escape
   collapses the expanded block.
 - **Localization.** All visitor-facing chrome strings ship in both
   Locales through the `promotion.*` message namespace (ADR 00-005);
@@ -201,8 +221,10 @@ unit and the rules the campaign system obeys.
   for time-boxed marketing.
 - The in-flow expansion preserves the editorial composition and the
   premium first impression: promotional content earns attention by
-  expansion on demand rather than by interruption, and dismissal is
-  per-campaign and respectful.
+  expansion on demand rather than by interruption.
+- The collapsed hook cycle puts the campaign headline in view before
+  any interaction, so the offer works on first glance while the strip
+  keeps its one-line height.
 - Free-shipping promises are enforced server-side at Checkout Session
   creation — the bar's message and the PSP's shipping options can
   never disagree, and the client interpolates from the same Site
@@ -210,14 +232,14 @@ unit and the rules the campaign system obeys.
 - The feature adds zero dependencies, zero Route Handlers, and zero
   new request-time capability — the Island consumes the existing Site
   Config read.
-- Visitor measurement stays inside the cookieless posture: five
+- Visitor measurement stays inside the cookieless posture: four
   enumerated aggregate events, anonymous per-device state, nothing
   transmitted but the platform-native beacon.
 - `promoCode` is schema-ready: when the PSP path supports promotion
   codes, rendering them is a presentation change, not a schema
   migration.
-- Per-campaign dismissal and per-session expansion memory keep the
-  unit polite without any server-side state.
+- Per-session expansion memory keeps the unit polite without any
+  server-side state.
 
 **Negative / trade-offs:**
 - Visitor-facing copy now lives in two systems: catalog parity tooling
@@ -237,11 +259,18 @@ unit and the rules the campaign system obeys.
 - `hf-visited` is a coarse signal: a visitor who clears site storage
   reads as `new` again; accepted as a presentation hint, never a
   business metric.
-- Per-device dismissal and session expansion memory do not follow the
-  visitor across devices — the same accepted bound as the Cart.
+- Session expansion memory does not follow the visitor across devices
+  — the same accepted bound as the Cart.
 - The bar adds a thin strip of vertical space at the very top of every
-  Locale route; the collapsed height is deliberately minimal, but all
-  compositions shift down when it renders.
+  Locale route and offers the visitor no dismissal — it stays mounted
+  for the duration of an active campaign; the collapsed height is
+  deliberately minimal, but all compositions shift down when it
+  renders.
+- The collapsed row now carries perpetual self-motion on every Locale
+  route: the cost is bounded by the four-second cadence, the
+  collapsed-only scope, and the reduced-motion static fallback, but
+  it must remain the enumerated exception — the general ban on
+  ad-tech motion stands.
 - The Admin Console form grows a structured campaigns editor — the
   most complex operator surface yet; a malformed hand-edited Edge
   Config is still handled by drop-out validation.
@@ -254,6 +283,30 @@ unit and the rules the campaign system obeys.
   Rejected: an overlay interrupts the composition, blocks content, and
   reads as ad-tech — the opposite of the editorial posture; in-flow
   expansion keeps the scroll composition intact and the premium feel.
+- **A two-column editorial layout for the expanded block** — Rejected:
+  splitting the offer across side-by-side columns breaks the single
+  centered reading order and reads as a layout block rather than one
+  editorial unit; the vertical stack keeps the campaign's hierarchy —
+  headline, description, call to action — on the Feed Surface's
+  column track at every viewport.
+- **A headline snippet alongside the micro-label in the collapsed
+  row** — Rejected: showing both texts simultaneously crowds the
+  single-line strip; the hook cycle presents each in turn, keeping
+  the row's one-text economy while the headline remains the expanded
+  offer's centerpiece.
+- **A single static hook text in the collapsed row** — Rejected: a
+  fixed micro-label leaves the campaign's headline invisible until
+  expansion; cycling the label and headline on a slow cadence lets
+  the offer speak before activation without growing the strip or
+  breaking the one-line composition, and the reduced-motion fallback
+  keeps the motion optional.
+- **Visitor dismissal of the bar (a dismiss or close control)** —
+  Rejected: a visitor could hide a campaign the operator has enabled,
+  and the hidden-until-dismissed state would require per-campaign
+  persistence on the device plus a dismissal measurement event —
+  machinery with no editorial payoff. The bar is permanent chrome for
+  the duration of an active campaign; politeness is carried by the
+  collapsed strip's minimal height and the expand/collapse toggle.
 - **Campaigns in the message catalogs or code-managed content** —
   Rejected: the operator cannot edit or schedule them without a
   redeploy, which defeats a time-boxed promotional surface. This is
@@ -274,7 +327,7 @@ unit and the rules the campaign system obeys.
 - **Per-visitor conversion attribution / promo funnels** — Rejected:
   per-visitor journeys and attribution sit outside ADR 00-008's
   aggregate-only posture and would need a future ADR plus a consent
-  mechanism; the five enumerated aggregate events are the boundary.
+  mechanism; the four enumerated aggregate events are the boundary.
 - **Client-only localStorage campaign configuration** — Rejected:
   config on the visitor's device is neither operator-manageable nor
   server-visible; Site Config is the sanctioned operator channel.

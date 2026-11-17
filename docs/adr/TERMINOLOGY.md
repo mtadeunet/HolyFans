@@ -210,7 +210,7 @@ user-facing documentation.
   Console (ADR 03-003).
 - **Smart Offer Switcher** — the Promotion Bar's client-side campaign
   selection pipeline: enabled → schedule → surface → visitor → Cart
-  conditions → dismissal → Purchase-Surface Gate → highest priority →
+  conditions → Purchase-Surface Gate → highest priority →
   fallback campaign (ADR 03-003).
 - **Store Domain** — the store's canonical domain, referred to in tracked
   documents only as `<store-domain>` (identifier hygiene rule).

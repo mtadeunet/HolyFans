@@ -4,7 +4,7 @@ import { formatPrice } from './utils';
  * Implements ADR 03-003: Promotion Bar — the Promotion Campaign model,
  * its normalization onto Site Config, the selection rules the Promotion
  * Bar applies per render, and the on-device persistence keys the bar's
- * visitor/dismissed/expanded state lives under.
+ * visitor/expanded state lives under.
  *
  * This module is deliberately isomorphic-pure: no 'use client', no
  * browser API touched at module level — every storage access is guarded
@@ -56,9 +56,9 @@ export const PROMOTION_TYPES: readonly PromotionType[] = [
 ];
 
 /**
- * Campaign ids become storage keys, analytics payloads, and dismissal
- * tokens — restrict them to lowercase slugs so operator-entered ids can
- * never inject whitespace, unicode, or control characters into those
+ * Campaign ids become on-device storage values and analytics payloads —
+ * restrict them to lowercase slugs so operator-entered ids can never
+ * inject whitespace, unicode, or control characters into those
  * surfaces.
  */
 export const CAMPAIGN_ID_PATTERN = /^[a-z0-9][a-z0-9-]{0,63}$/;
@@ -278,10 +278,10 @@ export function normalizeCampaigns(raw: unknown): PromotionCampaign[] {
     const pt = copySource ? normalizeCopy(copySource.pt) : null;
     const en = copySource ? normalizeCopy(copySource.en) : null;
     // Hard requirements — a malformed entry drops out entirely. Ids
-    // must be slug-safe (they become storage keys, analytics payloads,
-    // and dismissal tokens) and unique: duplicates would collapse
-    // per-campaign dismissal ("dismissing A never hides B") and the
-    // displayed-event dedup, so a repeated id drops the later entry.
+    // must be slug-safe (they become on-device storage values and
+    // analytics payloads) and unique: duplicates would collapse the
+    // expanded-state memory and the displayed-event dedup, so a
+    // repeated id drops the later entry.
     if (
       !id ||
       !CAMPAIGN_ID_PATTERN.test(id) ||
@@ -351,7 +351,6 @@ export interface PromotionContext {
    * `belowFreeShipping` condition compares the Cart subtotal against.
    */
   freeShippingThresholdCents: number;
-  dismissedIds: string[];
   now: Date;
   purchaseSurfaceEnabled: boolean;
 }
@@ -363,7 +362,7 @@ export interface PromotionContext {
  * Eligibility, in order: enabled → schedule (`startDate <= now <=
  * endDate` when set) → surface match → visitor match → cart conditions
  * (`minCartCents` and `belowFreeShipping` both fail closed while the Cart
- * is unhydrated) → not dismissed → the Purchase-Surface Gate (a
+ * is unhydrated) → the Purchase-Surface Gate (a
  * campaign conditioned on the purchase surface ONLY is ineligible
  * while the gate is closed; a `/checkout` CTA on an otherwise-eligible
  * campaign is suppressed at render — `isPurchasePath` — mirroring the
@@ -418,8 +417,6 @@ export function selectCampaign(
       }
     }
 
-    if (ctx.dismissedIds.includes(campaign.id)) continue;
-
     // Implements ADR 03-003: "a campaign whose conditions target only
     // the purchase surface is ineligible" while the Purchase-Surface
     // Gate is closed — the gated /checkout subtree renders the
@@ -456,15 +453,14 @@ export function isPurchasePath(url: string): boolean {
 }
 
 /**
- * On-device persistence keys. Visit flag and dismissals live in
- * `localStorage` (they persist across visits on the same device); the
- * expanded state lives in `sessionStorage` (it resets per browser
- * session, so a dismissed-then-returned-visit re-shows the bar
- * collapsed). All access is try/catch-guarded — storage full, blocked,
- * or absent degrades to the default posture, never a crash.
+ * On-device persistence keys. The visit flag lives in `localStorage`
+ * (it persists across visits on the same device); the expanded and
+ * displayed state lives in `sessionStorage` (it resets per browser
+ * session, so a returning visit re-shows the bar collapsed). All access
+ * is try/catch-guarded — storage full, blocked, or absent degrades to
+ * the default posture, never a crash.
  */
 export const PROMO_VISITED_KEY = 'hf-visited';
-export const PROMO_DISMISSED_KEY = 'hf-promo-dismissed';
 export const PROMO_EXPANDED_KEY = 'hf-promo-expanded';
 export const PROMO_DISPLAYED_KEY = 'hf-promo-displayed';
 
@@ -488,32 +484,6 @@ export function markVisited(): void {
     localStorage.setItem(PROMO_VISITED_KEY, '1');
   } catch {
     // Storage unavailable — the visitor simply stays "new" next load.
-  }
-}
-
-/** Read the dismissed campaign id list; corrupt or absent storage yields `[]`. */
-export function readDismissedIds(): string[] {
-  try {
-    const raw = localStorage.getItem(PROMO_DISMISSED_KEY);
-    if (!raw) return [];
-    const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed)
-      ? parsed.filter((id): id is string => typeof id === 'string')
-      : [];
-  } catch {
-    return [];
-  }
-}
-
-/** Record a campaign id as dismissed (idempotent). */
-export function dismissCampaign(id: string): void {
-  try {
-    const ids = readDismissedIds();
-    if (!ids.includes(id)) {
-      localStorage.setItem(PROMO_DISMISSED_KEY, JSON.stringify([...ids, id]));
-    }
-  } catch {
-    // Storage unavailable — the dismissal just won't persist.
   }
 }
 
