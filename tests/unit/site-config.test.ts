@@ -200,6 +200,121 @@ describe('normalizeSiteConfig', () => {
     expect('unknown' in config.promotion).toBe(false);
   });
 
+  // Implements ADR 00-013: Email Delivery Channel — the `emails` group
+  // merges like every Site Config group: a missing group means empty
+  // overrides (all-default copy), unknown kinds/Locales/fields drop,
+  // blanks drop (→ default), single-line fields reject line breaks,
+  // and values normalize within their caps.
+  it('normalizes the emails group merge', () => {
+    // Missing or malformed group → empty overrides everywhere.
+    expect(normalizeSiteConfig({}).emails).toEqual({
+      shared: {},
+      thankYou: {},
+      captureAck: {},
+      restock: {},
+    });
+    expect(normalizeSiteConfig({ emails: 'junk' }).emails).toEqual(
+      DEFAULT_SITE_CONFIG.emails
+    );
+    expect(normalizeSiteConfig({ emails: { unknown: 1 } }).emails).toEqual(
+      DEFAULT_SITE_CONFIG.emails
+    );
+
+    // A valid override survives; unknown kinds and Locales drop out.
+    const config = normalizeSiteConfig({
+      emails: {
+        thankYou: { pt: { subject: 'Obrigado!' }, fr: { subject: 'Merci' } },
+        unknownKind: { pt: { subject: 'x' } },
+      },
+    });
+    expect(config.emails.thankYou.pt?.subject).toBe('Obrigado!');
+    expect('fr' in config.emails.thankYou).toBe(false);
+    expect('unknownKind' in config.emails).toBe(false);
+  });
+
+  it('drops blank, non-string, and legacy email override fields', () => {
+    const config = normalizeSiteConfig({
+      emails: {
+        restock: {
+          pt: {
+            subject: '  ',
+            heading: 42,
+            body: 'Pediu para ser avisado quando {product} voltar.',
+            // `cta` is a legacy key — the purchase CTA is code-owned now.
+            cta: 'Ver',
+          },
+        },
+        captureAck: {
+          pt: { cta: 'Ver', body: 'Porque pediu.' },
+        },
+      },
+    });
+    // Blank subject → dropped (default applies); non-string heading →
+    // dropped; the valid body survives; the legacy `cta` drops.
+    expect(config.emails.restock.pt).toEqual({
+      body: 'Pediu para ser avisado quando {product} voltar.',
+    });
+    // `cta` dropped; `body` survives.
+    expect(config.emails.captureAck.pt).toEqual({ body: 'Porque pediu.' });
+    // A Locale block that normalizes to nothing drops entirely.
+    expect('en' in config.emails.restock).toBe(false);
+  });
+
+  it('rejects line breaks in single-line fields and caps field lengths', () => {
+    const config = normalizeSiteConfig({
+      emails: {
+        captureAck: {
+          pt: {
+            subject: 'Linha um\nLinha dois',
+            heading: 'x'.repeat(200),
+            body: 'a'.repeat(3000),
+            // `why` is a legacy key — the consent-purpose line is
+            // code-owned now.
+            why: 'Porque\npediu.',
+          },
+        },
+      },
+    });
+    const fields = config.emails.captureAck.pt;
+    // Single-line: newline → rejected; length → capped at 150.
+    expect(fields && 'subject' in fields).toBe(false);
+    expect(fields?.heading).toHaveLength(150);
+    // Multi-line: capped at 2000, newlines preserved.
+    expect(fields?.body).toHaveLength(2000);
+    expect(fields && 'why' in fields).toBe(false);
+  });
+
+  it('normalizes the shared header/footer group like the send kinds', () => {
+    const config = normalizeSiteConfig({
+      emails: {
+        shared: {
+          pt: {
+            headerText: '{image:/logo/logo-full.png}\nCabeçalho',
+            // The legacy URL lists are unknown keys now — they drop.
+            headerImageUrls: [
+              'https://cdn.example.test/a.png',
+              'javascript:alert(1)',
+            ],
+            footerText: 'Linha um\nLinha dois',
+            unknownField: 'x',
+          },
+          fr: { footerText: 'Signature' },
+        },
+      },
+    });
+    const shared = config.emails.shared.pt;
+    // Shared fields are multi-line — text and `{image:…}` tags compose.
+    expect(shared?.headerText).toBe(
+      '{image:/logo/logo-full.png}\nCabeçalho'
+    );
+    expect(shared?.footerText).toBe('Linha um\nLinha dois');
+    // Legacy image-URL and unknown keys drop via the field whitelist.
+    expect(shared && 'headerImageUrls' in shared).toBe(false);
+    expect(shared && 'unknownField' in shared).toBe(false);
+    // Unknown Locales drop.
+    expect('fr' in config.emails.shared).toBe(false);
+  });
+
   it('does not mutate the defaults object', () => {
     const before: SiteConfig = structuredClone(DEFAULT_SITE_CONFIG);
     normalizeSiteConfig({ sections: { hero: false } });

@@ -28,6 +28,8 @@ import type Stripe from 'stripe';
 import { NextRequest } from 'next/server';
 import { getEmailConfig, sendEmail } from '@/lib/email';
 import { getManagedStore } from '@/lib/managed-store';
+import { getSiteConfig } from '@/lib/site-config-server';
+import { DEFAULT_SITE_CONFIG } from '@/lib/site-config';
 import { getStripeClient } from '@/lib/stripe';
 import { POST } from '@/app/api/webhooks/stripe/route';
 
@@ -36,12 +38,14 @@ vi.mock('@/lib/email', () => ({
   sendEmail: vi.fn(),
 }));
 vi.mock('@/lib/managed-store', () => ({ getManagedStore: vi.fn() }));
+vi.mock('@/lib/site-config-server', () => ({ getSiteConfig: vi.fn() }));
 vi.mock('@/lib/stripe', () => ({ getStripeClient: vi.fn() }));
 
 const mockedStripe = vi.mocked(getStripeClient);
 const mockedStore = vi.mocked(getManagedStore);
 const mockedConfig = vi.mocked(getEmailConfig);
 const mockedSend = vi.mocked(sendEmail);
+const mockedSiteConfig = vi.mocked(getSiteConfig);
 
 const SESSION_ID = 'cs_test_synthetic_order';
 
@@ -73,6 +77,7 @@ function makeStore(preHeldKeys: string[] = []) {
 function makeSession(overrides: Record<string, unknown> = {}) {
   return {
     id: SESSION_ID,
+    created: 1735689600, // A fixed unix timestamp — the Thank-You {date} tag reads the session date.
     payment_status: 'paid',
     amount_total: 9000,
     metadata: { locale: 'pt' },
@@ -151,6 +156,10 @@ beforeEach(() => {
   mockedStore.mockReturnValue(makeStore() as unknown as Redis);
   mockedConfig.mockReturnValue(EMAIL_CONFIG);
   mockedSend.mockResolvedValue(true);
+  // The Thank-You send reads Site Config once per event for
+  // `emails.thankYou` overrides (ADR 00-013) — default to the
+  // no-override posture.
+  mockedSiteConfig.mockResolvedValue(DEFAULT_SITE_CONFIG);
 });
 
 afterEach(() => {
@@ -270,6 +279,26 @@ describe('POST /api/webhooks/stripe — event routing (ADR 00-015)', () => {
     expect(mockedSend.mock.calls[0][0].subject).toBe(
       'Obrigado pela sua encomenda'
     );
+  });
+
+  it('applies Site Config emails.thankYou overrides to the customer email (ADR 00-013)', async () => {
+    mockedSiteConfig.mockResolvedValue({
+      ...DEFAULT_SITE_CONFIG,
+      emails: {
+        ...DEFAULT_SITE_CONFIG.emails,
+        thankYou: { pt: { subject: 'A sua encomenda foi recebida' } },
+      },
+    });
+    stubEvent('checkout.session.completed');
+    stripeClient.checkout.sessions.retrieve.mockResolvedValue(makeSession());
+
+    const response = await POST(makeRequest());
+    expect(response.status).toBe(200);
+    // The operator's subject override reached the send payload; the
+    // Order Alert is operator-facing and stays code-fixed.
+    const [thankYou, orderAlert] = mockedSend.mock.calls.map((call) => call[0]);
+    expect(thankYou.subject).toBe('A sua encomenda foi recebida');
+    expect(orderAlert.subject).toContain('Nova encomenda paga');
   });
 
   it('acknowledges a paid event with no reachable customer email — Order Alert only', async () => {

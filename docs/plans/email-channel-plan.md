@@ -93,7 +93,29 @@ all; real values live in `.env.local` / Vercel env (ADR 00-007).
   URL builder — the `/checkout` redirect keeps already-sent links
   alive until the single-product redirect is retired.
 
-### 5. Tests
+### 5. Editable templates increment (ADR 00-013)
+
+- `SiteConfig.emails` group: `shared` (per-Locale header/footer
+  text carrying the `{image:path}` tag) plus per customer-facing send (`thankYou`,
+  `captureAck`, `restock`) a per-Locale `{subject, heading, body}`
+  object; every field is an optional override — blank/missing
+  normalizes to the in-repo default (Promotion Campaign precedent,
+  ADR 03-003).
+- `lib/email-templates.ts`: copy tables stay the defaults; a
+  resolver merges overrides per field; builders accept the merged
+  copy. A fixed per-send tag vocabulary — `{product}`, `{variant}`,
+  `{name}`, `{date}`, `{brand}`, `{image:path}` — interpolates like
+  the Promotion
+  Bar's `{remaining}`; markup/structure is code-owned, including
+  the consent-purpose line and the restock CTA.
+- Callers pass `siteConfig.emails` through to builders (webhook,
+  stock-notification handler, admin restock action).
+- `admin-form.tsx`: Email Templates section — template + Locale
+  select boxes, then the three fields (or header/footer fields for
+  `shared`); blank = default; serialized through the existing
+  `saveSiteConfig` path.
+
+### 6. Tests
 
 - `tests/unit/email.test.ts` — fail-closed config, payload builder.
 - `tests/unit/contact.test.ts` — `parseContactBody` bounds.

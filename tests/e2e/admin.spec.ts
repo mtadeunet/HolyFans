@@ -10,7 +10,9 @@
  * totals, per-post last-like timestamps, and store health — aggregates
  * only, never Like Token membership (ADR 00-008)".
  *
- * Covers the Admin Console's Likes section: the store-health banner
+ * Covers the Admin Console's Likes section — mounted on the Social
+ * tab of the console's tab strip, which these tests open before
+ * asserting: the store-health banner
  * (connected / not configured / read failed — surfaced, never silent)
  * and one aggregate card per Post Card carrying its like total and
  * `Last like:` field. The store's provisioning is environment state,
@@ -44,10 +46,7 @@ function adminPassword(): string | null {
     return process.env.ADMIN_PASSWORD;
   }
   try {
-    const envLocal = readFileSync(
-      join(__dirname, '../../.env.local'),
-      'utf8'
-    );
+    const envLocal = readFileSync(join(__dirname, '../../.env.local'), 'utf8');
     const line = envLocal
       .split('\n')
       .find((entry) => entry.startsWith('ADMIN_PASSWORD='));
@@ -70,6 +69,17 @@ async function authenticate(page: Page, password: string): Promise<void> {
   await page.setExtraHTTPHeaders({
     authorization: `Basic ${Buffer.from(`admin:${password}`).toString('base64')}`,
   });
+}
+
+/**
+ * Open the console's Social tab — the Likes section's panel stays
+ * mounted but `hidden` until its tab is selected, exactly like the
+ * operator's click.
+ *
+ * @param page - The test page, already on `/admin`.
+ */
+async function openSocialTab(page: Page): Promise<void> {
+  await page.getByRole('tab', { name: 'Social', exact: true }).click();
 }
 
 /** The Admin Console's Likes section, identified by its heading. */
@@ -117,6 +127,7 @@ test.describe('Admin Console — Likes section', () => {
   }) => {
     const response = await page.goto('/admin');
     expect(response?.status()).toBe(200);
+    await openSocialTab(page);
 
     const section = likesSection(page);
     await expect(section).toBeVisible();
@@ -169,6 +180,7 @@ test.describe('Admin Console — Likes section', () => {
     page,
   }) => {
     await page.goto('/admin');
+    await openSocialTab(page);
     const banner = storeBanner(page);
     await expect(banner).toBeVisible();
     const bannerText = (await banner.textContent()) ?? '';
@@ -198,6 +210,7 @@ test.describe('Admin Console — Likes section', () => {
     page,
   }) => {
     await page.goto('/admin');
+    await openSocialTab(page);
     const banner = storeBanner(page);
     await expect(banner).toBeVisible();
     const bannerText = (await banner.textContent()) ?? '';

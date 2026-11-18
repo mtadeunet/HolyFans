@@ -25,8 +25,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Redis } from '@upstash/redis';
 import { getEmailConfig, sendEmail } from '@/lib/email';
 import { getManagedStore } from '@/lib/managed-store';
+import { getSiteConfig } from '@/lib/site-config-server';
 import { sendRestockNotifications } from '@/app/admin/actions';
 import { PRODUCT } from '@/lib/constants';
+import { DEFAULT_SITE_CONFIG } from '@/lib/site-config';
 
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 vi.mock('@/lib/email', () => ({
@@ -40,6 +42,7 @@ vi.mock('@/lib/site-config-server', () => ({ getSiteConfig: vi.fn() }));
 const mockedStore = vi.mocked(getManagedStore);
 const mockedConfig = vi.mocked(getEmailConfig);
 const mockedSend = vi.mocked(sendEmail);
+const mockedSiteConfig = vi.mocked(getSiteConfig);
 
 const VARIANT_ID = 'nsr-female-m';
 const STORE_KEY = `stock-notifications:${VARIANT_ID}`;
@@ -65,6 +68,9 @@ beforeEach(() => {
   mockedStore.mockReturnValue(makeStore() as unknown as Redis);
   mockedConfig.mockReturnValue(EMAIL_CONFIG);
   mockedSend.mockResolvedValue(true);
+  // The action reads Site Config once per run for `emails.restock`
+  // overrides (ADR 00-013) — default to the no-override posture.
+  mockedSiteConfig.mockResolvedValue(DEFAULT_SITE_CONFIG);
 });
 
 describe('sendRestockNotifications — fail-closed guards (ADR 00-015)', () => {
@@ -170,6 +176,28 @@ describe('sendRestockNotifications — send-and-clear (ADR 00-010/00-015)', () =
     // The send already happened — a duplicate on the next run is the
     // bounded, honest outcome, not a hidden failure.
     expect(result).toEqual({ ok: true, sent: 1, failed: 0 });
+  });
+
+  it('applies Site Config emails.restock overrides to the send copy (ADR 00-013)', async () => {
+    mockedSiteConfig.mockResolvedValue({
+      ...DEFAULT_SITE_CONFIG,
+      emails: {
+        ...DEFAULT_SITE_CONFIG.emails,
+        restock: { pt: { subject: 'Reposição: {product}' } },
+      },
+    });
+    const store = makeStore({
+      'one@example.test': { consentedAt: 'x', locale: 'pt' },
+    });
+    mockedStore.mockReturnValue(store as unknown as Redis);
+
+    const result = await sendRestockNotifications(VARIANT_ID);
+    expect(result).toEqual({ ok: true, sent: 1, failed: 0 });
+    // The operator's subject override reached the send payload, with
+    // the {product} placeholder interpolated.
+    expect(mockedSend.mock.calls[0][0].subject).toBe(
+      `Reposição: ${PRODUCT.name}`
+    );
   });
 
   it('falls back to the Primary Locale for a corrupt consent record', async () => {

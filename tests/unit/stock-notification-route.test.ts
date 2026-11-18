@@ -32,6 +32,8 @@ import type { Redis } from '@upstash/redis';
 import { NextRequest } from 'next/server';
 import { getEmailConfig, sendEmail } from '@/lib/email';
 import { getManagedStore } from '@/lib/managed-store';
+import { getSiteConfig } from '@/lib/site-config-server';
+import { DEFAULT_SITE_CONFIG } from '@/lib/site-config';
 import { POST } from '@/app/api/stock-notification/route';
 
 vi.mock('@/lib/email', () => ({
@@ -39,10 +41,12 @@ vi.mock('@/lib/email', () => ({
   sendEmail: vi.fn(),
 }));
 vi.mock('@/lib/managed-store', () => ({ getManagedStore: vi.fn() }));
+vi.mock('@/lib/site-config-server', () => ({ getSiteConfig: vi.fn() }));
 
 const mockedStore = vi.mocked(getManagedStore);
 const mockedConfig = vi.mocked(getEmailConfig);
 const mockedSend = vi.mocked(sendEmail);
+const mockedSiteConfig = vi.mocked(getSiteConfig);
 
 const EMAIL_CONFIG = {
   sendUrl: 'https://api.zeptomail.example.test/v1.1/email',
@@ -93,6 +97,10 @@ beforeEach(() => {
   mockedStore.mockReturnValue(makeStore() as unknown as Redis);
   mockedConfig.mockReturnValue(EMAIL_CONFIG);
   mockedSend.mockResolvedValue(true);
+  // The ack send reads Site Config once per request for
+  // `emails.captureAck` overrides (ADR 00-013) — default to the
+  // no-override posture.
+  mockedSiteConfig.mockResolvedValue(DEFAULT_SITE_CONFIG);
 });
 
 afterEach(() => {
@@ -186,6 +194,24 @@ describe('POST /api/stock-notification — Capture Acknowledgment (ADR 00-015)',
     // Variant are identified (ADR 00-015).
     expect(ack.subject).toBe('Recebemos o seu pedido — Nossa Senhora da Rosa');
     expect(ack.text).toContain('Female Fit — M');
+  });
+
+  it('applies Site Config emails.captureAck overrides to the ack copy (ADR 00-013)', async () => {
+    mockedSiteConfig.mockResolvedValue({
+      ...DEFAULT_SITE_CONFIG,
+      emails: {
+        ...DEFAULT_SITE_CONFIG.emails,
+        captureAck: { pt: { subject: 'Pedido registado — {product}' } },
+      },
+    });
+
+    const response = await POST(makeRequest(VALID_BODY));
+    expect(response.status).toBe(200);
+    // The operator's subject override reached the send payload, with
+    // the {product} placeholder interpolated.
+    expect(mockedSend.mock.calls[0][0].subject).toBe(
+      'Pedido registado — Nossa Senhora da Rosa'
+    );
   });
 
   it("renders the ack in the submission's own Locale", async () => {

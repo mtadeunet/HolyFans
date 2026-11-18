@@ -9,6 +9,7 @@ import {
 } from '@/lib/email-templates';
 import { defaultLocale, locales, type Locale } from '@/lib/i18n';
 import { getManagedStore } from '@/lib/managed-store';
+import { getSiteConfig } from '@/lib/site-config-server';
 import { getStripeClient } from '@/lib/stripe';
 
 /**
@@ -350,14 +351,30 @@ export async function POST(request: NextRequest) {
         const locale = sessionLocale(session);
         const customerName = session.customer_details?.name ?? undefined;
         outcomes.push(
-          await sendOnce(store, session.id, 'thank-you', () =>
-            sendEmail({
+          await sendOnce(store, session.id, 'thank-you', async () => {
+            // Implements ADR 00-013: Email Delivery Channel — the
+            // Thank-You Email's copy is "operator-editable Site Config
+            // data": the read lives inside the claimed send so a
+            // deduped redelivery skips it; a failed read fails open to
+            // the in-repo defaults inside `getSiteConfig`. The whole
+            // `emails` group passes through so the builder can resolve
+            // the shared header/footer too.
+            const emails = (await getSiteConfig()).emails;
+            return sendEmail({
               to: recipient,
               toName: customerName,
               replyTo: emailConfig.supportInbox,
-              ...thankYouEmail(locale, customerName),
-            })
-          )
+              ...thankYouEmail(
+                locale,
+                {
+                  customerName,
+                  // The `{date}` tag renders the order/session date.
+                  orderDate: new Date(session.created * 1000),
+                },
+                emails
+              ),
+            });
+          })
         );
       }
       // No recipient address → nothing to send; the send kind stays

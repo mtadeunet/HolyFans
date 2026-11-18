@@ -1,5 +1,10 @@
 import { VARIANTS, type VariantKey } from '@/lib/constants';
 import {
+  EMPTY_EMAIL_OVERRIDES,
+  normalizeEmailOverrides,
+  type EmailOverrides,
+} from './email-templates';
+import {
   DEFAULT_CAMPAIGNS,
   normalizeCampaigns,
   type PromotionCampaign,
@@ -78,6 +83,18 @@ export type SiteConfig = {
    * identically at checkout.
    */
   shipping: { freeShippingThresholdCents: number };
+  /**
+   * Implements ADR 00-013: Email Delivery Channel — "The
+   * customer-facing sends' copy — Thank-You Email, Capture
+   * Acknowledgment, Restock Notification — is operator-editable Site
+   * Config data (an `emails` group normalized field-by-field over the
+   * in-repo defaults like every Site Config group, ADR 03-003)". The
+   * `shared` per-Locale header/footer plus one `EmailTemplateOverride`
+   * (`{subject, heading, body}`) per send kind; an empty object means
+   * the send renders its in-repo default copy. Operator-facing sends
+   * stay code-fixed and have no entry here.
+   */
+  emails: EmailOverrides;
 };
 
 export const DEFAULT_SITE_CONFIG: SiteConfig = {
@@ -112,6 +129,10 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
   // `lib/shipping.ts`; the Admin Console edits the live value through
   // the Shipping section.
   shipping: { freeShippingThresholdCents: FREE_SHIPPING_THRESHOLD_CENTS },
+  // Implements ADR 00-013: the default `emails` group is empty — the
+  // customer-facing sends ship with their in-repo copy and the
+  // operator's edits arrive as overrides, never as a seeded document.
+  emails: EMPTY_EMAIL_OVERRIDES,
 };
 
 export const SECTION_KEYS: SectionKey[] = [
@@ -153,6 +174,11 @@ export function normalizeSiteConfig(raw: unknown): SiteConfig {
     stock: { ...DEFAULT_SITE_CONFIG.stock },
     promotion: { campaigns: [...DEFAULT_CAMPAIGNS] },
     shipping: { ...DEFAULT_SITE_CONFIG.shipping },
+    // Implements ADR 00-013: the `emails` group's starting shape is the
+    // shared all-defaults constant — `normalizeEmailOverrides` rebuilds
+    // it fresh below for object input, and non-object input keeps this
+    // read-only alias exactly like `DEFAULT_SITE_CONFIG.emails` does.
+    emails: EMPTY_EMAIL_OVERRIDES,
   };
   if (!raw || typeof raw !== 'object') return out;
   const source = raw as Partial<SiteConfig>;
@@ -210,5 +236,12 @@ export function normalizeSiteConfig(raw: unknown): SiteConfig {
       out.shipping.freeShippingThresholdCents = Math.round(threshold);
     }
   }
+  // Implements ADR 00-013: Email Delivery Channel — the `emails` group
+  // merges like every Site Config group: the `shared` header/footer and
+  // known send kinds, Locales, and per-kind fields survive; unknown
+  // keys, non-strings, blanks, and line-broken single-line fields drop
+  // out — a missing or empty group means all-default copy, never a
+  // failure.
+  out.emails = normalizeEmailOverrides(source.emails);
   return out;
 }

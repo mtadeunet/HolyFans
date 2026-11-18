@@ -6,6 +6,7 @@ import { captureAckEmail } from '@/lib/email-templates';
 import { locales, type Locale } from '@/lib/i18n';
 import { getManagedStore } from '@/lib/managed-store';
 import { isPurchaseSurfaceEnabled } from '@/lib/purchase-surface';
+import { getSiteConfig } from '@/lib/site-config-server';
 import {
   parseStockNotificationBody,
   stockNotificationKey,
@@ -181,16 +182,28 @@ export async function POST(request: NextRequest) {
     // Product Data Variant — but the type stays honest.
     const variant = findVariant(body.variantId);
     if (variant) {
+      // Implements ADR 00-013: Email Delivery Channel — the Capture
+      // Acknowledgment's copy is "operator-editable Site Config data":
+      // one config read per request feeds the whole `emails` group into
+      // the builder (the send kind's fields plus the shared
+      // header/footer); a failed read fails open to the in-repo
+      // defaults inside `getSiteConfig`, like every other config
+      // consumer.
+      const emails = (await getSiteConfig()).emails;
       // `sendEmail` resolves `false` on every failure path rather than
       // throwing (`lib/email.ts`), so a bare `await` suffices — a
       // `false` here means the courtesy send was attempted and failed.
       const delivered = await sendEmail({
         to: body.email,
         replyTo: emailConfig.supportInbox,
-        ...captureAckEmail(body.locale as Locale, {
-          productName: PRODUCT.name,
-          variantLabel: variantLabel(variant),
-        }),
+        ...captureAckEmail(
+          body.locale as Locale,
+          {
+            productName: PRODUCT.name,
+            variantLabel: variantLabel(variant),
+          },
+          emails
+        ),
       });
       if (!delivered) {
         // The failure fact only — never the address or the content

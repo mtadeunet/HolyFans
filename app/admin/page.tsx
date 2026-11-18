@@ -7,6 +7,7 @@ import {
   readVariantStockNotifications,
 } from '@/lib/stock-notification-server';
 import AdminForm from './admin-form';
+import { AdminTabPanel, AdminTabs } from './admin-tabs';
 import LikesSection from './likes-section';
 import StockNotificationsSection from './stock-notifications-section';
 import type { StoreStatus } from './types';
@@ -92,24 +93,32 @@ export default async function AdminPage() {
           HolyFans Admin
         </h1>
         <p className="mt-2 text-text-secondary">
-          Toggle which sections and chrome elements appear on the live site, and
-          flag individual variants out of stock. Changes are persisted to Vercel
-          Edge Config.
+          Edit the live site&apos;s config — sections, chrome, stock flags,
+          shipping, promotion campaigns, and email templates — and review
+          per-post likes and the stock-notification lists. Config changes are
+          persisted to Vercel Edge Config.
         </p>
       </header>
-      <div className="space-y-8">
+      {/* The console's five tabs: the form owns the three write-path
+          panels (Layout, Promotions, Email); the read/operate sections
+          get their own panels as siblings. */}
+      <AdminTabs>
         <AdminForm initial={config} />
-        <LikesSection
-          status={likes.status}
-          statusDetail={likes.statusDetail}
-          aggregates={likes.data}
-        />
-        <StockNotificationsSection
-          status={notifications.status}
-          statusDetail={notifications.statusDetail}
-          lists={notifications.data}
-        />
-      </div>
+        <AdminTabPanel id="social">
+          <LikesSection
+            status={likes.status}
+            statusDetail={likes.statusDetail}
+            aggregates={likes.data}
+          />
+        </AdminTabPanel>
+        <AdminTabPanel id="customers">
+          <StockNotificationsSection
+            status={notifications.status}
+            statusDetail={notifications.statusDetail}
+            lists={notifications.data}
+          />
+        </AdminTabPanel>
+      </AdminTabs>
     </main>
   );
 }

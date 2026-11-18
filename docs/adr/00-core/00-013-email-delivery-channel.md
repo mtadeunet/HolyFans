@@ -57,8 +57,8 @@ behalf.
 
 - **Division of labor.** The provider carries every send the
   Storefront originates — the Contact Form relay, the customer
-  Thank-You Email, the Operator Order Alert, and the Restock
-  Notification. The operator's Zoho mailbox on the Store Domain
+  Thank-You Email, the Capture Acknowledgment, the Operator Order
+  Alert, and the Restock Notification. The operator's Zoho mailbox on the Store Domain
   remains the read-and-reply side: every app-sent message carries a
   `Reply-To` of either the visitor's address (contact relays) or the
   **Support Inbox** (customer-facing notifications), so replies land
@@ -90,12 +90,31 @@ behalf.
   Route Handlers and the Admin Console's server-side write paths on
   the Node runtime. It never enters a client bundle; the visitor
   surface only ever sees the success or unavailable state.
-- **Templates.** Every send's content is an in-repo, localized
-  template (both Locales, ADR 00-005): plain text with light branded
-  HTML, no external template service, no provider-side template
-  storage. Recipient-visible strings render in the recipient's
-  Locale — the visitor's submitted Locale for contact
-  acknowledgments, the Checkout Session's Locale for the Thank-You
+- **Templates.** Every send's content is a localized template
+  (both Locales, ADR 00-005) with in-repo defaults: plain text with
+  light branded HTML, no external template service, no provider-side
+  template storage. The customer-facing sends' copy — Thank-You
+  Email, Capture Acknowledgment, Restock Notification — is
+  operator-editable Site Config data (an `emails` group normalized
+  field-by-field over the in-repo defaults like every Site Config
+  group, ADR 03-003), editable in the Admin Console: the operator
+  tunes wording without a deploy. Each send exposes exactly three
+  fields per Locale — subject, heading, body — plus a shared
+  per-Locale header and footer common to every customer-facing
+  send; the header and footer carry the operator's brand imagery
+  through an `{image:path,size:Npx|N%}` tag — the
+  `,size:` parameter optional — that resolves only Store-domain
+  asset paths (`public/` files served from the Storefront's own
+  origin, the logo asset by default), never an external URL.
+  Dynamic values interpolate through a fixed per-send tag
+  vocabulary — `{product}`, `{variant}`, `{name}`, `{date}`,
+  `{brand}`, `{image:path}` — so the operator edits text, never
+  markup or structure; the consent-purpose line and the purchase CTA stay
+  code-owned. Operator-facing
+  sends (the contact relay, the Operator Order Alert) remain
+  code-fixed. Recipient-visible strings render in the recipient's
+  Locale — the visitor's submitted Locale for the Capture
+  Acknowledgment, the Checkout Session's Locale for the Thank-You
   Email, and the Locale stored in each consent record for the
   Restock Notification.
 - **Transactional-only scope — hard constraint.** The provider's

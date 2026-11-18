@@ -4,7 +4,11 @@ import { revalidatePath } from 'next/cache';
 import { writeSiteConfig } from '@/lib/edge-config-write';
 import { findVariant, PRODUCT, SITE_CONFIG } from '@/lib/constants';
 import { getEmailConfig, sendEmail } from '@/lib/email';
-import { restockEmail } from '@/lib/email-templates';
+import {
+  EMPTY_EMAIL_OVERRIDES,
+  normalizeEmailOverrides,
+  restockEmail,
+} from '@/lib/email-templates';
 import { defaultLocale, locales, type Locale } from '@/lib/i18n';
 import { getManagedStore } from '@/lib/managed-store';
 import { getSiteConfig } from '@/lib/site-config-server';
@@ -33,6 +37,7 @@ export async function saveSiteConfig(formData: FormData): Promise<SaveResult> {
     // that honestly; seeding defaults here would never persist.
     promotion: { campaigns: [] },
     shipping: { freeShippingThresholdCents: 0 },
+    emails: EMPTY_EMAIL_OVERRIDES,
   };
 
   // Carry-over reads are lazy and shared — the campaigns and threshold
@@ -133,6 +138,42 @@ export async function saveSiteConfig(formData: FormData): Promise<SaveResult> {
     next.shipping.freeShippingThresholdCents = (
       await stored()
     ).shipping.freeShippingThresholdCents;
+  }
+
+  // Implements ADR 00-013: Email Delivery Channel — the `emails` group
+  // is "operator-editable Site Config data": the form submits it as one
+  // serialized JSON field, normalized through the same rules
+  // `normalizeSiteConfig` applies on read. Unlike campaigns there is no
+  // fail-loud case — every field is optional and malformed entries drop
+  // out — so only unparseable JSON rejects the submit; parsed JSON that
+  // is not an overrides object carries the stored group forward like an
+  // absent field.
+  const rawEmails = formData.get('emails');
+  if (typeof rawEmails === 'string' && rawEmails.length > 0) {
+    let parsedEmails: unknown;
+    try {
+      parsedEmails = JSON.parse(rawEmails);
+    } catch {
+      return { ok: false, error: 'Email template data is not valid JSON' };
+    }
+    if (
+      !parsedEmails ||
+      typeof parsedEmails !== 'object' ||
+      Array.isArray(parsedEmails)
+    ) {
+      // Well-formed JSON that is not an overrides object is malformed
+      // submit data too — normalizing a scalar or array would produce
+      // an all-defaults group and silently wipe the operator's copy,
+      // the same reset the absent-field path below refuses to make.
+      next.emails = (await stored()).emails;
+    } else {
+      next.emails = normalizeEmailOverrides(parsedEmails);
+    }
+  } else {
+    // The field is absent only on a malformed submit — the form always
+    // sends it. Carry the stored overrides forward rather than wiping
+    // the operator's copy.
+    next.emails = (await stored()).emails;
   }
 
   try {
@@ -239,6 +280,14 @@ export async function sendRestockNotifications(
     return { ok: false, error: 'Email delivery not configured' };
   }
 
+  // Implements ADR 00-013: Email Delivery Channel — the Restock
+  // Notification's copy is "operator-editable Site Config data": one
+  // config read per run feeds the whole `emails` group into every
+  // entry's builder (the send kind's fields plus the shared
+  // header/footer); a failed read fails open to the in-repo defaults
+  // inside `getSiteConfig`.
+  const emails = (await getSiteConfig()).emails;
+
   const key = stockNotificationKey(variantId);
   let entries: Record<string, unknown>;
   try {
@@ -266,11 +315,15 @@ export async function sendRestockNotifications(
     const delivered = await sendEmail({
       to: email,
       replyTo: emailConfig.supportInbox,
-      ...restockEmail(locale, {
-        productName: PRODUCT.name,
-        variantLabel: variantLabel(variant),
-        productUrl: `${SITE_CONFIG.url}/${locale}/checkout`,
-      }),
+      ...restockEmail(
+        locale,
+        {
+          productName: PRODUCT.name,
+          variantLabel: variantLabel(variant),
+          productUrl: `${SITE_CONFIG.url}/${locale}/checkout`,
+        },
+        emails
+      ),
     });
 
     if (delivered) {
