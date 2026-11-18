@@ -32,6 +32,13 @@ interface PromotionBarProps {
   /** Normalized campaigns from Site Config (`promotion.campaigns`). */
   campaigns: PromotionCampaign[];
   /**
+   * Implements ADR 03-003: Promotion Bar — "The bar's visual theme is a
+   * single Site Config field — `promotion.theme` ... shared by every
+   * campaign: the bar renders at most one campaign at a time, so the
+   * skin belongs to the bar, not to the campaign that happens to win."
+   */
+  theme: PromotionTheme;
+  /**
    * The Site Config free-shipping threshold in cents
    * (`shipping.freeShippingThresholdCents`) — fed to `selectCampaign`
    * for the `belowFreeShipping` condition and to the `{remaining}`
@@ -63,8 +70,9 @@ interface ClientState {
 }
 
 /**
- * Implements ADR 03-003: Promotion Bar — the campaign themes, and
- * ADR 03-001: Design System — token-driven only, no raw colors.
+ * Implements ADR 03-003: Promotion Bar — the bar themes (`promotion.theme`
+ * selects one for the whole bar), and ADR 03-001: Design System —
+ * token-driven only, no raw colors.
  * `section` styles the collapsed row (the expanded block inherits its
  * palette), `panel` optionally overrides the expanded block's
  * background, and `ring` keeps `focus-visible` rings visible on the
@@ -205,6 +213,7 @@ function FeedColumn({ children }: { children: ReactNode }) {
  */
 export default function PromotionBar({
   campaigns,
+  theme,
   freeShippingThresholdCents,
   purchaseSurfaceEnabled,
 }: PromotionBarProps) {
@@ -357,7 +366,9 @@ export default function PromotionBar({
 
   if (!client.mounted || !selected) return null;
 
-  const theme = THEME_CLASSES[selected.theme];
+  // The bar-level skin (ADR 03-003 "Bar theme"): the Site Config
+  // `promotion.theme` prop — independent of which campaign won.
+  const themeClasses = THEME_CLASSES[theme];
   const copy = locale === 'en' ? selected.copy.en : selected.copy.pt;
 
   // {remaining} interpolation — applied only while a belowFreeShipping
@@ -419,7 +430,7 @@ export default function PromotionBar({
     <section
       aria-label={t('aria_label')}
       data-testid="promotion-bar"
-      className={`max-h-dvh overflow-y-auto ${theme.section}`}
+      className={`max-h-dvh overflow-y-auto ${themeClasses.section}`}
     >
       {/* Collapsed row: one thin line — the campaign micro-label and
           the campaign headline cycling in a width-stable text slot
@@ -441,7 +452,7 @@ export default function PromotionBar({
             aria-controls={expandedRegionId}
             aria-label={expanded ? t('collapse') : t('expand')}
             onClick={toggle}
-            className={`flex min-w-0 flex-1 items-center justify-center gap-2 px-4 sm:px-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset ${theme.ring}`}
+            className={`flex min-w-0 flex-1 items-center justify-center gap-2 px-4 sm:px-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset ${themeClasses.ring}`}
           >
             <ChevronGlyph expanded={expanded} className="h-3 w-3" />
             <span
@@ -474,7 +485,7 @@ export default function PromotionBar({
           expanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
         }`}
       >
-        <div className={`overflow-hidden ${theme.panel}`}>
+        <div className={`overflow-hidden ${themeClasses.panel}`}>
           <FeedColumn>
             <div inert={!expanded} className="px-4 py-4 sm:px-6 md:py-6">
               <div className="flex flex-col items-center text-center">
@@ -497,7 +508,7 @@ export default function PromotionBar({
                       rel="noopener noreferrer"
                       data-testid="promotion-bar-cta"
                       onClick={ctaClicked}
-                      className={`mt-4 inline-block text-sm font-medium uppercase tracking-wide underline underline-offset-4 transition-opacity hover:opacity-70 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${theme.ring}`}
+                      className={`mt-4 inline-block text-sm font-medium uppercase tracking-wide underline underline-offset-4 transition-opacity hover:opacity-70 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${themeClasses.ring}`}
                     >
                       {ctaLabel} <span aria-hidden="true">↗</span>
                     </a>
@@ -506,7 +517,7 @@ export default function PromotionBar({
                       href={selected.ctaUrl}
                       data-testid="promotion-bar-cta"
                       onClick={ctaClicked}
-                      className={`mt-4 inline-block text-sm font-medium uppercase tracking-wide underline underline-offset-4 transition-opacity hover:opacity-70 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${theme.ring}`}
+                      className={`mt-4 inline-block text-sm font-medium uppercase tracking-wide underline underline-offset-4 transition-opacity hover:opacity-70 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${themeClasses.ring}`}
                     >
                       {ctaLabel} <span aria-hidden="true">↗</span>
                     </Link>

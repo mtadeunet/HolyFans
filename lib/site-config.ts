@@ -5,9 +5,12 @@ import {
   type EmailOverrides,
 } from './email-templates';
 import {
+  asPromotionTheme,
   DEFAULT_CAMPAIGNS,
+  DEFAULT_PROMOTION_THEME,
   normalizeCampaigns,
   type PromotionCampaign,
+  type PromotionTheme,
 } from './promotions';
 import { FREE_SHIPPING_THRESHOLD_CENTS } from './shipping';
 
@@ -72,8 +75,13 @@ export type SiteConfig = {
    * Site Config group": the campaigns the Promotion Bar selects from,
    * validated by `normalizeCampaigns` — malformed entries drop out,
    * missing `promotion` documents fall back to `DEFAULT_CAMPAIGNS`.
+   *
+   * Implements ADR 03-003: Promotion Bar - "The bar's visual theme is a
+   * single Site Config field — `promotion.theme` ... shared by every
+   * campaign": the skin belongs to the bar, not to the campaign that
+   * happens to win the selection.
    */
-  promotion: { campaigns: PromotionCampaign[] };
+  promotion: { theme: PromotionTheme; campaigns: PromotionCampaign[] };
   /**
    * Implements ADR 03-003: Promotion Bar — the free-shipping
    * threshold is operator-editable Site Config data, normalized like
@@ -124,7 +132,12 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
   stock: Object.fromEntries(
     VARIANTS.map((variant) => [variant.id, false])
   ) as Record<StockKey, boolean>,
-  promotion: { campaigns: DEFAULT_CAMPAIGNS },
+  promotion: {
+    // Implements ADR 03-003: "Bar theme" — 'dark' preserves the look
+    // the pre-amendment default campaign carried.
+    theme: DEFAULT_PROMOTION_THEME,
+    campaigns: DEFAULT_CAMPAIGNS,
+  },
   // Implements ADR 03-003: the threshold's default is the constant in
   // `lib/shipping.ts`; the Admin Console edits the live value through
   // the Shipping section.
@@ -172,7 +185,10 @@ export function normalizeSiteConfig(raw: unknown): SiteConfig {
     sections: { ...DEFAULT_SITE_CONFIG.sections },
     chrome: { ...DEFAULT_SITE_CONFIG.chrome },
     stock: { ...DEFAULT_SITE_CONFIG.stock },
-    promotion: { campaigns: [...DEFAULT_CAMPAIGNS] },
+    promotion: {
+      theme: DEFAULT_PROMOTION_THEME,
+      campaigns: [...DEFAULT_CAMPAIGNS],
+    },
     shipping: { ...DEFAULT_SITE_CONFIG.shipping },
     // Implements ADR 00-013: the `emails` group's starting shape is the
     // shared all-defaults constant — `normalizeEmailOverrides` rebuilds
@@ -206,15 +222,35 @@ export function normalizeSiteConfig(raw: unknown): SiteConfig {
       if (typeof value === 'boolean') out.stock[key] = value;
     }
   }
-  // Implements ADR 03-003: Promotion Bar — campaigns normalize through
-  // the same posture: applied only when the stored document carries a
-  // `promotion.campaigns` array (missing → defaults, unknown keys
-  // ignored); an explicit empty array stays empty so the operator can
-  // deliberately run no campaigns.
+  // Implements ADR 03-003: Promotion Bar — the promotion group
+  // normalizes through the same posture: applied only when the stored
+  // document carries the group (missing → defaults, unknown keys
+  // ignored); an explicit empty campaign array stays empty so the
+  // operator can deliberately run no campaigns.
   if (source.promotion && typeof source.promotion === 'object') {
-    const campaigns = (source.promotion as Record<string, unknown>)[
-      'campaigns'
-    ];
+    const promotion = source.promotion as Record<string, unknown>;
+    // Implements ADR 03-003: "Bar theme" — `promotion.theme` is a
+    // single shared field. A missing or invalid value falls back to
+    // the FIRST stored campaign's valid legacy `theme` — the shape
+    // change lifted theme off the campaign record, and this read
+    // preserves an operator's existing visual choice through the
+    // migration — then to `DEFAULT_PROMOTION_THEME`.
+    const theme = asPromotionTheme(promotion['theme']);
+    if (theme !== null) {
+      out.promotion.theme = theme;
+    } else if (Array.isArray(promotion['campaigns'])) {
+      for (const entry of promotion['campaigns']) {
+        if (!entry || typeof entry !== 'object') continue;
+        const legacyTheme = asPromotionTheme(
+          (entry as Record<string, unknown>)['theme']
+        );
+        if (legacyTheme !== null) {
+          out.promotion.theme = legacyTheme;
+          break;
+        }
+      }
+    }
+    const campaigns = promotion['campaigns'];
     if (Array.isArray(campaigns)) {
       out.promotion.campaigns = normalizeCampaigns(campaigns);
     }

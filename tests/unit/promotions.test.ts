@@ -31,7 +31,6 @@ import {
   markDisplayed,
   markVisited,
   normalizeCampaigns,
-  PROMOTION_THEMES,
   PROMO_EXPANDED_KEY,
   PROMO_VISITED_KEY,
   readDisplayedIds,
@@ -96,7 +95,6 @@ const EN_COPY = {
 const rawCampaign = (): Record<string, unknown> => ({
   id: 'promo-raw',
   type: 'editorial',
-  theme: 'dark',
   copy: {
     pt: { label: PT_COPY.label, headline: PT_COPY.headline },
     en: { label: EN_COPY.label, headline: EN_COPY.headline },
@@ -114,7 +112,6 @@ function makeCampaign(
     enabled: true,
     startDate: null,
     endDate: null,
-    theme: 'dark',
     ctaUrl: null,
     promoCode: null,
     conditions: null,
@@ -164,18 +161,8 @@ describe('normalizeCampaigns', () => {
     ['non-string id', { id: 7 }],
     ['unknown type', { type: 'flash-sale' }],
     ['missing type', { type: undefined }],
-    ['unknown theme', { theme: 'sepia' }],
-    ['missing theme', { theme: undefined }],
   ])('drops an entry with %s', (_label, patch) => {
     expect(normalizeCampaigns([{ ...rawCampaign(), ...patch }])).toEqual([]);
-  });
-
-  // Every exported theme must normalize — a typo'd member of
-  // PROMOTION_THEMES would silently make that scheme unselectable in
-  // the Admin Console.
-  it.each(PROMOTION_THEMES)('accepts the valid theme %j', (theme) => {
-    const [campaign] = normalizeCampaigns([{ ...rawCampaign(), theme }]);
-    expect(campaign?.theme).toBe(theme);
   });
 
   it.each([
@@ -228,7 +215,6 @@ describe('normalizeCampaigns', () => {
         enabled: true,
         startDate: null,
         endDate: null,
-        theme: 'dark',
         ctaUrl: null,
         promoCode: null,
         conditions: null,
@@ -291,6 +277,11 @@ describe('normalizeCampaigns', () => {
     const entry = {
       ...rawCampaign(),
       unexpected: 'ignored',
+      // Implements ADR 03-003 "Bar theme": a legacy per-campaign `theme`
+      // key is just another unknown key now — it drops on normalize;
+      // `normalizeSiteConfig` reads it for the `promotion.theme`
+      // fallback before this strip runs.
+      theme: 'dark',
       conditions: { surfaces: ['feed'], unknownCondition: true },
       copy: {
         pt: { ...PT_COPY, extra: 'x' },
@@ -305,7 +296,6 @@ describe('normalizeCampaigns', () => {
       enabled: true,
       startDate: null,
       endDate: null,
-      theme: 'dark',
       ctaUrl: null,
       promoCode: null,
       conditions: { surfaces: ['feed'] },
@@ -766,7 +756,7 @@ describe('saveSiteConfig — strict promotion.campaigns validation', () => {
   it('rejects the whole document when any campaign fails validation', async () => {
     const payload = JSON.stringify([
       rawCampaign(),
-      { id: 'broken', type: 'bogus', theme: 'dark', copy: {} },
+      { id: 'broken', type: 'bogus', copy: {} },
       { id: 'also-broken' },
     ]);
     const result = await saveSiteConfig(formDataWith(payload));
@@ -805,7 +795,7 @@ describe('saveSiteConfig — strict promotion.campaigns validation', () => {
     ]);
     getSiteConfigMock.mockResolvedValue({
       ...DEFAULT_SITE_CONFIG,
-      promotion: { campaigns: stored },
+      promotion: { ...DEFAULT_SITE_CONFIG.promotion, campaigns: stored },
     });
     const result = await saveSiteConfig(formDataWith());
     expect(result).toEqual({ ok: true });

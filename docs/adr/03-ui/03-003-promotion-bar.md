@@ -99,7 +99,7 @@ unit and the rules the campaign system obeys.
   scroll — so the in-flow bar pushes it down rather than sliding under
   it.
 - **Visual identity.** The unit is token-driven per ADR 03-001 and
-  introduces no new colors. Four campaign themes exist, expressed
+  introduces no new colors. Four bar themes exist, expressed
   entirely through tokens: `light` (`bg-surface`, `border`,
   `text-primary`), `dark` (`bg-text-primary` with `surface` text —
   the only full inversion), `accent` (a `primary` band with `surface`
@@ -121,11 +121,24 @@ unit and the rules the campaign system obeys.
   operator editability is bought at the cost of moving a class of
   visitor-facing copy outside the parity-checked catalogs; validation
   (below) takes over the catalog checker's role for that copy.
+- **Bar theme.** The bar's visual theme is a single Site Config
+  field — `promotion.theme`, one of `light`, `dark`, `accent`,
+  `soft` — shared by every campaign: the bar renders at most one
+  campaign at a time, so the skin belongs to the bar, not to the
+  campaign that happens to win. The Admin Console edits it as
+  shared bar settings beside the campaign list. On read, a missing
+  or invalid `promotion.theme` falls back to the first stored
+  campaign's legacy per-campaign `theme` (a valid one, if any) and
+  then to the default — a stored document written before the field
+  existed keeps its look; legacy `theme` keys drop from the
+  normalized campaigns. On write, an invalid or absent
+  `promotion.theme` carries the stored value forward rather than
+  rejecting or resetting — the same never-silently-reset posture as
+  the `emails` group.
 - **Campaign shape.** Each campaign is
-  `{id, type, priority, enabled, startDate, endDate, theme, ctaUrl,
+  `{id, type, priority, enabled, startDate, endDate, ctaUrl,
   promoCode?, conditions, copy}` where `type` is one of `editorial`,
-  `discount`, `seasonal`, `exclusive`; `theme` is `light`, `dark`,
-  `accent`, or `soft`;
+  `discount`, `seasonal`, `exclusive`;
   `conditions` is `null` or
   `{surfaces: ('feed'|'purchase'|'classic')[], minCartCents?,
   belowFreeShipping?, visitor: 'new'|'returning'|'any'}`; and `copy` carries

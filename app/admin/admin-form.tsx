@@ -116,7 +116,7 @@ const PROMO_COPY_FIELDS: readonly (keyof PromotionCopy)[] = [
   'ctaLabel',
 ];
 const PROMO_COPY_FIELD_LABELS: Record<keyof PromotionCopy, string> = {
-  label: 'Label',
+  label: 'Hook',
   headline: 'Headline',
   description: 'Description',
   ctaLabel: 'CTA label',
@@ -188,7 +188,6 @@ function blankCampaign(n: number): PromotionCampaign {
     enabled: false,
     startDate: null,
     endDate: null,
-    theme: 'dark',
     ctaUrl: null,
     promoCode: null,
     conditions: null,
@@ -476,6 +475,10 @@ export default function AdminForm({ initial }: { initial: SiteConfig }) {
   const [rowKeys, setRowKeys] = useState<string[]>(() =>
     config.promotion.campaigns.map((_, i) => `row-${i + 1}`)
   );
+  // The Language the campaign copy fieldsets render — the section-level
+  // select mirrors the Email tab's: one Locale's four copy fields at a
+  // time instead of stacked pt/en fieldsets.
+  const [promoLocale, setPromoLocale] = useState<Locale>('pt');
 
   const patchCampaign = (
     index: number,
@@ -484,6 +487,7 @@ export default function AdminForm({ initial }: { initial: SiteConfig }) {
     setConfig((prev) => ({
       ...prev,
       promotion: {
+        ...prev.promotion,
         campaigns: prev.promotion.campaigns.map((campaign, i) =>
           i === index ? mutate(campaign) : campaign
         ),
@@ -530,6 +534,17 @@ export default function AdminForm({ initial }: { initial: SiteConfig }) {
       },
     }));
 
+  /**
+   * Implements ADR 03-003: Promotion Bar — "Bar theme": the shared
+   * `promotion.theme` field the "Shared bar settings" card edits; one
+   * skin for the whole bar, lifted out of the per-campaign cards.
+   */
+  const updatePromotionTheme = (theme: PromotionTheme): void =>
+    setConfig((prev) => ({
+      ...prev,
+      promotion: { ...prev.promotion, theme },
+    }));
+
   const addCampaign = (): void => {
     // The counter advance is a side effect — it must happen OUTSIDE the
     // state updater, which StrictMode may invoke twice.
@@ -538,6 +553,7 @@ export default function AdminForm({ initial }: { initial: SiteConfig }) {
     setConfig((prev) => ({
       ...prev,
       promotion: {
+        ...prev.promotion,
         campaigns: [...prev.promotion.campaigns, blankCampaign(n)],
       },
     }));
@@ -548,6 +564,7 @@ export default function AdminForm({ initial }: { initial: SiteConfig }) {
     setConfig((prev) => ({
       ...prev,
       promotion: {
+        ...prev.promotion,
         campaigns: prev.promotion.campaigns.filter((_, i) => i !== index),
       },
     }));
@@ -666,11 +683,15 @@ export default function AdminForm({ initial }: { initial: SiteConfig }) {
     );
     // Implements ADR 03-003: Promotion Bar — the whole campaign list
     // travels as one serialized JSON field; the server action
-    // re-normalizes it through `normalizeCampaigns`.
+    // re-normalizes it through `normalizeCampaigns`. The shared
+    // `promotion.theme` ("Bar theme") travels as a plain scalar like
+    // `shipping.freeShippingThreshold`, validated with the same
+    // carry-forward posture.
     formData.set(
       'promotion.campaigns',
       JSON.stringify(config.promotion.campaigns)
     );
+    formData.set('promotion.theme', config.promotion.theme);
     // Implements ADR 00-013: Email Delivery Channel — the `emails`
     // override group travels as one serialized JSON field, mirroring
     // `promotion.campaigns`; the server action re-normalizes it
@@ -830,7 +851,12 @@ export default function AdminForm({ initial }: { initial: SiteConfig }) {
         {/* Implements ADR 03-003: Promotion Bar — "the Promotion Campaign
           list is operator-editable Site Config data": one bordered card
           per campaign mirroring the `PromotionCampaign` schema; the
-          highest-priority eligible campaign wins on the storefront. */}
+          highest-priority eligible campaign wins on the storefront.
+          One Language select scopes the campaign copy fieldsets (the
+          Email tab's pattern), and the shared `promotion.theme` lives
+          in its own "Shared bar settings" card above the list — "The
+          Admin Console edits it as shared bar settings beside the
+          campaign list." */}
         <section className="rounded-xl border border-border bg-surface p-6">
           <h2 className="mb-1 text-xl font-semibold text-text-primary">
             Promotions
@@ -840,7 +866,54 @@ export default function AdminForm({ initial }: { initial: SiteConfig }) {
             campaign wins; the bar hides when none applies. Dates are optional
             (empty = unbounded).
           </p>
+          <div className="mb-4 grid gap-3 sm:grid-cols-2">
+            <label className="block">
+              <span className={fieldLabelClass}>Language</span>
+              <select
+                value={promoLocale}
+                onChange={(event) =>
+                  setPromoLocale(event.target.value as Locale)
+                }
+                className={inputClass}
+              >
+                <option value="pt">Português</option>
+                <option value="en">English</option>
+              </select>
+            </label>
+          </div>
           <div className="space-y-4">
+            {/* Implements ADR 03-003: "Bar theme" — "The bar's visual
+              theme is a single Site Config field — `promotion.theme` ...
+              shared by every campaign": the skin belongs to the bar, not
+              to whichever campaign wins, so it edits here beside the
+              list rather than inside each campaign card. */}
+            <div className="rounded-lg border border-border bg-background px-4 py-4">
+              <h3 className="mb-1 text-sm font-semibold text-text-primary">
+                Shared bar settings
+              </h3>
+              <p className="mb-3 text-xs text-text-secondary">
+                One visual theme for the whole promotion bar — it applies to
+                whichever campaign is showing.
+              </p>
+              <label className="block">
+                <span className={fieldLabelClass}>Theme</span>
+                <select
+                  value={config.promotion.theme}
+                  onChange={(event) =>
+                    updatePromotionTheme(
+                      event.target.value as PromotionTheme
+                    )
+                  }
+                  className={inputClass}
+                >
+                  {PROMOTION_THEMES.map((theme) => (
+                    <option key={theme} value={theme}>
+                      {theme}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
             {config.promotion.campaigns.map((campaign, index) => {
               const conditions = campaign.conditions ?? {};
               return (
@@ -905,24 +978,6 @@ export default function AdminForm({ initial }: { initial: SiteConfig }) {
                         }}
                         className={inputClass}
                       />
-                    </label>
-                    <label className="block">
-                      <span className={fieldLabelClass}>Theme</span>
-                      <select
-                        value={campaign.theme}
-                        onChange={(event) =>
-                          updateCampaign(index, {
-                            theme: event.target.value as PromotionTheme,
-                          })
-                        }
-                        className={inputClass}
-                      >
-                        {PROMOTION_THEMES.map((theme) => (
-                          <option key={theme} value={theme}>
-                            {theme}
-                          </option>
-                        ))}
-                      </select>
                     </label>
                     <button
                       type="button"
@@ -1090,43 +1145,40 @@ export default function AdminForm({ initial }: { initial: SiteConfig }) {
                     </div>
                   </fieldset>
 
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {(['pt', 'en'] as const).map((locale) => (
-                      <fieldset
-                        key={locale}
-                        className="rounded-md border border-border px-3 py-3"
-                      >
-                        <legend className="px-1 text-xs font-medium uppercase text-text-secondary">
-                          {locale}
-                        </legend>
-                        <div className="space-y-2">
-                          {PROMO_COPY_FIELDS.map((field) => (
-                            <label key={field} className="block">
-                              <span className={fieldLabelClass}>
-                                {PROMO_COPY_FIELD_LABELS[field]}
-                              </span>
-                              <input
-                                type="text"
-                                required={
-                                  field === 'label' || field === 'headline'
-                                }
-                                value={campaign.copy[locale][field]}
-                                onChange={(event) =>
-                                  updateCopy(
-                                    index,
-                                    locale,
-                                    field,
-                                    event.target.value
-                                  )
-                                }
-                                className={inputClass}
-                              />
-                            </label>
-                          ))}
-                        </div>
-                      </fieldset>
-                    ))}
-                  </div>
+                  {/* One Locale's copy block at a time — the
+                    section-level Language select picks which of the
+                    campaign's `{pt, en}` blocks these four fields edit
+                    (the Email tab's single-locale pattern). */}
+                  <fieldset className="rounded-md border border-border px-3 py-3">
+                    <legend className="px-1 text-xs font-medium uppercase text-text-secondary">
+                      {promoLocale}
+                    </legend>
+                    <div className="space-y-2">
+                      {PROMO_COPY_FIELDS.map((field) => (
+                        <label key={field} className="block">
+                          <span className={fieldLabelClass}>
+                            {PROMO_COPY_FIELD_LABELS[field]}
+                          </span>
+                          <input
+                            type="text"
+                            required={
+                              field === 'label' || field === 'headline'
+                            }
+                            value={campaign.copy[promoLocale][field]}
+                            onChange={(event) =>
+                              updateCopy(
+                                index,
+                                promoLocale,
+                                field,
+                                event.target.value
+                              )
+                            }
+                            className={inputClass}
+                          />
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
                 </div>
               );
             })}

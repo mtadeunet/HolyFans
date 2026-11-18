@@ -174,7 +174,9 @@ describe('normalizeSiteConfig', () => {
     expect(
       normalizeSiteConfig({ promotion: { campaigns: [] } }).promotion.campaigns
     ).toEqual([]);
-    // Malformed entries drop out individually; the valid one survives.
+    // Malformed entries drop out individually; the valid one survives
+    // — and its legacy per-campaign `theme` key drops from the record
+    // (ADR 03-003 "Bar theme": the skin moved to `promotion.theme`).
     const [campaign] = normalizeSiteConfig({
       promotion: {
         campaigns: [
@@ -192,12 +194,59 @@ describe('normalizeSiteConfig', () => {
       },
     }).promotion.campaigns;
     expect(campaign.id).toBe('ok');
+    expect('theme' in campaign).toBe(false);
     // Unknown keys on the group are ignored.
     const config = normalizeSiteConfig({ promotion: { unknown: 1 } });
     expect(config.promotion.campaigns).toEqual(
       DEFAULT_SITE_CONFIG.promotion.campaigns
     );
     expect('unknown' in config.promotion).toBe(false);
+  });
+
+  // Implements ADR 03-003: Promotion Bar — "Bar theme": `promotion.theme`
+  // is "a single Site Config field ... shared by every campaign". A
+  // valid enum value survives; a missing or invalid one falls back to
+  // the first stored campaign's valid legacy `theme` — preserving an
+  // operator's visual choice through the shape change — then to the
+  // default.
+  it('normalizes promotion.theme — valid survives, invalid falls back to campaign theme, then default', () => {
+    const campaign = (theme?: unknown): Record<string, unknown> => ({
+      id: 'ok',
+      type: 'editorial',
+      ...(theme === undefined ? {} : { theme }),
+      copy: {
+        pt: { label: 'L', headline: 'H' },
+        en: { label: 'L', headline: 'H' },
+      },
+    });
+
+    // A valid enum value survives.
+    expect(
+      normalizeSiteConfig({ promotion: { theme: 'accent' } }).promotion.theme
+    ).toBe('accent');
+
+    // Missing or invalid `promotion.theme` → the FIRST stored
+    // campaign's valid legacy theme wins.
+    for (const rawTheme of [undefined, 'sepia', 42]) {
+      const config = normalizeSiteConfig({
+        promotion: {
+          ...(rawTheme === undefined ? {} : { theme: rawTheme }),
+          campaigns: [campaign('bogus'), campaign('soft')],
+        },
+      });
+      expect(config.promotion.theme).toBe('soft');
+    }
+
+    // No usable theme anywhere → the default ('dark', the pre-amendment
+    // default campaign's theme).
+    expect(
+      normalizeSiteConfig({
+        promotion: { theme: 'sepia', campaigns: [campaign()] },
+      }).promotion.theme
+    ).toBe(DEFAULT_SITE_CONFIG.promotion.theme);
+    expect(normalizeSiteConfig({}).promotion.theme).toBe(
+      DEFAULT_SITE_CONFIG.promotion.theme
+    );
   });
 
   // Implements ADR 00-013: Email Delivery Channel — the `emails` group

@@ -267,9 +267,10 @@ user-facing documentation.
   above all other chrome on every Locale route: a thin collapsed row that
   expands in-flow into a richer promotional block (ADR 03-003).
 - **Promotion Campaign** — one unit of promotional content stored in Site
-  Config (`promotion.campaigns`): per-Locale copy, theme, priority,
+  Config (`promotion.campaigns`): per-Locale copy, priority,
   schedule, CTA, and eligibility conditions, editable through the Admin
-  Console (ADR 03-003).
+  Console (ADR 03-003). The bar's visual theme is not a campaign
+  property — it is the shared `promotion.theme` Site Config field.
 - **Smart Offer Switcher** — the Promotion Bar's client-side campaign
   selection pipeline: enabled → schedule → surface → visitor → Cart
   conditions → Purchase-Surface Gate → highest priority →

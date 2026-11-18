@@ -1,6 +1,7 @@
 {
   "shipping": { "freeShippingThresholdCents": 10000 },
   "promotion": {
+    "theme": "dark",
     "campaigns": [
       {
         "id": "promo-free-shipping",
@@ -9,7 +10,6 @@
         "enabled": true,
         "startDate": null,
         "endDate": null,
-        "theme": "dark",
         "ctaUrl": null,
         "promoCode": null,
         "conditions": { "belowFreeShipping": true },
@@ -35,7 +35,6 @@
         "enabled": true,
         "startDate": null,
         "endDate": null,
-        "theme": "dark",
         "ctaUrl": "/#products",
         "promoCode": null,
         "conditions": null,
@@ -61,7 +60,6 @@
         "enabled": true,
         "startDate": null,
         "endDate": null,
-        "theme": "soft",
         "ctaUrl": null,
         "promoCode": null,
         "conditions": null,

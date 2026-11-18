@@ -107,3 +107,44 @@ describe('saveSiteConfig — emails group write path (ADR 00-013)', () => {
     );
   });
 });
+
+/**
+ * Implements ADR 03-003: Promotion Bar — "Bar theme": `promotion.theme`
+ * travels as a plain scalar field and validates against the theme enum;
+ * a missing or invalid value carries the stored theme forward — the
+ * same never-silently-reset posture as the campaigns list and the
+ * threshold.
+ */
+describe('saveSiteConfig — promotion.theme write path (ADR 03-003)', () => {
+  beforeEach(() => {
+    writeSiteConfigMock.mockReset().mockResolvedValue(undefined);
+    getSiteConfigMock.mockReset().mockResolvedValue({
+      ...DEFAULT_SITE_CONFIG,
+      promotion: {
+        ...DEFAULT_SITE_CONFIG.promotion,
+        theme: 'soft',
+      },
+    });
+  });
+
+  it('persists a valid submitted theme', async () => {
+    const formData = new FormData();
+    formData.set('promotion.theme', 'accent');
+    const result = await saveSiteConfig(formData);
+    expect(result).toEqual({ ok: true });
+    expect(savedConfig().promotion.theme).toBe('accent');
+  });
+
+  it.each([undefined, 'sepia', '42'])(
+    'carries the stored theme forward on invalid input %j',
+    async (value) => {
+      const formData = new FormData();
+      if (value !== undefined) {
+        formData.set('promotion.theme', value);
+      }
+      const result = await saveSiteConfig(formData);
+      expect(result).toEqual({ ok: true });
+      expect(savedConfig().promotion.theme).toBe('soft');
+    }
+  );
+});

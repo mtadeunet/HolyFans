@@ -56,6 +56,14 @@ export const PROMOTION_TYPES: readonly PromotionType[] = [
 ];
 
 /**
+ * Implements ADR 03-003: Promotion Bar — "The bar's visual theme is a
+ * single Site Config field — `promotion.theme`". `'dark'` preserves
+ * the pre-amendment default campaign's theme, so a store that never
+ * set `promotion.theme` keeps the look it had.
+ */
+export const DEFAULT_PROMOTION_THEME: PromotionTheme = 'dark';
+
+/**
  * Campaign ids become on-device storage values and analytics payloads —
  * restrict them to lowercase slugs so operator-entered ids can never
  * inject whitespace, unicode, or control characters into those
@@ -92,6 +100,13 @@ export interface PromotionConditions {
  * One Promotion Campaign as stored in Site Config (`promotion.campaigns`).
  * `promoCode` is RESERVED — it is validated into the schema so documents
  * stay forward-compatible, but nothing renders it in v1.
+ *
+ * Implements ADR 03-003: Promotion Bar — the campaign shape carries no
+ * `theme`: the bar's skin is the shared `promotion.theme` field ("the
+ * bar renders at most one campaign at a time, so the skin belongs to
+ * the bar, not to the campaign that happens to win"). A stored campaign
+ * still carrying a legacy `theme` key simply drops it on normalize —
+ * the same unknown-key posture as every other field.
  */
 export interface PromotionCampaign {
   id: string;
@@ -101,7 +116,6 @@ export interface PromotionCampaign {
   /** ISO 8601 timestamp or `null` = unbounded. */
   startDate: string | null;
   endDate: string | null;
-  theme: PromotionTheme;
   /** Locale-neutral path (e.g. `'/checkout'`, `'/#products'`); `null` = no CTA. */
   ctaUrl: string | null;
   /** RESERVED — validated in schema, NOT rendered in v1. */
@@ -126,7 +140,6 @@ export const DEFAULT_CAMPAIGNS: PromotionCampaign[] = [
     enabled: true,
     startDate: null,
     endDate: null,
-    theme: 'dark',
     ctaUrl: '/#products',
     promoCode: null,
     conditions: null,
@@ -165,6 +178,15 @@ function asEnum<T extends string>(
     (allowed as readonly string[]).includes(value)
     ? (value as T)
     : null;
+}
+
+/**
+ * Narrow an unknown value to a Bar theme (`promotion.theme`), else
+ * `null`. Exported for `normalizeSiteConfig` and the Admin Console
+ * write path — the single enum check shared by both.
+ */
+export function asPromotionTheme(value: unknown): PromotionTheme | null {
+  return asEnum(value, PROMOTION_THEMES);
 }
 
 /** Accept a string holding a parseable date; everything else becomes `null`. */
@@ -252,10 +274,13 @@ function normalizeConditions(raw: unknown): PromotionConditions | null {
  * `normalizeSiteConfig`: unknown keys ignored, malformed entries drop out
  * entirely, and the function never throws.
  *
- * An entry must carry a non-empty `id`, a valid `type` and `theme`, and
+ * An entry must carry a non-empty `id`, a valid `type`, and
  * both-Locale `copy` with non-empty `label`/`headline` to survive;
  * everything else is coerced to its default (`priority: 0`,
- * `enabled: true`, dates/ctaUrl/promoCode `null`).
+ * `enabled: true`, dates/ctaUrl/promoCode `null`). A legacy per-campaign
+ * `theme` key is just another unknown key — it drops with the rest;
+ * `normalizeSiteConfig` reads it for the `promotion.theme` fallback
+ * BEFORE this strip runs.
  *
  * @param raw - Untrusted value (typically `siteConfig.promotion.campaigns`).
  * @returns The well-formed campaigns contained in `raw`, in order.
@@ -270,7 +295,6 @@ export function normalizeCampaigns(raw: unknown): PromotionCampaign[] {
 
     const id = asNonEmptyString(source.id);
     const type = asEnum(source.type, PROMOTION_TYPES);
-    const theme = asEnum(source.theme, PROMOTION_THEMES);
     const copySource =
       source.copy && typeof source.copy === 'object'
         ? (source.copy as Record<string, unknown>)
@@ -286,7 +310,6 @@ export function normalizeCampaigns(raw: unknown): PromotionCampaign[] {
       !id ||
       !CAMPAIGN_ID_PATTERN.test(id) ||
       !type ||
-      !theme ||
       !pt ||
       !en ||
       seenIds.has(id)
@@ -316,7 +339,6 @@ export function normalizeCampaigns(raw: unknown): PromotionCampaign[] {
       enabled: typeof source.enabled === 'boolean' ? source.enabled : true,
       startDate,
       endDate,
-      theme,
       ctaUrl: asCtaUrlOrNull(source.ctaUrl),
       promoCode: asNonEmptyString(source.promoCode),
       conditions: normalizeConditions(source.conditions),

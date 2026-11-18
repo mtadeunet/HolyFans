@@ -57,6 +57,7 @@ export default async function LocaleLayout({
             siteConfig.chrome.promotionBar ? (
               <PromotionBar
                 campaigns={siteConfig.promotion.campaigns}
+                theme={siteConfig.promotion.theme}
                 freeShippingThresholdCents={
                   siteConfig.shipping.freeShippingThresholdCents
                 }

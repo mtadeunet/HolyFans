@@ -18,7 +18,11 @@ import {
   STOCK_KEYS,
   type SiteConfig,
 } from '@/lib/site-config';
-import { normalizeCampaigns } from '@/lib/promotions';
+import {
+  asPromotionTheme,
+  DEFAULT_PROMOTION_THEME,
+  normalizeCampaigns,
+} from '@/lib/promotions';
 import { stockNotificationKey } from '@/lib/stock-notification';
 import {
   parseRecord,
@@ -35,7 +39,7 @@ export async function saveSiteConfig(formData: FormData): Promise<SaveResult> {
     // Every path below overwrites both fields — a valid submit, or the
     // stored value on absent/invalid input. Empty placeholders state
     // that honestly; seeding defaults here would never persist.
-    promotion: { campaigns: [] },
+    promotion: { theme: DEFAULT_PROMOTION_THEME, campaigns: [] },
     shipping: { freeShippingThresholdCents: 0 },
     emails: EMPTY_EMAIL_OVERRIDES,
   };
@@ -110,7 +114,7 @@ export async function saveSiteConfig(formData: FormData): Promise<SaveResult> {
         .filter((id): id is string => id !== null);
       return {
         ok: false,
-        error: `${failed.length} campaign(s) failed validation (${failed.join(', ')}) — check required fields: unique slug-safe id (a-z, 0-9, hyphens), type, theme, PT + EN label and headline, non-inverted dates`,
+        error: `${failed.length} campaign(s) failed validation (${failed.join(', ')}) — check required fields: unique slug-safe id (a-z, 0-9, hyphens), type, PT + EN label and headline, non-inverted dates`,
       };
     }
     next.promotion.campaigns = normalizedCampaigns;
@@ -120,6 +124,15 @@ export async function saveSiteConfig(formData: FormData): Promise<SaveResult> {
     // defaults over the operator's campaigns.
     next.promotion.campaigns = (await stored()).promotion.campaigns;
   }
+
+  // Implements ADR 03-003: Promotion Bar — "Bar theme": the shared
+  // `promotion.theme` travels as a plain scalar field like
+  // `shipping.freeShippingThreshold`; a valid enum value applies, an
+  // invalid or missing field carries the stored value forward — never
+  // silently resetting the operator's theme.
+  const submittedTheme = asPromotionTheme(formData.get('promotion.theme'));
+  next.promotion.theme =
+    submittedTheme ?? (await stored()).promotion.theme;
 
   // Implements ADR 03-003: Promotion Bar — the free-shipping threshold
   // is operator-editable Site Config data, submitted in euros and

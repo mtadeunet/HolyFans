@@ -202,16 +202,19 @@ until the M4 editor exists.
     description: string; ctaLabel: string }`.
   - `PromotionCampaign = { id: string; type: PromotionType;
     priority: number; enabled: boolean; startDate: string | null;
-    endDate: string | null; theme: PromotionTheme; ctaUrl: string;
+    endDate: string | null; ctaUrl: string;
     promoCode?: string; conditions: PromotionConditions | null;
     copy: { pt: PromotionCopy; en: PromotionCopy } }`.
-  - `SiteConfig` gains `promotion: { campaigns: PromotionCampaign[] }`.
+  - `SiteConfig` gains `promotion: { theme: PromotionTheme;
+    campaigns: PromotionCampaign[] }` — the bar's theme is a single
+    bar-level field: the bar renders at most one campaign at a
+    time, so the skin belongs to the bar, not the winning campaign.
 - **Campaign types & validation — `lib/promotions.ts`:** the
   `Promotion*` types plus an exported `normalizeCampaigns` used by
   `normalizeSiteConfig` (in `lib/site-config.ts`). Per campaign:
   `id` non-empty slug-safe
   (`/^[a-z0-9][a-z0-9-]{0,63}$/`, unique within the list); `type`,
-  `theme`, `visitor` enum-checked; `priority` finite number;
+  `visitor` enum-checked; `priority` finite number;
   `enabled` boolean; `startDate`/`endDate` ISO-8601 strings or `null`,
   with `startDate <= endDate` when both set; `ctaUrl` internal path
   (`/…`, never `//`) or absolute `https://` URL; `promoCode` optional
@@ -224,7 +227,7 @@ until the M4 editor exists.
   fail-safe on read. `[ADR 03-003]`
 - **Defaults — `lib/site-config.ts`:** `DEFAULT_SITE_CONFIG.promotion.campaigns`
   ships exactly one enabled, condition-free, lowest-priority
-  `editorial` campaign in `light` theme — own-brand placeholder copy
+  `editorial` campaign with `promotion.theme` at its default — own-brand placeholder copy
   in both Locales, no `{remaining}` placeholder, `ctaUrl '/'`
   (identifier hygiene — ADR 00-007). `[ADR 03-003]` `[ADR 00-007]`
 - **Chrome key `promotionBar`:** added to `ChromeKey`, `CHROME_KEYS`,
@@ -636,11 +639,13 @@ strict-validated write path replacing M1's carry-over.
 - **Promotions section — `app/admin/admin-form.tsx`:** a new section
   rendering one editor card per campaign in `config.promotion.campaigns`:
   `id`, `enabled` checkbox, `type` select, `priority` number,
-  `startDate`/`endDate` `datetime-local` inputs, `theme` select,
+  `startDate`/`endDate` `datetime-local` inputs,
   `ctaUrl`, `promoCode` (editable, hint marks it reserved — not
   rendered in v1), conditions (surface checkboxes, `minCartCents`
   euros-input converted to cents, `visitor` select), and per-Locale
-  copy groups (`PT` / `EN`: label, headline, description, ctaLabel).
+  copy fields (label, headline, description, ctaLabel) gated by a
+  section-level language select. A shared-bar-settings card carries
+  the bar-level `theme` select.
   Add-campaign and remove-campaign controls; campaigns serialize to a
   hidden `promotion.campaigns` JSON form field on submit. `[ADR 03-003]`
 - **Write path — `app/admin/actions.ts`:** parse the `promotion.campaigns`
