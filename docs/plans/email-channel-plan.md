@@ -23,7 +23,8 @@ WhatsApp surface removal (config-off only — code stays dormant).
 ## New env vars
 
 `ZEPTOMAIL_TOKEN`, `ZEPTOMAIL_API_BASE`, `EMAIL_FROM`,
-`OPERATOR_INBOX`, `STRIPE_WEBHOOK_SECRET` — `.env.example` documents
+`SUPPORT_INBOX`, `ADMIN_INBOX`, `STRIPE_WEBHOOK_SECRET` —
+`.env.example` documents
 all; real values live in `.env.local` / Vercel env (ADR 00-007).
 
 ## Build order
@@ -49,7 +50,7 @@ all; real values live in `.env.local` / Vercel env (ADR 00-007).
 - `app/api/contact/route.ts` — Node handler: 4 KB body cap, per-IP
   rate limit (5/min shared window), `parseContactBody` (pure,
   `lib/contact.ts`), honeypot → silent 200, unconfigured provider →
-  503 graceful. Success → one `sendEmail` to `OPERATOR_INBOX`,
+  503 graceful. Success → one `sendEmail` to `SUPPORT_INBOX`,
   `replyTo` = visitor. Nothing persisted or logged.
 - `components/feed/nav-entries.tsx` — `contact` entry → internal
   `/<locale>/contact`, always rendered; WhatsApp deep-link entry

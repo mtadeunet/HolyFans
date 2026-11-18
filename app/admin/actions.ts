@@ -265,7 +265,7 @@ export async function sendRestockNotifications(
 
     const delivered = await sendEmail({
       to: email,
-      replyTo: emailConfig.operatorInbox,
+      replyTo: emailConfig.supportInbox,
       ...restockEmail(locale, {
         productName: PRODUCT.name,
         variantLabel: variantLabel(variant),

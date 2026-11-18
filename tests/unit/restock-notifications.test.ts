@@ -48,7 +48,8 @@ const EMAIL_CONFIG = {
   sendUrl: 'https://api.zeptomail.example.test/v1.1/email',
   token: 'zoho-mail-agent-token',
   from: 'store@example.test',
-  operatorInbox: 'ops@example.test',
+  supportInbox: 'support@example.test',
+  adminInbox: 'admin@example.test',
 };
 
 /** A fake store exposing the HASH ops the action drives. */
@@ -126,10 +127,10 @@ describe('sendRestockNotifications — send-and-clear (ADR 00-010/00-015)', () =
     expect(store.hgetall).toHaveBeenCalledWith(STORE_KEY);
 
     // One send per entry, in the consent record's Locale, Reply-To the
-    // Operator Inbox (ADR 00-013/00-015).
+    // Support Inbox (ADR 00-013/00-015).
     const [enSend, ptSend] = mockedSend.mock.calls.map((call) => call[0]);
     expect(enSend.to).toBe('one@example.test');
-    expect(enSend.replyTo).toBe('ops@example.test');
+    expect(enSend.replyTo).toBe('support@example.test');
     expect(enSend.subject).toBe(`Back in stock: ${PRODUCT.name}`);
     expect(enSend.text).toContain('/en/checkout');
     expect(ptSend.to).toBe('two@example.test');

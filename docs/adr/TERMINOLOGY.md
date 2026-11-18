@@ -84,11 +84,14 @@ user-facing documentation.
   ZeptoMail): sends originate from a provider-verified domain using
   a server-side API token; it is transactional-only by contract —
   no marketing sends (ADR 00-013).
-- **Operator Inbox** — the operator-held mailbox (env-configured,
-  never committed) that receives Contact Form relays and the
-  Operator Order Alert; app-sent mail carries it or the visitor's
-  address as `Reply-To`, so replies land where the operator reads
+- **Support Inbox** — the operator-held support mailbox
+  (env-configured, never committed) that receives Contact Form
+  relays; it is also the `Reply-To` on every customer-facing send,
+  so customer replies land where the operator reads
   (ADR 00-013, ADR 00-014, ADR 00-015).
+- **Admin Inbox** — the operator-held administration mailbox
+  (env-configured, never committed) that receives the Operator
+  Order Alert (ADR 00-015).
 - **Contact Page** — the Locale-prefixed auxiliary route
   (`/<Locale>/contact`) inside the Feed Shell whose Feed Surface
   carries the Contact Form while the shell's navigation chrome
@@ -96,7 +99,7 @@ user-facing documentation.
 - **Contact Form** — the in-shell Island that collects the
   visitor's name, email, optional subject, and message plus a
   honeypot under purpose-bound consent copy, posting to the
-  contact Route Handler which relays it to the Operator Inbox;
+  contact Route Handler which relays it to the Support Inbox;
   nothing is persisted or logged (ADR 00-014).
 - **PSP Event Receiver** — the enumerated signature-verified
   webhook Route Handler the PSP calls with order lifecycle events;
@@ -106,7 +109,7 @@ user-facing documentation.
   customer in the Checkout Session's Locale once payment settles,
   complementing the PSP's native receipt (ADR 00-015).
 - **Operator Order Alert** — the owner-facing order email sent to
-  the Operator Inbox carrying the line items, quantities, shipping
+  the Admin Inbox carrying the line items, quantities, shipping
   details, and payment state manual Fulfillment needs
   (ADR 00-015).
 - **Capture Acknowledgment** — the localized email the
@@ -197,7 +200,7 @@ user-facing documentation.
   the single checkout endpoint, the like counter endpoint serving the
   Interaction Row, the stock-notification endpoint serving the
   Pre-order state, the contact endpoint relaying the Contact Form to
-  the Operator Inbox, and the PSP Event Receiver (the managed Redis
+  the Support Inbox, and the PSP Event Receiver (the managed Redis
   store backing the like, stock-notification, and send-dedupe
   keyspaces) — and the dynamic post-checkout
   success page, which performs a read-only retrieval of the Checkout

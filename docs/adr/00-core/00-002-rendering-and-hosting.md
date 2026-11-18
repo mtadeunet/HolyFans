@@ -34,7 +34,7 @@ Checkout Sessions with the PSP, a request-time read of the created
 Session's payment status on the post-checkout success page (ADR 00-004),
 shared like counters for the feed's Interaction Row (ADR 03-002),
 consented email capture for the purchase surface's Pre-order state
-(ADR 00-010), the Contact Form's relay to the Operator Inbox
+(ADR 00-010), the Contact Form's relay to the Support Inbox
 (ADR 00-014), the PSP event receiver feeding the order-lifecycle
 emails (ADR 00-015), and the Admin Console's Restock Notification
 send (ADR 00-015).
@@ -120,7 +120,7 @@ The Storefront runs a **hybrid model on the Vercel Hosting Platform**:
     posture of ADR 00-004: it answers unavailable while the gate is
     closed.
   - the **contact Route Handler** on the Node runtime, which relays a
-    Contact Form submission to the Operator Inbox through the
+    Contact Form submission to the Support Inbox through the
     Transactional Email Provider (ADR 00-013, ADR 00-014) — hardened
     like its siblings (input caps, IP rate limiting, a honeypot
     check, fail-closed), ungated by the Purchase-Surface Gate, and

@@ -186,7 +186,7 @@ export async function POST(request: NextRequest) {
       // `false` here means the courtesy send was attempted and failed.
       const delivered = await sendEmail({
         to: body.email,
-        replyTo: emailConfig.operatorInbox,
+        replyTo: emailConfig.supportInbox,
         ...captureAckEmail(body.locale as Locale, {
           productName: PRODUCT.name,
           variantLabel: variantLabel(variant),

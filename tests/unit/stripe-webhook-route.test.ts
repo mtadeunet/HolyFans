@@ -49,7 +49,8 @@ const EMAIL_CONFIG = {
   sendUrl: 'https://api.zeptomail.example.test/v1.1/email',
   token: 'zoho-mail-agent-token',
   from: 'store@example.test',
-  operatorInbox: 'ops@example.test',
+  supportInbox: 'support@example.test',
+  adminInbox: 'admin@example.test',
 };
 
 /** A fake managed store honoring the `SET ... NX` claim semantics. */
@@ -220,14 +221,14 @@ describe('POST /api/webhooks/stripe — event routing (ADR 00-015)', () => {
 
     const [thankYou, orderAlert] = mockedSend.mock.calls.map((call) => call[0]);
     // The Thank-You goes to the customer in the session Locale, with
-    // Reply-To the Operator Inbox (ADR 00-013 reply routing).
+    // Reply-To the Support Inbox (ADR 00-013 reply routing).
     expect(thankYou.to).toBe('buyer@example.test');
     expect(thankYou.toName).toBe('Example Buyer');
-    expect(thankYou.replyTo).toBe('ops@example.test');
+    expect(thankYou.replyTo).toBe('support@example.test');
     expect(thankYou.subject).toBe('Obrigado pela sua encomenda');
-    // The Order Alert goes to the Operator Inbox with the fulfillment
+    // The Order Alert goes to the Admin Inbox with the fulfillment
     // detail (ADR 00-015).
-    expect(orderAlert.to).toBe('ops@example.test');
+    expect(orderAlert.to).toBe('admin@example.test');
     expect(orderAlert.subject).toContain('Nova encomenda paga');
     expect(orderAlert.text).toContain('Método de envio: Standard');
     // Both send kinds claimed their dedupe markers.
@@ -254,7 +255,7 @@ describe('POST /api/webhooks/stripe — event routing (ADR 00-015)', () => {
     // No customer email before settlement (ADR 00-015).
     expect(mockedSend).toHaveBeenCalledTimes(1);
     const alert = mockedSend.mock.calls[0][0];
-    expect(alert.to).toBe('ops@example.test');
+    expect(alert.to).toBe('admin@example.test');
     expect(alert.subject).toContain('Pagamento pendente');
     expect(alert.text).toContain('a aguardar pagamento');
   });
@@ -281,7 +282,7 @@ describe('POST /api/webhooks/stripe — event routing (ADR 00-015)', () => {
     expect(response.status).toBe(200);
     // The alert still reaches the operator; the thank-you cannot exist.
     expect(mockedSend).toHaveBeenCalledTimes(1);
-    expect(mockedSend.mock.calls[0][0].to).toBe('ops@example.test');
+    expect(mockedSend.mock.calls[0][0].to).toBe('admin@example.test');
   });
 });
 

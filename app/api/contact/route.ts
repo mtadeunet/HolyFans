@@ -9,7 +9,7 @@ import { locales } from '@/lib/i18n';
  * Implements ADR 00-002: Rendering and Hosting Model — "One new Route
  * Handler joins the enumerated dynamic surface ... on the Node
  * runtime" (ADR 00-014): the contact Route Handler relaying the
- * Contact Form to the Operator Inbox through the delivery channel of
+ * Contact Form to the Support Inbox through the delivery channel of
  * ADR 00-013. This handler is part of the enumerated dynamic surface;
  * no other request-time endpoints may be added without a new ADR.
  */
@@ -39,10 +39,10 @@ const requestLog = new Map<string, number[]>();
 /**
  * Implements ADR 00-014: Contact Channel — "On success it performs
  * exactly one send through the delivery channel: the message body and
- * the visitor's name and address to the Operator Inbox, with
+ * the visitor's name and address to the Support Inbox, with
  * `Reply-To` set to the visitor's email so the operator answers by
  * replying. The submitted content is never logged and never written
- * to the managed store — the delivered email in the Operator Inbox is
+ * to the managed store — the delivered email in the Support Inbox is
  * the record."
  *
  * Gate posture (ADR 00-014): "it is NOT behind the Purchase-Surface
@@ -103,10 +103,10 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Exactly one send (ADR 00-014): visitor content to the Operator
+  // Exactly one send (ADR 00-014): visitor content to the Support
   // Inbox, Reply-To set to the visitor's address.
   const sent = await sendEmail({
-    to: config.operatorInbox,
+    to: config.supportInbox,
     replyTo: submission.email,
     ...contactRelay({
       name: submission.name ?? '',

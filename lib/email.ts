@@ -10,8 +10,12 @@
  * graceful-unavailable state rather than crashing or reporting a send
  * it did not perform. Server-side only: the token never enters a
  * client bundle. Configuration: `ZEPTOMAIL_TOKEN`,
- * `ZEPTOMAIL_API_BASE`, `EMAIL_FROM`, `OPERATOR_INBOX` (ADR 00-007:
- * real values live only in platform env and untracked local files).
+ * `ZEPTOMAIL_API_BASE`, `EMAIL_FROM` (the verified sender identity —
+ * the operator's general-information mailbox), `SUPPORT_INBOX` (the
+ * Support Inbox — destination for contact relays and the `Reply-To`
+ * on customer-facing sends), and `ADMIN_INBOX` (the Admin Inbox —
+ * destination for the Operator Order Alert) (ADR 00-007: real values
+ * live only in platform env and untracked local files).
  */
 
 /** One resolved delivery-channel configuration. */
@@ -23,9 +27,14 @@ export interface EmailConfig {
   token: string;
   /** The verified sender identity (`EMAIL_FROM`). */
   from: string;
-  /** The Operator Inbox (`OPERATOR_INBOX`) — destination for contact
-   *  relays and the Operator Order Alert. */
-  operatorInbox: string;
+  /** The Support Inbox (`SUPPORT_INBOX`) — the operator-held support
+   *  mailbox that receives Contact Form relays; also the `Reply-To`
+   *  on every customer-facing send (ADR 00-013, ADR 00-014). */
+  supportInbox: string;
+  /** The Admin Inbox (`ADMIN_INBOX`) — the operator-held
+   *  administration mailbox that receives the Operator Order Alert
+   *  (ADR 00-015). */
+  adminInbox: string;
 }
 
 /**
@@ -49,7 +58,7 @@ export interface SendEmailInput {
   /** Optional display name on the recipient. */
   toName?: string;
   /** `Reply-To` — the visitor's address on contact relays, the
-   *  Operator Inbox on outbound notifications. */
+   *  Support Inbox on outbound notifications. */
   replyTo?: string;
   /** The message subject (template-produced). */
   subject: string;
@@ -74,14 +83,16 @@ export function getEmailConfig(): EmailConfig | null {
     const token = process.env.ZEPTOMAIL_TOKEN?.trim();
     const apiBase = process.env.ZEPTOMAIL_API_BASE?.trim();
     const from = process.env.EMAIL_FROM?.trim();
-    const operatorInbox = process.env.OPERATOR_INBOX?.trim();
+    const supportInbox = process.env.SUPPORT_INBOX?.trim();
+    const adminInbox = process.env.ADMIN_INBOX?.trim();
     config =
-      token && apiBase && from && operatorInbox
+      token && apiBase && from && supportInbox && adminInbox
         ? {
             sendUrl: `${apiBase.replace(/\/+$/, '')}/v1.1/email`,
             token,
             from,
-            operatorInbox,
+            supportInbox,
+            adminInbox,
           }
         : null;
   }

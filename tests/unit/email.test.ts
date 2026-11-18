@@ -5,9 +5,12 @@
  * Implements ADR 00-013: Email Delivery Channel — "The client is lazy and
  * fail-closed like the managed-store client: unconfigured → every
  * dependent surface degrades to its graceful-unavailable state and no
- * send is attempted." and "Four environment variables configure the
- * channel: `ZEPTOMAIL_TOKEN` ..., `ZEPTOMAIL_API_BASE` ..., `EMAIL_FROM`
- * ..., and `OPERATOR_INBOX`".
+ * send is attempted." and the channel's env configuration:
+ * `ZEPTOMAIL_TOKEN` ..., `ZEPTOMAIL_API_BASE` ..., `EMAIL_FROM` (the
+ * verified sender identity — the operator's general-information
+ * mailbox), `SUPPORT_INBOX` (the destination for contact relays and
+ * the `Reply-To` on customer-facing sends), and `ADMIN_INBOX` (the
+ * destination for the Operator Order Alert).
  *
  * Covers `lib/email.ts`: `getEmailConfig` fails closed when any one of
  * the four variables is unset/blank and memoizes its first resolution;
@@ -27,13 +30,14 @@ const FULL_ENV = {
   ZEPTOMAIL_TOKEN: 'zoho-mail-agent-token',
   ZEPTOMAIL_API_BASE: 'https://api.zeptomail.example.test/',
   EMAIL_FROM: 'store@example.test',
-  OPERATOR_INBOX: 'ops@example.test',
+  SUPPORT_INBOX: 'support@example.test',
+  ADMIN_INBOX: 'admin@example.test',
 } as const;
 
 const SEND_INPUT: SendEmailInput = {
   to: 'user@example.test',
   toName: 'Example User',
-  replyTo: 'ops@example.test',
+  replyTo: 'support@example.test',
   subject: 'Synthetic subject',
   text: 'Synthetic plain-text body',
   html: '<p>Synthetic HTML body</p>',
@@ -71,7 +75,8 @@ describe('getEmailConfig', () => {
       sendUrl: 'https://api.zeptomail.example.test/v1.1/email',
       token: 'zoho-mail-agent-token',
       from: 'store@example.test',
-      operatorInbox: 'ops@example.test',
+      supportInbox: 'support@example.test',
+      adminInbox: 'admin@example.test',
     });
   });
 
@@ -124,7 +129,7 @@ describe('buildZeptoMailPayload', () => {
           },
         },
       ],
-      reply_to: [{ address: 'ops@example.test' }],
+      reply_to: [{ address: 'support@example.test' }],
       subject: 'Synthetic subject',
       textbody: 'Synthetic plain-text body',
       htmlbody: '<p>Synthetic HTML body</p>',
@@ -171,7 +176,7 @@ describe('sendEmail', () => {
 
   it('returns false without attempting a send when the channel is unconfigured — fail-closed (ADR 00-013)', async () => {
     const { sendEmail } = await importEmailModule({
-      OPERATOR_INBOX: undefined,
+      ADMIN_INBOX: undefined,
     });
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);

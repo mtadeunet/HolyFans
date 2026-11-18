@@ -84,7 +84,7 @@ Notification send** in the Admin Console.
   channel. It complements, never replaces, the PSP's native receipt
   (which remains the payment record).
 - **Operator Order Alert.** The owner-facing notification sent to
-  the Operator Inbox: the order's line items, quantities, the
+  the Admin Inbox: the order's line items, quantities, the
   shipping address and option the customer chose, and the payment
   state — the detail manual Fulfillment needs in one place. It
   supersedes the PSP's native operator alert, which the operator

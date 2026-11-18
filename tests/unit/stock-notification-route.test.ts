@@ -16,7 +16,7 @@
  * Covers `app/api/stock-notification/route.ts`: the gated 404, invalid
  * 400, store-unconfigured 503, write-failure 502, the `{ok: true}`
  * success, and the acknowledgment contract — one localized send to the
- * visitor with `Reply-To` the Operator Inbox after the store write,
+ * visitor with `Reply-To` the Support Inbox after the store write,
  * never attempted when no capture was stored, and never changing the
  * response on a send failure or an unconfigured channel.
  * `lib/managed-store` and `lib/email` are mocked at the module boundary
@@ -48,7 +48,8 @@ const EMAIL_CONFIG = {
   sendUrl: 'https://api.zeptomail.example.test/v1.1/email',
   token: 'zoho-mail-agent-token',
   from: 'store@example.test',
-  operatorInbox: 'ops@example.test',
+  supportInbox: 'support@example.test',
+  adminInbox: 'admin@example.test',
 };
 
 /** A fake managed store whose `HSET` behavior each case controls. */
@@ -159,7 +160,7 @@ describe('POST /api/stock-notification — gate and failure contract (ADR 00-010
 });
 
 describe('POST /api/stock-notification — Capture Acknowledgment (ADR 00-015)', () => {
-  it('sends one localized ack to the visitor with Reply-To the Operator Inbox', async () => {
+  it('sends one localized ack to the visitor with Reply-To the Support Inbox', async () => {
     const store = makeStore();
     mockedStore.mockReturnValue(store as unknown as Redis);
 
@@ -180,7 +181,7 @@ describe('POST /api/stock-notification — Capture Acknowledgment (ADR 00-015)',
     expect(mockedSend).toHaveBeenCalledTimes(1);
     const ack = mockedSend.mock.calls[0][0];
     expect(ack.to).toBe('visitor@example.test');
-    expect(ack.replyTo).toBe('ops@example.test');
+    expect(ack.replyTo).toBe('support@example.test');
     // The submission's Locale drives the template; the product and
     // Variant are identified (ADR 00-015).
     expect(ack.subject).toBe('Recebemos o seu pedido — Nossa Senhora da Rosa');

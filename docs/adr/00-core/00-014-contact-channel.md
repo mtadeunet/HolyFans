@@ -1,4 +1,4 @@
-# ADR 00-014: Contact Channel — In-Shell Contact Form Relayed to the Operator Inbox
+# ADR 00-014: Contact Channel — In-Shell Contact Form Relayed to the Support Inbox
 
 ## Status
 
@@ -45,7 +45,7 @@ keyspace at all.
 ## Decision
 
 The contact channel is a **Contact Page inside the Feed Shell**
-carrying a **Contact Form** that relays to the **Operator Inbox**
+carrying a **Contact Form** that relays to the **Support Inbox**
 through the delivery channel of ADR 00-013 — a new enumerated
 contact Route Handler on the Node runtime. Nothing submitted is
 persisted or logged; the delivered email is the record.
@@ -85,10 +85,10 @@ persisted or logged; the delivered email is the record.
   the graceful unavailable state and never reports a success it did
   not send. On success it performs exactly one send through the
   delivery channel: the message body and the visitor's name and
-  address to the Operator Inbox, with `Reply-To` set to the
+  address to the Support Inbox, with `Reply-To` set to the
   visitor's email so the operator answers by replying. The
   submitted content is never logged and never written to the
-  managed store — the delivered email in the Operator Inbox is the
+  managed store — the delivered email in the Support Inbox is the
   record, and the channel creates no persisted personal data.
 - **Gate posture.** The contact channel is not the purchase
   surface: it is NOT behind the Purchase-Surface Gate and must work
@@ -129,7 +129,7 @@ persisted or logged; the delivered email is the record.
 **Negative / trade-offs:**
 - A public form that sends email is an abuse target: the rate
   limit, honeypot, and single-destination design bound it, but a
-  motivated sender can still push messages to the Operator Inbox
+  motivated sender can still push messages to the Support Inbox
   — volume is capped, not zero.
 - The relay is a live provider dependency at submit time: a
   delivery-channel outage shows as the unavailable state — honest

@@ -354,7 +354,7 @@ export async function POST(request: NextRequest) {
             sendEmail({
               to: recipient,
               toName: customerName,
-              replyTo: emailConfig.operatorInbox,
+              replyTo: emailConfig.supportInbox,
               ...thankYouEmail(locale, customerName),
             })
           )
@@ -380,7 +380,7 @@ export async function POST(request: NextRequest) {
     outcomes.push(
       await sendOnce(store, session.id, 'order-alert', () =>
         sendEmail({
-          to: emailConfig.operatorInbox,
+          to: emailConfig.adminInbox,
           ...orderAlertEmail({
             sessionId: session.id,
             lines,

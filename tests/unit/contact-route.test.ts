@@ -39,7 +39,8 @@ const CONFIG = {
   sendUrl: 'https://api.zeptomail.example.test/v1.1/email',
   token: 'zoho-mail-agent-token',
   from: 'store@example.test',
-  operatorInbox: 'ops@example.test',
+  supportInbox: 'support@example.test',
+  adminInbox: 'admin@example.test',
 };
 
 let ipCounter = 0;
@@ -158,14 +159,14 @@ describe('POST /api/contact — delivery-channel contract (ADR 00-013/00-014)', 
     expect(await response.json()).toEqual({ error: 'contact_unavailable' });
   });
 
-  it('performs exactly one send to the Operator Inbox with Reply-To set to the visitor', async () => {
+  it('performs exactly one send to the Support Inbox with Reply-To set to the visitor', async () => {
     const response = await POST(makeRequest(VALID_BODY));
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ ok: true });
 
     expect(mockedSend).toHaveBeenCalledTimes(1);
     const input = mockedSend.mock.calls[0][0];
-    expect(input.to).toBe('ops@example.test');
+    expect(input.to).toBe('support@example.test');
     expect(input.replyTo).toBe('user@example.test');
     // The relay template rendered for real — the visitor's words and
     // Locale are in the body, never the visitor's address logged.

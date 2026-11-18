@@ -61,8 +61,9 @@ behalf.
   Notification. The operator's Zoho mailbox on the Store Domain
   remains the read-and-reply side: every app-sent message carries a
   `Reply-To` of either the visitor's address (contact relays) or the
-  **Operator Inbox** (notifications), so replies land where the
-  operator already works. The provider is a pipe, not a mailbox.
+  **Support Inbox** (customer-facing notifications), so replies land
+  where the operator already works. The provider is a pipe, not a
+  mailbox.
 - **Sending identity.** Sends authenticate with a provider-issued
   API token and originate from an operator-owned address on a domain
   verified with the provider — `EMAIL_FROM` environment
@@ -75,8 +76,10 @@ behalf.
 - **Configuration and fail-closed posture.** Four environment
   variables configure the channel: `ZEPTOMAIL_TOKEN` (server-only
   secret), `ZEPTOMAIL_API_BASE` (the account's data-center API
-  endpoint), `EMAIL_FROM` (the verified sender identity), and
-  `OPERATOR_INBOX` (the destination mailbox for contact relays and
+  endpoint), `EMAIL_FROM` (the verified sender identity — the
+  operator's general-information mailbox), `SUPPORT_INBOX` (the
+  destination for contact relays and the `Reply-To` on
+  customer-facing sends), and `ADMIN_INBOX` (the destination for
   the Operator Order Alert). Real values live only in platform
   environment configuration and untracked local env files
   (identifier hygiene, ADR 00-007). The client is lazy and
@@ -116,8 +119,8 @@ behalf.
   mailbox, the sender domain, and billing live under one account,
   and paid Zoho Mail plans may bundle provider credits.
 - Verified-domain sends with Reply-To routing keep the brand's
-  sender identity coherent while replies flow into the existing
-  Operator Inbox — no new mailbox, no forwarding rules.
+  sender identity coherent while replies flow into the operator's
+  existing mailboxes — no new mailbox, no forwarding rules.
 - Effectively free at the Storefront's volume (a no-cost first
   credit at launch scale) and EU data-center endpoints match the
   primary market.
