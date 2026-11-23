@@ -6,9 +6,48 @@ import { Link } from '@/lib/navigation';
 import InteractionRow from './interaction-row';
 import MediaSlot from './media-slot';
 
+/**
+ * Implements ADR 03-004: Model Profiles — a Model Profile's author
+ * identity for the Post Card header: when set, the header renders the
+ * profile's avatar and name wrapped in a link to the profile's
+ * `/u/<slug>` route instead of the brand avatar and name.
+ */
+interface PostCardAuthor {
+  /** The profile's display name — derived from the slug, rendered
+   *  verbatim. */
+  name: string;
+  /** The profile's slug — rendered as the decorative `@handle`. */
+  handle: string;
+  /** The profile's avatar path under `public/`; '' renders a plain
+   *  circle placeholder. */
+  avatarSrc: string;
+  /** The profile route (`/u/<slug>`) — locale-prefixed by the
+   *  next-intl Link. */
+  href: string;
+}
+
 interface PostCardProps {
-  /** The authored feed entry being rendered. */
-  post: FeedPost;
+  /**
+   * The post being rendered — the subset of `FeedPost` the card reads;
+   * `FeedPost` satisfies it, and Model Profile posts adapt onto it
+   * (`ProfilePostCard`) without carrying feed-only fields like
+   * `section` (ADR 03-004).
+   */
+  post: Pick<FeedPost, 'id' | 'anchorAlias' | 'captionKey' | 'media' | 'likes'>;
+  /**
+   * Implements ADR 03-004: Model Profiles — the post's author identity;
+   * absent (authored feed posts) the header renders the brand avatar
+   * and name exactly as before.
+   */
+  author?: PostCardAuthor;
+  /**
+   * Implements ADR 03-004: Model Profiles — literal caption text that
+   * replaces the `feed.posts.<captionKey>.caption` message lookup for
+   * posts whose copy lives in the managed store's profile records
+   * rather than messages. The `useTranslations` hook still runs
+   * unconditionally; only the key lookup is skipped.
+   */
+  captionOverride?: string;
   /**
    * Implements ADR 00-004: Commerce and Checkout - "Checkout is delegated
    * to the PSP's Hosted Checkout." (interim purchase-surface gate, plan
@@ -45,12 +84,17 @@ interface PostCardProps {
  */
 export default function PostCard({
   post,
+  author,
+  captionOverride,
   purchaseSurfaceEnabled,
   children,
 }: PostCardProps) {
   const t = useTranslations('feed');
   const tCommon = useTranslations('common');
-  const caption = t(`posts.${post.captionKey}.caption`);
+  // A `captionOverride` replaces the message lookup entirely — profile
+  // posts carry managed-store copy, not `feed.posts` message keys
+  // (ADR 03-004). The hooks above stay unconditional.
+  const caption = captionOverride ?? t(`posts.${post.captionKey}.caption`);
 
   return (
     <article
@@ -90,23 +134,62 @@ export default function PostCard({
 
       {/* Card header — brand avatar, name, and a decorative own-brand
           handle rendered as plain text: never a link, never a
-          third-party account name (identifier hygiene, ADR 00-007). */}
+          third-party account name (identifier hygiene, ADR 00-007).
+          Implements ADR 03-004: Model Profiles — when `author` is set
+          the header instead shows the profile's avatar and name inside
+          a link to the profile route; the Link carries `relative` so it
+          sits above the card's stretched product link like the other
+          interactive Islands, and the displayed @handle is the profile
+          slug carried on `author.handle`. */}
       <header className="flex items-center gap-3 px-4 py-3">
-        <Image
-          src="/logo/logo-mark.png"
-          alt=""
-          width={40}
-          height={40}
-          className="h-10 w-10 rounded-full border border-border object-cover"
-        />
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-text-primary">
-            {tCommon('brand')}
-          </p>
-          <p className="truncate text-sm text-text-secondary">
-            {t('post.handle')}
-          </p>
-        </div>
+        {author !== undefined ? (
+          <Link
+            href={author.href}
+            aria-label={t('profile.view_profile', { name: author.name })}
+            className="relative flex min-w-0 items-center gap-3"
+          >
+            {author.avatarSrc !== '' ? (
+              <Image
+                src={author.avatarSrc}
+                alt=""
+                width={40}
+                height={40}
+                className="h-10 w-10 rounded-full border border-border object-cover"
+              />
+            ) : (
+              <span
+                aria-hidden="true"
+                className="h-10 w-10 rounded-full border border-border bg-background"
+              />
+            )}
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-text-primary">
+                {author.name}
+              </p>
+              <p className="truncate text-sm text-text-secondary">
+                @{author.handle}
+              </p>
+            </div>
+          </Link>
+        ) : (
+          <>
+            <Image
+              src="/logo/logo-mark.png"
+              alt=""
+              width={40}
+              height={40}
+              className="h-10 w-10 rounded-full border border-border object-cover"
+            />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-text-primary">
+                {tCommon('brand')}
+              </p>
+              <p className="truncate text-sm text-text-secondary">
+                {t('post.handle')}
+              </p>
+            </div>
+          </>
+        )}
       </header>
 
       <div className="px-4 pb-3">

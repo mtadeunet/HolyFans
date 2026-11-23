@@ -55,8 +55,9 @@ import { AdminTabPanel, useAdminTab, type TabId } from './admin-tabs';
 
 /**
  * The tabs carrying this form's Site Config panels — the submit row is
- * rendered only while one of them is active; the Social and Customers
- * tabs are read/operate views that never write through this form.
+ * rendered only while one of them is active; the Profiles, Social and
+ * Customers tabs own their own sections and never write through this
+ * form.
  */
 const FORM_TABS: readonly TabId[] = ['layout', 'promotions', 'email'];
 
@@ -414,7 +415,13 @@ function EmailPreviewCard({
   );
 }
 
-export default function AdminForm({ initial }: { initial: SiteConfig }) {
+interface AdminFormProps {
+  /** The Site Config as read on the server — the form's starting
+   *  state. */
+  initial: SiteConfig;
+}
+
+export default function AdminForm({ initial }: AdminFormProps) {
   const [config, setConfig] = useState<SiteConfig>(initial);
   const [isPending, startTransition] = useTransition();
   const [status, setStatus] = useState<SaveResult | null>(null);
@@ -900,9 +907,7 @@ export default function AdminForm({ initial }: { initial: SiteConfig }) {
                 <select
                   value={config.promotion.theme}
                   onChange={(event) =>
-                    updatePromotionTheme(
-                      event.target.value as PromotionTheme
-                    )
+                    updatePromotionTheme(event.target.value as PromotionTheme)
                   }
                   className={inputClass}
                 >
@@ -1161,9 +1166,7 @@ export default function AdminForm({ initial }: { initial: SiteConfig }) {
                           </span>
                           <input
                             type="text"
-                            required={
-                              field === 'label' || field === 'headline'
-                            }
+                            required={field === 'label' || field === 'headline'}
                             value={campaign.copy[promoLocale][field]}
                             onChange={(event) =>
                               updateCopy(
@@ -1259,10 +1262,9 @@ export default function AdminForm({ initial }: { initial: SiteConfig }) {
                   />
                   <span className="mt-1 block text-xs text-text-secondary">
                     {'{image:/path/to.png,size:80px}'} renders any file in
-                    public/ (letters, digits, - . _ /); the size is
-                    optional — px (16–600) or % (1–100), and % may render
-                    at natural size in Outlook — e.g.{' '}
-                    {'{image:/logo/logo-full.png}'}.
+                    public/ (letters, digits, - . _ /); the size is optional —
+                    px (16–600) or % (1–100), and % may render at natural size
+                    in Outlook — e.g. {'{image:/logo/logo-full.png}'}.
                   </span>
                 </label>
                 <label className="block">
@@ -1284,10 +1286,9 @@ export default function AdminForm({ initial }: { initial: SiteConfig }) {
                   />
                   <span className="mt-1 block text-xs text-text-secondary">
                     {'{image:/path/to.png,size:80px}'} renders any file in
-                    public/ (letters, digits, - . _ /); the size is
-                    optional — px (16–600) or % (1–100), and % may render
-                    at natural size in Outlook — e.g.{' '}
-                    {'{image:/logo/logo-mark.png,size:80px}'}.
+                    public/ (letters, digits, - . _ /); the size is optional —
+                    px (16–600) or % (1–100), and % may render at natural size
+                    in Outlook — e.g. {'{image:/logo/logo-mark.png,size:80px}'}.
                   </span>
                 </label>
                 <p className="text-xs text-text-secondary">

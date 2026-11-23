@@ -45,7 +45,7 @@ export default function MediaSlot({
     <div className="relative aspect-square w-full overflow-hidden bg-surface">
       <Image
         src={media.src}
-        alt={t(media.altKey)}
+        alt={media.alt ?? t(media.altKey)}
         fill
         sizes="(max-width: 768px) 100vw, 576px"
         className="object-cover"

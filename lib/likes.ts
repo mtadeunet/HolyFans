@@ -1,4 +1,5 @@
 import { FEED_POSTS } from '@/lib/feed-posts';
+import { isProfilePostId } from './profiles';
 
 /**
  * Implements ADR 03-002: Landing Page Composition — Three-Column Feed
@@ -49,12 +50,32 @@ export function likeLastKey(postId: string): string {
  *   entry.
  */
 export function baseLikeCounts(): Record<string, number> {
-  return Object.fromEntries(FEED_POSTS.map((post) => [post.id, post.likes]));
+  return baseLikeCountsFor(FEED_POSTS);
+}
+
+/**
+ * Implements ADR 03-004: Model Profiles — Model Profile posts share
+ * the like counter's base+delta semantics with the authored
+ * `FEED_POSTS`, but their authored base counts resolve from the
+ * `profile:<slug>` overlays merged onto the folders' post files, not
+ * from `FEED_POSTS`. This is the generic mapper over any post list so
+ * both domains produce their `{postId: base}` map through one path.
+ *
+ * @param posts - Any `{id, likes}` post list (`FEED_POSTS`, or the
+ *   flattened `allProfilePosts` result).
+ * @returns `{ <postId>: <authored base count> }` for every entry.
+ */
+export function baseLikeCountsFor(
+  posts: readonly { id: string; likes: number }[]
+): Record<string, number> {
+  return Object.fromEntries(posts.map((post) => [post.id, post.likes]));
 }
 
 /** The validated body of a like-toggle POST. */
 export interface LikeToggleBody {
-  /** Post Card id — must name a real `FEED_POSTS` entry. */
+  /** Post Card id — a real `FEED_POSTS` entry, or a `pp-` profile post
+   *  id (ADR 03-004; existence as a real derived folder post of an
+   *   enabled profile is checked by the Route Handler's POST). */
   postId: string;
   /** The visitor's Like Token — opaque, never logged (ADR 00-008). */
   token: string;
@@ -65,9 +86,13 @@ export interface LikeToggleBody {
 /**
  * Narrow parsed JSON to the like-toggle body shape.
  *
- * Validation rules: `postId` must be a real `FEED_POSTS` id (arbitrary
- * strings would mint unmanaged Redis keys); `token` a non-empty string
- * within `LIKE_TOKEN_MAX_LENGTH`; `liked` a strict boolean.
+ * Validation rules: `postId` must be a real `FEED_POSTS` id — or,
+ * Implements ADR 03-004: Model Profiles, a well-formed `pp-` profile
+ * post id via `isProfilePostId` (arbitrary strings would mint unmanaged
+ * Redis keys; the Route Handler's POST still requires the `pp-` id to
+ * name a real derived post of an enabled profile); `token` a
+ * non-empty string within `LIKE_TOKEN_MAX_LENGTH`; `liked` a strict
+ * boolean.
  *
  * @param body - `JSON.parse` output (untrusted).
  * @returns The typed body, or `null` when any field is malformed.
@@ -80,7 +105,8 @@ export function parseLikeToggleBody(body: unknown): LikeToggleBody | null {
 
   if (
     typeof candidate.postId !== 'string' ||
-    !FEED_POSTS.some((post) => post.id === candidate.postId)
+    (!FEED_POSTS.some((post) => post.id === candidate.postId) &&
+      !isProfilePostId(candidate.postId))
   ) {
     return null;
   }

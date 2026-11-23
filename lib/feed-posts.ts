@@ -25,6 +25,14 @@ export interface FeedMedia {
   src: string;
   /** Message key for the localized alt text, under `feed`. */
   altKey: string;
+  /**
+   * Implements ADR 03-004: Model Profiles — an optional literal alt-text
+   * override for media whose alt copy is operator data rather than a
+   * message key (Model Profile posts carry operator-authored alt text
+   * resolved by request Locale). When present it wins over the
+   * `altKey` lookup.
+   */
+  alt?: string;
 }
 
 /** One authored Post Card entry in the Feed Surface. */

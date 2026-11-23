@@ -19,15 +19,19 @@ import {
   type SiteConfig,
 } from '@/lib/site-config';
 import {
+  asLikeCount,
+  normalizeLocalizedText,
+  normalizeProfiles,
+  type ProfilePostOverride,
+} from '@/lib/profiles';
+import { deriveProfilePosts, writeProfile } from '@/lib/profiles-server';
+import {
   asPromotionTheme,
   DEFAULT_PROMOTION_THEME,
   normalizeCampaigns,
 } from '@/lib/promotions';
 import { stockNotificationKey } from '@/lib/stock-notification';
-import {
-  parseRecord,
-  variantLabel,
-} from '@/lib/stock-notification-server';
+import { parseRecord, variantLabel } from '@/lib/stock-notification-server';
 
 export type SaveResult = { ok: true } | { ok: false; error: string };
 
@@ -131,8 +135,7 @@ export async function saveSiteConfig(formData: FormData): Promise<SaveResult> {
   // invalid or missing field carries the stored value forward — never
   // silently resetting the operator's theme.
   const submittedTheme = asPromotionTheme(formData.get('promotion.theme'));
-  next.promotion.theme =
-    submittedTheme ?? (await stored()).promotion.theme;
+  next.promotion.theme = submittedTheme ?? (await stored()).promotion.theme;
 
   // Implements ADR 03-003: Promotion Bar — the free-shipping threshold
   // is operator-editable Site Config data, submitted in euros and
@@ -206,6 +209,175 @@ export async function saveSiteConfig(formData: FormData): Promise<SaveResult> {
 }
 
 /**
+ * Implements ADR 03-004: Model Profiles — one profile's sparse
+ * overlay persists as the managed store's `profile:<slug>` document,
+ * not Site Config: the Profiles tab's Save button submits ONLY the
+ * selected profile as the action's argument (server actions take
+ * serializable arguments — no form-field transport needed), it is
+ * normalized through `normalizeProfiles` — a malformed submit rejects
+ * with a named error rather than dropping fields silently — and
+ * persisted through `writeProfile`'s single `SET`.
+ *
+ * The filesystem is BOTH the profile set and the post set: a submit
+ * naming no `public/images/profiles/<slug>/` folder fails as
+ * `unknown_profile` — `writeProfile`'s own folder guard is the single
+ * existence check — and a submitted post id whose image is not in the
+ * folder fails as `unknown_post` — the console can never mint a post
+ * the filesystem does not define. Post baselines (media, sidecar
+ * captions, `likes: 0`, `visible: true`) are recomputed SERVER-SIDE
+ * through `deriveProfilePosts` — never trusted from the client — and
+ * each submitted post diffs against them: only changed fields enter
+ * the stored override entry (`visible` only when `false`, `likes`
+ * only when non-zero, `caption` only when it differs from the
+ * sidecar's, `alt` only when non-empty), and a post that differs
+ * nowhere stores no entry at all — the overlay stays sparse.
+ *
+ * Fail-closed like every store consumer (ADR 00-002): an unconfigured
+ * store reports an error rather than a success it did not perform.
+ *
+ * @param profile - The edited profile (untrusted — `{id, enabled,
+ *   avatar, posts}` where `posts` is the client draft as an array of
+ *   effective posts or an id-keyed record; baselines and diffing are
+ *   server-side).
+ * @returns `{ok: true}` once the document is written; `{ok: false,
+ *   error}` when the submit is malformed, names a post id with no
+ *   image in the folder (`unknown_post: <ids>`), the slug names no
+ *   folder (`unknown_profile`), the store is unconfigured, or the
+ *   write fails.
+ */
+export async function saveProfile(profile: unknown): Promise<SaveResult> {
+  if (
+    profile === null ||
+    typeof profile !== 'object' ||
+    Array.isArray(profile)
+  ) {
+    return { ok: false, error: 'Profile data is not a valid profile' };
+  }
+  const source = profile as Record<string, unknown>;
+
+  // Identity fields normalize first — a malformed, non-slug-safe,
+  // reserved, or empty id rejects before any filesystem or store
+  // touch, the same fail-loud posture the whole submit applies.
+  const [validated] = normalizeProfiles([
+    {
+      id: source.id,
+      enabled: source.enabled,
+      avatar: source.avatar,
+      posts: {},
+    },
+  ]);
+  if (validated === undefined) {
+    return { ok: false, error: 'Profile data is not a valid profile' };
+  }
+
+  const store = getManagedStore();
+  if (!store) {
+    return { ok: false, error: 'Store not configured' };
+  }
+
+  // Server-side baselines: the folder's post files and sidecar
+  // captions, never the client's claim — the sparse diff is only as
+  // trustworthy as what it diffs against.
+  const baselines = new Map(
+    (await deriveProfilePosts(validated.id)).map((post) => [post.id, post])
+  );
+
+  // Collect the submitted posts — the console sends the effective
+  // post array; an id-keyed record (already-sparse form) is accepted
+  // the same way.
+  const submitted: { postId: string; value: Record<string, unknown> }[] = [];
+  if (Array.isArray(source.posts)) {
+    for (const entry of source.posts) {
+      if (entry === null || typeof entry !== 'object') continue;
+      const record = entry as Record<string, unknown>;
+      if (typeof record.id === 'string' && record.id.trim() !== '') {
+        submitted.push({ postId: record.id.trim(), value: record });
+      }
+    }
+  } else if (source.posts !== null && typeof source.posts === 'object') {
+    for (const [key, value] of Object.entries(
+      source.posts as Record<string, unknown>
+    )) {
+      if (value === null || typeof value !== 'object') continue;
+      const postId = key.trim();
+      if (postId !== '') {
+        submitted.push({ postId, value: value as Record<string, unknown> });
+      }
+    }
+  }
+
+  // Every submitted post must name a real file — a post exists iff
+  // its image exists, so an id outside the folder's derived set can
+  // never be overridden or published.
+  const unknownIds = submitted
+    .filter((entry) => !baselines.has(entry.postId))
+    .map((entry) => entry.postId);
+  if (unknownIds.length > 0) {
+    return { ok: false, error: `unknown_post: ${unknownIds.join(', ')}` };
+  }
+
+  // Build the sparse overlay: one entry per post carrying ONLY the
+  // fields that differ from the filesystem baseline.
+  const posts: Record<string, ProfilePostOverride> = {};
+  for (const { postId, value } of submitted) {
+    const baseline = baselines.get(postId);
+    if (baseline === undefined) continue;
+    const override: ProfilePostOverride = {};
+    if (value.visible === false) override.visible = false;
+    const likes = asLikeCount(value.likes);
+    if (likes !== 0) override.likes = likes;
+    // `caption` diffs only when the field was submitted at all — in
+    // the sparse record transport an absent field means "untouched",
+    // while a present `{pt:'',en:''}` is a deliberate blanking that
+    // overrides the sidecar.
+    if (value.caption !== undefined) {
+      const caption = normalizeLocalizedText(value.caption);
+      if (
+        caption.pt !== baseline.caption.pt ||
+        caption.en !== baseline.caption.en
+      ) {
+        override.caption = caption;
+      }
+    }
+    // `alt` has no filesystem baseline — it stores only when the
+    // operator wrote non-empty copy.
+    const alt = normalizeLocalizedText(value.alt);
+    if (alt.pt !== '' || alt.en !== '') override.alt = alt;
+    if (Object.keys(override).length > 0) posts[postId] = override;
+  }
+
+  // The assembled sparse document re-normalizes — the same rules on
+  // write as on read, so no hand-built shape can bypass them.
+  const [normalized] = normalizeProfiles([
+    {
+      id: validated.id,
+      enabled: validated.enabled,
+      avatar: validated.avatar,
+      posts,
+    },
+  ]);
+  if (normalized === undefined) {
+    return { ok: false, error: 'Profile data is not a valid profile' };
+  }
+
+  try {
+    await writeProfile(store, normalized);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : 'Unknown write error';
+    return { ok: false, error: message };
+  }
+
+  // Profile reads are request-time store and filesystem reads;
+  // invalidate the RSC cache so the next request re-renders with the
+  // new record.
+  revalidatePath('/', 'layout');
+  revalidatePath('/admin');
+
+  return { ok: true };
+}
+
+/**
  * Implements ADR 00-010: Pre-order and Stock Notification — "the list
  * is an operator-held record the operator can export and clear", the
  * purge half of the "operator export-and-clear path" the ADR 00-008
@@ -247,8 +419,7 @@ export async function clearStockNotificationList(
 }
 
 export type NotifyResult =
-  | { ok: true; sent: number; failed: number }
-  | { ok: false; error: string };
+  { ok: true; sent: number; failed: number } | { ok: false; error: string };
 
 /**
  * Implements ADR 00-015: Transactional Notifications — the
@@ -348,10 +519,7 @@ export async function sendRestockNotifications(
       try {
         await store.hdel(key, email);
       } catch (error) {
-        console.error(
-          `[admin] restock HDEL failed for ${variantId}:`,
-          error
-        );
+        console.error(`[admin] restock HDEL failed for ${variantId}:`, error);
       }
       sent += 1;
     } else {

@@ -241,6 +241,10 @@
       "expand": "Show answer",
       "collapse": "Hide answer"
     },
+    "profile": {
+      "posts_count": "{count, plural, one {# post} other {# posts}}",
+      "view_profile": "View {name}''s profile"
+    },
     "suggestions": {
       "title": "You might like",
       "view": "View",

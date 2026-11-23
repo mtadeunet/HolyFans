@@ -56,7 +56,10 @@ export default function ChromeFrame({
   children,
 }: ChromeFrameProps) {
   const pathname = usePathname();
-  const isShellRoute = SHELL_ROUTES.has(pathname);
+  // Implements ADR 03-004: Model Profiles — the `/u/<slug>` profile
+  // routes compose the Feed Shell like the landing and purchase
+  // routes, so the classic header/footer is suppressed there too.
+  const isShellRoute = SHELL_ROUTES.has(pathname) || pathname.startsWith('/u/');
 
   return (
     <div className="flex min-h-screen flex-col">

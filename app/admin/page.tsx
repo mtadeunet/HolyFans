@@ -2,6 +2,13 @@ import type { Redis } from '@upstash/redis';
 import { getSiteConfig } from '@/lib/site-config-server';
 import { basePostAggregates, readPostAggregates } from '@/lib/likes-server';
 import { getManagedStore } from '@/lib/managed-store';
+import { allProfilePosts, type ProfilePost } from '@/lib/profiles';
+import {
+  deriveProfilePosts,
+  listProfileFolders,
+  listProfileImages,
+  readProfiles,
+} from '@/lib/profiles-server';
 import {
   baseVariantStockNotifications,
   readVariantStockNotifications,
@@ -9,6 +16,7 @@ import {
 import AdminForm from './admin-form';
 import { AdminTabPanel, AdminTabs } from './admin-tabs';
 import LikesSection from './likes-section';
+import ProfilesSection from './profiles-section';
 import StockNotificationsSection from './stock-notifications-section';
 import type { StoreStatus } from './types';
 
@@ -55,9 +63,106 @@ async function readStoreSection<T>(
   }
 }
 
+/**
+ * Implements ADR 03-004: Model Profiles — the Profiles tab's avatar
+ * select is picker-only (no upload path) and per-model: each
+ * profile's picker enumerates `public/images/profiles/<slug>/`, the
+ * folder name matching the profile slug. This builds the
+ * slug-to-paths map it indexes — the same sorted image listing the
+ * server-side avatar fallback applies (`listProfileImages`), so the
+ * picker and the fallback can never disagree on what the folder
+ * offers. Files outside `public/images/profiles/` belong to no model
+ * and are ignored. Fail-soft like every filesystem read in the
+ * feature: an unreadable folder simply contributes no options.
+ *
+ * @param folders - The profile slugs the filesystem defines
+ *   (`listProfileFolders` output).
+ * @returns A map from each profile folder slug to its sorted
+ *   `/images/profiles/<slug>/<file>` image paths.
+ */
+async function listAvailableImages(
+  folders: readonly string[]
+): Promise<Record<string, string[]>> {
+  return Object.fromEntries(
+    await Promise.all(
+      folders.map(
+        async (slug) => [slug, await listProfileImages(slug)] as const
+      )
+    )
+  );
+}
+
+/**
+ * Implements ADR 03-004: Model Profiles — the derived baseline posts
+ * (files + sidecar captions, no overlay applied) of the folders the
+ * profiles read did NOT materialize, the fallback the Profiles tab's
+ * drafts use for a folder whose stored overlay is unreadable — and
+ * the same derivation `saveProfile` diffs submissions against. Pure
+ * filesystem reads: no store involved, fail-soft per folder like the
+ * rest of the feature.
+ *
+ * @param folders - The slugs needing fallback drafts — folders with no
+ *   materialized profile (a corrupt document, or a read while the
+ *   store was unconfigured); folders whose merged profile already
+ *   enumerates the same derived posts are never re-derived.
+ * @returns A map from each given folder slug to its derived posts in
+ *   filename order.
+ */
+async function listBaselinePosts(
+  folders: readonly string[]
+): Promise<Record<string, ProfilePost[]>> {
+  return Object.fromEntries(
+    await Promise.all(
+      folders.map(
+        async (slug) => [slug, await deriveProfilePosts(slug)] as const
+      )
+    )
+  );
+}
+
 export default async function AdminPage() {
   const config = await getSiteConfig();
   const store = getManagedStore();
+
+  // Implements ADR 03-004: Model Profiles — the profile set IS the
+  // filesystem: the `public/images/profiles/<slug>/` folders enumerate
+  // the models the tab's selector offers and feed the avatar picker's
+  // image map. The per-folder `profile:<slug>` overlay documents live
+  // in the managed store, merged onto the folders' derived posts at
+  // read and surfaced through the same store-section pattern as Likes
+  // and Stock Notifications: an unconfigured store reports
+  // 'unconfigured' with an empty list, a failing read 'error' —
+  // explicit, never silent. The single folder enumeration is passed
+  // through — the read does not re-list the profiles root the pickers
+  // already read.
+  const folders = await listProfileFolders();
+  const [availableImages, profiles] = await Promise.all([
+    listAvailableImages(folders),
+    readStoreSection(
+      store,
+      (client) => readProfiles(client, { folders }),
+      () => [],
+      'profiles'
+    ),
+  ]);
+
+  // Implements ADR 03-004: each folder's derived baseline posts feed
+  // the tab's fallback drafts — computed only for folders the profiles
+  // read did not materialize (a corrupt document, or any folder while
+  // the store is unconfigured): a folder whose merged profile already
+  // enumerates the same derived posts is never derived twice.
+  const baselinePosts = await listBaselinePosts(
+    folders.filter(
+      (slug) => !profiles.data.some((profile) => profile.id === slug)
+    )
+  );
+
+  // Implements ADR 03-004: Model Profiles — the folders' derived
+  // profile posts join the aggregate like view after the authored
+  // FEED_POSTS entries, listed by their deterministic `pp-` ids
+  // as-is, from the same store+filesystem read the Profiles tab
+  // renders.
+  const profilePosts = allProfilePosts(profiles.data);
 
   // Implements ADR 00-002: Rendering and Hosting Model - the Admin
   // Console's "request-time read of the like store's aggregate state —
@@ -67,8 +172,8 @@ export default async function AdminPage() {
   // falls back to authored base counts — visible, never silent.
   const likes = await readStoreSection(
     store,
-    readPostAggregates,
-    basePostAggregates,
+    (client) => readPostAggregates(client, profilePosts),
+    () => basePostAggregates(profilePosts),
     'like-store'
   );
 
@@ -94,16 +199,28 @@ export default async function AdminPage() {
         </h1>
         <p className="mt-2 text-text-secondary">
           Edit the live site&apos;s config — sections, chrome, stock flags,
-          shipping, promotion campaigns, and email templates — and review
-          per-post likes and the stock-notification lists. Config changes are
-          persisted to Vercel Edge Config.
+          shipping, promotion campaigns, and email templates — manage model
+          profiles, and review per-post likes and the stock-notification lists.
+          Config changes are persisted to Vercel Edge Config; profiles to the
+          managed store.
         </p>
       </header>
-      {/* The console's five tabs: the form owns the three write-path
-          panels (Layout, Promotions, Email); the read/operate sections
-          get their own panels as siblings. */}
+      {/* The console's six tabs: the form owns the three Site Config
+          write-path panels (Layout, Promotions, Email); Profiles,
+          Social, and Customers are managed-store sections rendered as
+          sibling panels. */}
       <AdminTabs>
         <AdminForm initial={config} />
+        <AdminTabPanel id="profiles">
+          <ProfilesSection
+            status={profiles.status}
+            statusDetail={profiles.statusDetail}
+            folders={folders}
+            profiles={profiles.data}
+            baselinePosts={baselinePosts}
+            availableImages={availableImages}
+          />
+        </AdminTabPanel>
         <AdminTabPanel id="social">
           <LikesSection
             status={likes.status}

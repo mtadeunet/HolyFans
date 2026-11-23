@@ -1,8 +1,11 @@
 import { FEED_POSTS } from '@/lib/feed-posts';
+import type { ModelProfile } from '@/lib/profiles';
+import { publishedProfilePostPairs, shuffled } from '@/lib/profiles';
 import type { SiteConfig } from '@/lib/site-config';
 import FeedFaq from './feed-faq';
 import PostCard from './post-card';
 import PremiumModalTrigger from './premium-modal-trigger';
+import ProfilePostCard from './profile-post-card';
 
 interface FeedPostsProps {
   /**
@@ -28,6 +31,14 @@ interface FeedPostsProps {
    * `PURCHASE_SURFACE_ENABLED` is `'true'`.
    */
   purchaseSurfaceEnabled: boolean;
+  /**
+   * Implements ADR 03-004: Model Profiles — the Model Profile list:
+   * the `public/images/profiles/` folders overlaid with the managed
+   * store's `profile:<slug>` documents; every enabled profile's
+   * visible posts render after the authored `FEED_POSTS`, shuffled
+   * per request.
+   */
+  profiles: ModelProfile[];
 }
 
 /**
@@ -46,6 +57,7 @@ export default function FeedPosts({
   sections,
   chrome,
   purchaseSurfaceEnabled,
+  profiles,
 }: FeedPostsProps) {
   const posts = FEED_POSTS.filter((post) => sections[post.section]);
 
@@ -63,6 +75,27 @@ export default function FeedPosts({
           {post.id === 'post-faq' && <FeedFaq />}
         </PostCard>
       ))}
+      {/* Implements ADR 03-004: Model Profiles — every enabled
+          profile's VISIBLE posts follow the authored feed as an
+          appended tail, SHUFFLED per request (`shuffled` runs a
+          Fisher–Yates pass on the collected {profile, post} pairs, so
+          the post→profile mapping survives and posts interleave
+          across profiles instead of grouping in folder order), each
+          rendered through the shared `ProfilePostCard` adapter so the
+          card carries the profile's author identity and its `pp-` id
+          as the anchor. Server-rendered per request — a fresh order
+          every render, no hydration mismatch. Hidden posts
+          (`visible: false`) render nowhere. */}
+      {shuffled(publishedProfilePostPairs(profiles)).map(
+        ({ profile, post }) => (
+          <ProfilePostCard
+            key={post.id}
+            profile={profile}
+            post={post}
+            purchaseSurfaceEnabled={purchaseSurfaceEnabled}
+          />
+        )
+      )}
     </>
   );
 }

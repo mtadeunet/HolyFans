@@ -9,13 +9,27 @@
  * threshold siblings — preserves the stored group on malformed submits
  * rather than wiping the operator's copy.
  *
- * Covers `saveSiteConfig` in `app/admin/actions.ts`: the `emails` field's
- * parse-and-normalize path. The persistence write, the stored-config
- * read, and cache invalidation are stubbed at their module boundaries;
- * the action's own validation runs for real.
+ * Implements ADR 03-004: Model Profiles — `saveProfile` normalizes the
+ * submitted profile through `normalizeProfiles`, diffs each submitted
+ * post against the SERVER-RECOMPUTED filesystem baseline (folder post
+ * files + sidecar captions — never trusted from the client), and
+ * persists the resulting SPARSE overlay through `writeProfile` into
+ * the managed store's profiles keyspace — `writeProfile`'s own folder
+ * guard rejects a slug naming no `public/images/profiles/<slug>/`
+ * folder as `unknown_profile`, a submitted post id naming no folder
+ * image rejects as `unknown_post`, and the action fails closed when
+ * the store is unconfigured.
+ *
+ * Covers `saveSiteConfig` and `saveProfile` in `app/admin/actions.ts`:
+ * the `emails` field's parse-and-normalize path and the profile write
+ * path. The persistence writes, the stored-config read, the managed-
+ * store client, the folder enumeration, and cache invalidation are
+ * stubbed at their module boundaries; the actions' own validation
+ * runs for real.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { saveSiteConfig } from '@/app/admin/actions';
+import type { Redis } from '@upstash/redis';
+import { saveProfile, saveSiteConfig } from '@/app/admin/actions';
 import {
   normalizeEmailOverrides,
   type EmailOverrides,
@@ -24,12 +38,22 @@ import { DEFAULT_SITE_CONFIG, type SiteConfig } from '@/lib/site-config';
 
 /**
  * Mocks are confined to true external boundaries: the Site Config
- * persistence write, the stored-config read, and the Next.js
- * cache-invalidation primitive. The action under test runs for real.
+ * persistence write, the stored-config read, the managed-store client,
+ * the profiles keyspace write, and the Next.js cache-invalidation
+ * primitive. The actions under test run for real.
  */
-const { writeSiteConfigMock, getSiteConfigMock } = vi.hoisted(() => ({
+const {
+  writeSiteConfigMock,
+  getSiteConfigMock,
+  getManagedStoreMock,
+  writeProfileMock,
+  deriveProfilePostsMock,
+} = vi.hoisted(() => ({
   writeSiteConfigMock: vi.fn(),
   getSiteConfigMock: vi.fn(),
+  getManagedStoreMock: vi.fn(),
+  writeProfileMock: vi.fn(),
+  deriveProfilePostsMock: vi.fn(),
 }));
 
 vi.mock('@/lib/edge-config-write', () => ({
@@ -37,6 +61,13 @@ vi.mock('@/lib/edge-config-write', () => ({
 }));
 vi.mock('@/lib/site-config-server', () => ({
   getSiteConfig: getSiteConfigMock,
+}));
+vi.mock('@/lib/managed-store', () => ({
+  getManagedStore: getManagedStoreMock,
+}));
+vi.mock('@/lib/profiles-server', () => ({
+  writeProfile: writeProfileMock,
+  deriveProfilePosts: deriveProfilePostsMock,
 }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
@@ -147,4 +178,245 @@ describe('saveSiteConfig — promotion.theme write path (ADR 03-003)', () => {
       expect(savedConfig().promotion.theme).toBe('soft');
     }
   );
+});
+
+/** An opaque stand-in for the managed-store client — the write path
+ *  is mocked, so the store is never commanded. */
+const FAKE_STORE = {} as unknown as Redis;
+
+/** The folder's derived baseline posts `deriveProfilePosts` returns —
+ *  file-derived ids, media, and sidecar captions at baseline flags. */
+const BASELINE_POSTS = [
+  {
+    id: 'pp-model-one-post-1',
+    media: '/images/profiles/model-one/post-1.jpg',
+    caption: { pt: 'Legenda sidecar', en: 'Sidecar caption' },
+    likes: 0,
+    visible: true,
+  },
+  {
+    id: 'pp-model-one-post-2',
+    media: '/images/profiles/model-one/post-2.jpg',
+    caption: { pt: '', en: '' },
+    likes: 0,
+    visible: true,
+  },
+];
+
+/** One submitted effective post — the shape the console's draft
+ *  sends, defaults equal to the first baseline post. */
+const submittedPost = (
+  overrides: Record<string, unknown> = {}
+): Record<string, unknown> => ({
+  id: 'pp-model-one-post-1',
+  media: '/images/profiles/model-one/post-1.jpg',
+  caption: { pt: 'Legenda sidecar', en: 'Sidecar caption' },
+  likes: 0,
+  visible: true,
+  ...overrides,
+});
+
+/** One well-formed profile submit (identifier hygiene: synthetic
+ *  slugs only, ADR 00-007). */
+const rawProfile = (
+  overrides: Record<string, unknown> = {}
+): Record<string, unknown> => ({
+  id: 'model-one',
+  enabled: true,
+  avatar: '/images/profiles/model-one/avatar.png',
+  posts: [submittedPost()],
+  ...overrides,
+});
+
+/**
+ * Implements ADR 03-004: Model Profiles — the Profiles tab submits
+ * ONLY the selected profile as the `saveProfile` argument; the action
+ * normalizes the identity fields through `normalizeProfiles` (a
+ * malformed submit rejects rather than coercing), diffs every
+ * submitted post against the SERVER-RECOMPUTED filesystem baseline —
+ * `deriveProfilePosts`, never client-supplied baselines — into the
+ * sparse `posts` Record, rejects a post id naming no folder image as
+ * `unknown_post`, and persists through `writeProfile`, whose own
+ * folder guard rejects a slug naming no
+ * `public/images/profiles/<slug>/` folder as `unknown_profile` — the
+ * filesystem is the profile set AND the post set, enforced at the
+ * write-path gate. Fail-closed (ADR 00-002): an unconfigured store
+ * reports 'Store not configured' rather than a success it did not
+ * perform.
+ */
+describe('saveProfile (ADR 03-004)', () => {
+  beforeEach(() => {
+    writeProfileMock.mockReset().mockResolvedValue(undefined);
+    deriveProfilePostsMock.mockReset().mockResolvedValue(BASELINE_POSTS);
+    getManagedStoreMock.mockReset().mockReturnValue(FAKE_STORE);
+  });
+
+  /** The posts Record the write was called with. */
+  const writtenPosts = (): Record<string, unknown> => {
+    const profile = writeProfileMock.mock.calls[0][1] as {
+      posts: Record<string, unknown>;
+    };
+    return profile.posts;
+  };
+
+  it('persists the selected profile as a sparse overlay — a post matching its baseline stores no entry', async () => {
+    const result = await saveProfile(rawProfile());
+    expect(result).toEqual({ ok: true });
+    expect(writeProfileMock).toHaveBeenCalledWith(
+      FAKE_STORE,
+      expect.objectContaining({
+        id: 'model-one',
+        enabled: true,
+        avatar: '/images/profiles/model-one/avatar.png',
+        posts: {},
+      })
+    );
+  });
+
+  it('stores only the fields that differ from the filesystem baseline', async () => {
+    const result = await saveProfile(
+      rawProfile({
+        posts: [
+          submittedPost({
+            visible: false,
+            likes: 7,
+            caption: { pt: 'Legenda nova', en: 'New caption' },
+            alt: { pt: 'Texto alt', en: '' },
+          }),
+          // post-2 unchanged → no entry.
+          submittedPost({
+            id: 'pp-model-one-post-2',
+            media: '/images/profiles/model-one/post-2.jpg',
+            caption: { pt: '', en: '' },
+          }),
+        ],
+      })
+    );
+    expect(result).toEqual({ ok: true });
+    expect(writtenPosts()).toEqual({
+      'pp-model-one-post-1': {
+        visible: false,
+        likes: 7,
+        caption: { pt: 'Legenda nova', en: 'New caption' },
+        alt: { pt: 'Texto alt', en: '' },
+      },
+    });
+  });
+
+  it('a caption equal to the sidecar stores no caption field — sparse means only diffs', async () => {
+    const result = await saveProfile(
+      rawProfile({ posts: [submittedPost({ likes: 3 })] })
+    );
+    expect(result).toEqual({ ok: true });
+    expect(writtenPosts()).toEqual({
+      'pp-model-one-post-1': { likes: 3 },
+    });
+  });
+
+  it('an empty alt override stores nothing — absent means "fall back to the display name"', async () => {
+    const result = await saveProfile(
+      rawProfile({
+        posts: [
+          submittedPost({ likes: 1, alt: { pt: '', en: '' } }),
+        ],
+      })
+    );
+    expect(result).toEqual({ ok: true });
+    expect(writtenPosts()).toEqual({
+      'pp-model-one-post-1': { likes: 1 },
+    });
+  });
+
+  it('accepts the posts field as an id-keyed record — the already-sparse transport shape', async () => {
+    const result = await saveProfile(
+      rawProfile({
+        posts: {
+          'pp-model-one-post-1': { visible: false },
+          'pp-model-one-post-2': { likes: 5 },
+        },
+      })
+    );
+    expect(result).toEqual({ ok: true });
+    expect(writtenPosts()).toEqual({
+      'pp-model-one-post-1': { visible: false },
+      'pp-model-one-post-2': { likes: 5 },
+    });
+  });
+
+  it('rejects a submitted post id whose image is not in the folder — unknown_post, nothing written', async () => {
+    const result = await saveProfile(
+      rawProfile({
+        posts: [submittedPost(), submittedPost({ id: 'pp-model-one-gone' })],
+      })
+    );
+    expect(result).toEqual({
+      ok: false,
+      error: 'unknown_post: pp-model-one-gone',
+    });
+    expect(writeProfileMock).not.toHaveBeenCalled();
+  });
+
+  it('skips non-object post entries silently — they carry no fields to diff', async () => {
+    const result = await saveProfile(
+      rawProfile({
+        posts: [null, 42, submittedPost({ likes: 2 })],
+      })
+    );
+    expect(result).toEqual({ ok: true });
+    expect(writtenPosts()).toEqual({
+      'pp-model-one-post-1': { likes: 2 },
+    });
+  });
+
+  it('ignores unknown keys on the submit — a stray `name` field never reaches the document', async () => {
+    const result = await saveProfile(rawProfile({ name: 'Stray Name' }));
+    expect(result).toEqual({ ok: true });
+    expect(writeProfileMock).toHaveBeenCalledWith(
+      FAKE_STORE,
+      expect.not.objectContaining({ name: expect.anything() })
+    );
+  });
+
+  it.each([
+    ['non-object input', 'not a profile'],
+    ['missing id', { enabled: true }],
+    ['a non-slug id', rawProfile({ id: 'NOT A SLUG' })],
+    ['a reserved slug', rawProfile({ id: 'admin' })],
+  ])('rejects a malformed submit %s without writing', (_label, payload) => {
+    return saveProfile(payload).then((result) => {
+      expect(result).toEqual({
+        ok: false,
+        error: 'Profile data is not a valid profile',
+      });
+      expect(writeProfileMock).not.toHaveBeenCalled();
+    });
+  });
+
+  it("surfaces writeProfile's folder guard as unknown_profile — the filesystem is the profile set", async () => {
+    // The single existence check lives inside `writeProfile`; the
+    // action relays its message verbatim to the operator.
+    writeProfileMock.mockRejectedValue(new Error('unknown_profile'));
+    const result = await saveProfile(rawProfile({ id: 'model-nine' }));
+    expect(result).toEqual({ ok: false, error: 'unknown_profile' });
+  });
+
+  it('accepts a posts field that is neither array nor record — nothing to diff, the overlay stays empty', async () => {
+    const result = await saveProfile(rawProfile({ posts: 'not-an-array' }));
+    expect(result).toEqual({ ok: true });
+    expect(writtenPosts()).toEqual({});
+  });
+
+  it('reports an unconfigured store without writing — and without touching the filesystem baselines', async () => {
+    getManagedStoreMock.mockReturnValue(null);
+    const result = await saveProfile(rawProfile());
+    expect(result).toEqual({ ok: false, error: 'Store not configured' });
+    expect(writeProfileMock).not.toHaveBeenCalled();
+    expect(deriveProfilePostsMock).not.toHaveBeenCalled();
+  });
+
+  it('surfaces a store write failure', async () => {
+    writeProfileMock.mockRejectedValue(new Error('write exploded'));
+    const result = await saveProfile(rawProfile());
+    expect(result).toEqual({ ok: false, error: 'write exploded' });
+  });
 });

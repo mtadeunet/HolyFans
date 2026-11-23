@@ -21,7 +21,8 @@ import {
  */
 
 /** The Admin Console's tab identifiers — one per console area. */
-export type TabId = 'layout' | 'promotions' | 'email' | 'social' | 'customers';
+export type TabId =
+  'layout' | 'profiles' | 'promotions' | 'email' | 'social' | 'customers';
 
 interface AdminTab {
   /** The tab's stable id, shared by the tab button and its panel. */
@@ -31,13 +32,18 @@ interface AdminTab {
 }
 
 /**
- * The console's tabs in strip order: the three write-path tabs first —
- * Layout, Promotions, Email, which together carry the whole Site Config
- * form — then the read/operate tabs (Social: post likes; Customers:
- * the stock-notification lists).
+ * The console's tabs in strip order: the Site Config write-path tabs —
+ * Layout, Promotions, Email, which together carry the Site Config
+ * form — with the Profiles managed-store editor between them, then
+ * the read/operate tabs (Social: post likes; Customers: the
+ * stock-notification lists).
  */
 export const ADMIN_TABS: readonly AdminTab[] = [
   { id: 'layout', label: 'Layout' },
+  // Implements ADR 03-004: Model Profiles — the Profiles tab sits right
+  // after Layout; it edits the managed store's profile records through
+  // its own section, outside the Site Config form.
+  { id: 'profiles', label: 'Profiles' },
   { id: 'promotions', label: 'Promotions' },
   { id: 'email', label: 'Email' },
   { id: 'social', label: 'Social' },

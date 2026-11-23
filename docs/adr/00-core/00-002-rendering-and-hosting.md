@@ -46,24 +46,39 @@ Europe for the primary market.
 
 The Storefront runs a **hybrid model on the Vercel Hosting Platform**:
 
-- **Storefront pages are produced by Static Site Generation** — every page,
-  for every Locale, is generated at build time and served from the Hosting
-  Platform's edge network; no per-request rendering is performed to compose
-  storefront content beyond the request-time reads below. The single
-  enumerated exception is the post-checkout success page, which renders
-  per request to perform the session-status read below.
+- **Storefront pages are Static Site Generation output served from the
+  Hosting Platform's edge network** — every page, for every Locale, is
+  built output delivered at the edge; per-request rendering is confined
+  to an enumerated set. The enumerated render-per-request pages are the
+  **Locale tree** — the Locale layout declares request-time rendering,
+  so every Locale-prefixed page (the landing, the Product Page and
+  Contact Page, and the Profile Routes of ADR 03-004) composes per
+  request, performing the Site Config read and, where applicable,
+  the managed-store Model Profile read and profiles-folder
+  enumeration enumerated below —
+  and, within it, the **post-checkout success page**, which
+  additionally performs the session-status read below on the Node
+  runtime. Operator edits to Site Config and Model Profile records
+  apply within seconds without a rebuild; authored content —
+  including the profiles folders that determine Model Profile
+  existence — still changes only at build time.
 - **Site Config is read from Edge Config at request time** — the Hosting
   Platform's edge-replicated key-value store holds section/chrome
   visibility, the per-Variant Stock Flags (ADR 00-010), and the QR
   Redirect Route
   destination, so operator changes apply within
   seconds without a rebuild. Reads degrade to safe defaults when the store
-  is unavailable; this read is the only request-time data dependency in
-  storefront page composition other than the post-checkout session-status
-  read enumerated below.
+  is unavailable; this read, the managed-store Model Profile read,
+  and the profiles-folder enumeration of `public/images/profiles/` —
+  the folder listing plus each profile folder's post-file `readdir`
+  and caption-sidecar `.txt` reads (ADR 03-004) — are the only
+  request-time data dependencies in
+  storefront page composition other than the post-checkout
+  session-status read enumerated below.
 - **Request-time compute is confined to an enumerated dynamic surface** —
-  a single Request-Time Middleware layer plus a small set of Route
-  Handlers and one dynamic page, and nothing else:
+  a single Request-Time Middleware layer, a small set of Route
+  Handlers, and the render-per-request pages enumerated above, and
+  nothing else:
   - the **Request-Time Middleware**, which runs on every inbound request
     to a non-static path and performs exactly three duties: Locale routing
     and country-signal Locale resolution (ADR 00-005), the fail-closed password
@@ -85,7 +100,10 @@ The Storefront runs a **hybrid model on the Vercel Hosting Platform**:
     (ADR 00-010); and a per-Variant email-send action that delivers
     the Restock Notification to a Variant's list through the
     delivery channel and removes each successfully sent address —
-    the send-and-clear half of ADR 00-015;
+    the send-and-clear half of ADR 00-015; and the Profiles tab's
+    read-and-write of the Model Profile records — the `saveProfile`
+    action persisting one `profile:<slug>` document for an existing
+    profiles folder (ADR 03-004);
   - the single checkout Route Handler on the **Node runtime** (required by
     the PSP SDK), which creates Checkout Sessions (ADR 00-004) and reads
     Site Config at request time for the free-shipping threshold it
@@ -103,7 +121,12 @@ The Storefront runs a **hybrid model on the Vercel Hosting Platform**:
   - the **like counter Route Handler**, which serves the Interaction
     Row's shared like counts and records per-visitor like toggles for
     Post Cards (ADR 03-002) — reads and writes against the managed
-    store below, deduplicating each toggle per Post Card by the
+    store below and, for the `pp-` profile-post id domain (ADR
+    03-004), the profiles filesystem: the count domain its GET serves
+    and the `pp-` id its POST validates both resolve through the
+    profiles-folder listing, per-profile post-file `readdir`s, and
+    caption-sidecar reads beside the `profile:<slug>` document
+    reads, deduplicating each toggle per Post Card by the
     visitor's anonymous client-held Like Token, stamping each newly
     recorded like in a per-post last-like record for the Admin
     Console's aggregate view, and answering degraded reads with the
@@ -139,17 +162,29 @@ The Storefront runs a **hybrid model on the Vercel Hosting Platform**:
   Edge Config's operator-configuration scope. It holds per-post like
   dedup records and last-like timestamps that feed aggregate counters
   and the Admin Console's aggregate likes view only (ADR 03-002, ADR
-  00-008) and, in a dedicated per-Variant keyspace never joined to
-  them, the Stock Notification List of consented visitor emails
-  (ADR 00-010), and the PSP event receiver's per-session send-dedupe
-  records (ADR 00-015) —
+  00-008) and — in a dedicated per-Variant keyspace never joined to
+  the like records — the Stock Notification List of consented visitor
+  emails (ADR 00-010); the PSP event receiver's per-session
+  send-dedupe records (ADR 00-015); and, in a dedicated profiles
+  keyspace — one
+  `profile:<slug>` JSON document per existing profiles folder — the
+  Model Profile operator overlays: sparse `{enabled, avatar, posts:
+  Record<postId, override>}` documents, the post set itself being
+  filesystem-derived (ADR 03-004) —
   the Storefront's first persisted personal data, held under the
-  per-feature consent posture of ADR 00-008. When the store is
+  per-feature consent posture of ADR 00-008. Profile enumeration
+  itself is filesystem-based — request-time
+  `readdir`s of `public/images/profiles/` and of each profile's own
+  folder, with the caption-sidecar `.txt` reads, performed by the
+  Locale routes and by the like Route Handler's `pp-` paths — not a
+  stored list. When the store is
   unconfigured or unreachable, the Interaction Row degrades to
   authored base counts with toggling disabled and a visible
   unavailable indicator — and the Admin Console surfaces the store's
   health — while the Pre-order
-  capture answers a graceful unavailable state rather than failing.
+  capture answers a graceful unavailable state rather than failing,
+  and no Model Profiles exist: the landing feed renders authored
+  posts only and Profile Routes resolve not-found (ADR 03-004).
 - No other inbound request-time capability exists or may be added without a
   new ADR — beyond the single enumerated PSP event receiver, this
   boundary forecloses further webhook receivers, additional
@@ -163,6 +198,35 @@ The Storefront runs a **hybrid model on the Vercel Hosting Platform**:
 - Deploys are driven by the Hosting Platform's Git integration (previews per
   change, production from the production branch); CI is a quality gate only
   (ADR 00-007), never a deploy mechanism.
+- **Environment and data isolation follow a three-tier model** — because
+  environment variables are the only store-selection mechanism the
+  Storefront uses, isolation is expressed entirely through env-var target
+  scoping on the Hosting Platform:
+  - the **development tier** — every deployment from `develop`,
+    `staging`, and `feature/*` branches, plus local `next dev` — resolves
+    the generic `preview`-targeted environment variables, which carry the
+    dedicated development managed store (a second, disposable Upstash
+    Redis database). `EDGE_CONFIG` and `VERCEL_EDGE_CONFIG_ID` are
+    deliberately unset there (the platform tier permits a single Edge
+    Config): Site Config reads fall back to `DEFAULT_SITE_CONFIG` and
+    admin writes fail closed rather than touching the production Edge
+    Config — the strongest possible isolation posture for
+    operator-controlled content. Local development resolves the same
+    development store through `.env.local`, which must never hold
+    production store credentials; Site Config stays file-backed through
+    `.site-config.local.json`.
+  - the **preview tier** — deployments of the release-candidate branch
+    (`master`) — resolves `preview`-targeted variables scoped to
+    `gitBranch: master`, which carry the production managed store, the
+    production Edge Config connection string (dedicated read token), and
+    the production `NEXT_PUBLIC_*` values. Build-time-inlined public
+    variables must already hold production values at this stage so a
+    promoted deployment needs no rebuild.
+  - the **production tier** — reached only by explicit promotion of a
+    preview deployment (`vercel promote` or dashboard promote), never by
+    automatic branch deploy: the project's production branch is set to a
+    branch nothing pushes to (`release`), so `master` merges produce
+    preview deployments gated behind manual promotion.
 - The Admin Console is password-gated at the edge by the Request-Time
   Middleware and fails closed when no credential is configured.
 
@@ -182,7 +246,8 @@ The Storefront runs a **hybrid model on the Vercel Hosting Platform**:
 - The dynamic surface is small and enumerated — minimal attack area,
   minimal operational surface.
 - One marketplace-provisioned store serves every small shared-state
-  need — like dedup records and the Stock Notification List — under a
+  need — like dedup records, the Stock Notification List, the
+  send-dedupe records, and the Model Profile records — under a
   single lazy, fail-closed posture.
 
 **Negative / trade-offs:**
@@ -228,7 +293,8 @@ The Storefront runs a **hybrid model on the Vercel Hosting Platform**:
   rendering cost and cache complexity to serve content that is identical
   for every visitor; the only request-time need is the enumerated
   dynamic surface (Request-Time Middleware, Route Handlers, and the
-  post-checkout session-status read) plus Edge Config reads.
+  render-per-request pages enumerated above) plus the enumerated
+  Edge Config and managed-store reads.
 - **A static host plus a separate functions platform** — Rejected:
   fragments deployment, routing, and operations across two providers for
   capabilities one platform already provides natively.

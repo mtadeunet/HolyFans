@@ -4,15 +4,24 @@ import { Redis } from '@upstash/redis';
  * Implements ADR 00-002: Rendering and Hosting Model - "Small shared
  * request-time state persists in a managed Redis store provisioned
  * through the Hosting Platform's marketplace" — one provisioned store
- * holding the per-post like records (ADR 03-002) and, in a dedicated
- * per-Variant keyspace never joined to them, the Stock Notification
- * List (ADR 00-010), under a single lazy, fail-closed client posture.
+ * holding the per-post like records (ADR 03-002) and — in a
+ * dedicated per-Variant keyspace never joined to the like records —
+ * the Stock Notification List (ADR 00-010); the PSP event receiver's
+ * per-session send-dedupe records (ADR 00-015); and, in a dedicated
+ * profiles keyspace — one `profile:<slug>` JSON document per profile,
+ * carrying only the sparse `{enabled, avatar, posts: Record}`
+ * overlay — the Model Profile overlays (ADR 03-004), whose
+ * enumeration and post set are the filesystem's
+ * `public/images/profiles/` folders rather than store keys, under a
+ * single lazy, fail-closed client posture.
  *
  * The shared Redis client for every managed-store consumer — the like
- * counter and stock-notification Route Handlers and the Admin
- * Console's likes and notifications views. Feature-specific reads and
- * writes live beside their domains (`lib/likes-server.ts`,
- * `lib/stock-notification-server.ts`); only the client is shared.
+ * counter and stock-notification Route Handlers, the profiles
+ * request-time reads and `saveProfile` Server Action, and the Admin
+ * Console's likes, notifications, and Profiles views. Feature-
+ * specific reads and writes live beside their domains
+ * (`lib/likes-server.ts`, `lib/stock-notification-server.ts`,
+ * `lib/profiles-server.ts`); only the client is shared.
  */
 
 /**
@@ -21,7 +30,9 @@ import { Redis } from '@upstash/redis';
  * authored base counts with toggling disabled and a visible
  * unavailable indicator" — the fail-closed posture every consumer
  * takes: `null` means genuinely unconfigured, not "a client whose
- * every command fails".
+ * every command fails". For the profiles keyspace the same posture
+ * means no profiles exist — the feed renders authored posts only and
+ * Profile Routes resolve not-found (ADR 03-004).
  *
  * Lazily initialized, memoized so `next build` and every unconfigured
  * request never construct one. `Redis.fromEnv()` reads

@@ -18,6 +18,7 @@ ADR 00-010 (Pre-order and Stock Notification)
 ADR 00-011 (Page Model and Product Routes)
 ADR 00-012 (Platform Posture)
 ADR 03-001 (Design System and Visual Identity)
+ADR 03-004 (Model Profiles — Creator-Attributed Post Cards and Profile Routes)
 
 ## Context
 
@@ -95,8 +96,11 @@ composition obeys.
   Entries are
   store-purpose only — landing sections, the purchase surface, and the
   contact channel through the Inbound Contact Surface's deep-link
-  mechanism (ADR 00-009). Social-platform concepts (profiles, messages,
-  notifications) are not carried over. Every entry resolves wherever
+  mechanism (ADR 00-009). Social-platform concepts are not carried over,
+  except creator profiles: a Model Profile is an authored persona and a
+  route of attributed editorial content — creator attribution only, not
+  a visitor account (ADR 03-004). Messages and notifications remain
+  excluded. Every entry resolves wherever
   the shell renders: on the Product Page routes, entries that target
   landing feed units return the shopper to that unit on the landing within the
   same Locale.

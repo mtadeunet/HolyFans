@@ -241,6 +241,10 @@
       "expand": "Mostrar resposta",
       "collapse": "Ocultar resposta"
     },
+    "profile": {
+      "posts_count": "{count, plural, one {# publicação} other {# publicações}}",
+      "view_profile": "Ver perfil de {name}"
+    },
     "suggestions": {
       "title": "Pode gostar de",
       "view": "Ver",

@@ -2,6 +2,15 @@ import type { Redis } from '@upstash/redis';
 import { FEED_POSTS } from '@/lib/feed-posts';
 import { likeKey, likeLastKey } from '@/lib/likes';
 
+/** The structural shape every like-counted post shares: an anchor/key
+ *  id plus its authored base count. `FeedPost` and `ProfilePost` both
+ *  satisfy it, so the like helpers stay post-domain agnostic (ADR
+ *  03-004's `pp-` ids join the same base+delta semantics). */
+export interface LikeablePost {
+  id: string;
+  likes: number;
+}
+
 /**
  * Implements ADR 00-002: Rendering and Hosting Model - "Small shared
  * request-time state persists in a managed Redis store provisioned
@@ -28,16 +37,27 @@ import { likeKey, likeLastKey } from '@/lib/likes';
  * aggregate read only — no Like Token membership is touched (ADR
  * 00-008).
  *
+ * Implements ADR 03-004: Model Profiles — `profilePosts` extends the
+ * served domain to Model Profile posts: their authored base counts
+ * resolve from the `profile:<slug>` overlays merged onto the
+ * folders' post files (`post.likes`), their deltas share the same
+ * `likes:<postId>` managed-store key convention.
+ *
  * @param store - The configured Redis client.
- * @returns `{ <postId>: <live total> }` for every `FEED_POSTS` entry.
+ * @param profilePosts - Model Profile posts to include alongside
+ *   `FEED_POSTS` (`allProfilePosts` over the read profiles); empty
+ *   by default so existing callers are unchanged.
+ * @returns `{ <postId>: <live total> }` for every `FEED_POSTS` entry
+ *   and every given profile post.
  * @throws Propagates store read failures; callers degrade per their
  *   fail-closed posture.
  */
 export async function readLiveCounts(
-  store: Redis
+  store: Redis,
+  profilePosts: readonly LikeablePost[] = []
 ): Promise<Record<string, number>> {
   const entries = await Promise.all(
-    FEED_POSTS.map(
+    [...FEED_POSTS, ...profilePosts].map(
       async (post) =>
         [post.id, post.likes + (await store.scard(likeKey(post.id)))] as const
     )
@@ -52,7 +72,8 @@ export async function readLiveCounts(
  * no like event has been recorded since the record existed.
  */
 export interface PostLikesAggregate {
-  /** Post Card id — always a real `FEED_POSTS` entry. */
+  /** Post Card id — a real `FEED_POSTS` entry or a `pp-` profile post
+   *  id (ADR 03-004). */
   postId: string;
   /** Live total: authored base + `SCARD likes:<postId>`. */
   count: number;
@@ -66,16 +87,24 @@ export interface PostLikesAggregate {
  * order. An aggregate read only — Like Token membership is never read
  * (ADR 00-008).
  *
+ * Implements ADR 03-004: Model Profiles — `profilePosts` appends one
+ * aggregate per Model Profile post after the authored `FEED_POSTS`
+ * entries; profile posts are listed by their `pp-` ids as-is.
+ *
  * @param store - The configured Redis client.
- * @returns One `PostLikesAggregate` per Post Card, in feed order.
+ * @param profilePosts - Model Profile posts to include after the
+ *   `FEED_POSTS` entries; empty by default.
+ * @returns One `PostLikesAggregate` per Post Card, in feed order then
+ *   profile-post order.
  * @throws Propagates store read failures; the Admin Console surfaces
  *   them as the store-error state with authored base counts.
  */
 export async function readPostAggregates(
-  store: Redis
+  store: Redis,
+  profilePosts: readonly LikeablePost[] = []
 ): Promise<PostLikesAggregate[]> {
   return Promise.all(
-    FEED_POSTS.map(async (post) => {
+    [...FEED_POSTS, ...profilePosts].map(async (post) => {
       const [delta, lastLikeAt] = await Promise.all([
         store.scard(likeKey(post.id)),
         store.get<string>(likeLastKey(post.id)),
@@ -91,11 +120,15 @@ export async function readPostAggregates(
  * Post Card when the store is unconfigured or failing (fail-closed
  * degradation, ADR 00-002).
  *
+ * @param profilePosts - Model Profile posts to include after the
+ *   `FEED_POSTS` entries (ADR 03-004); empty by default.
  * @returns One `PostLikesAggregate` per Post Card with `lastLikeAt`
  *   `null`.
  */
-export function basePostAggregates(): PostLikesAggregate[] {
-  return FEED_POSTS.map((post) => ({
+export function basePostAggregates(
+  profilePosts: readonly LikeablePost[] = []
+): PostLikesAggregate[] {
+  return [...FEED_POSTS, ...profilePosts].map((post) => ({
     postId: post.id,
     count: post.likes,
     lastLikeAt: null,

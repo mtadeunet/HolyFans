@@ -3,12 +3,19 @@ import { allowRequest, clientIp, readCappedJson } from '@/lib/api-guard';
 import { FEED_POSTS } from '@/lib/feed-posts';
 import {
   baseLikeCounts,
+  baseLikeCountsFor,
   likeKey,
   likeLastKey,
   parseLikeToggleBody,
 } from '@/lib/likes';
 import { readLiveCounts } from '@/lib/likes-server';
 import { getManagedStore } from '@/lib/managed-store';
+import {
+  isProfilePostId,
+  publishedProfilePosts,
+  type ProfilePost,
+} from '@/lib/profiles';
+import { readProfiles } from '@/lib/profiles-server';
 
 /**
  * Implements ADR 00-002: Rendering and Hosting Model - "the like counter
@@ -83,6 +90,9 @@ export async function GET(request: NextRequest) {
 
   const store = getManagedStore();
   if (!store) {
+    // Fail-closed (ADR 00-002): with no store configured the profile
+    // records are unreachable too — authored base counts for the
+    // `FEED_POSTS` only, toggling disabled, the reason made explicit.
     return NextResponse.json({
       counts: baseLikeCounts(),
       live: false,
@@ -90,9 +100,33 @@ export async function GET(request: NextRequest) {
     });
   }
 
+  // Implements ADR 03-004: Model Profiles — profile posts share the
+  // like counter; their authored base counts resolve from the same
+  // managed store's `profile:<slug>` overlays merged onto the
+  // folders' post files, not `FEED_POSTS`. Only ENABLED profiles'
+  // VISIBLE posts are served — unpublished and hidden posts hold no
+  // public counts, matching the profile route's not-found posture.
+  // A profiles read failure degrades on its own boundary: feed counts
+  // still serve, profile posts simply contribute nothing.
+  let profilePosts: ProfilePost[] = [];
+  try {
+    // resolveAvatars: false — the like counter never renders avatars,
+    // so the per-folder image readdir the avatar fallback performs is
+    // skipped and `avatar` passes through as stored. readCaptions:
+    // false — it never renders captions either, so each post's
+    // sidecar `readFile` is skipped as well.
+    const profiles = await readProfiles(store, {
+      resolveAvatars: false,
+      readCaptions: false,
+    });
+    profilePosts = publishedProfilePosts(profiles);
+  } catch (error) {
+    console.error('[likes] profiles read failed:', error);
+  }
+
   try {
     return NextResponse.json({
-      counts: await readLiveCounts(store),
+      counts: await readLiveCounts(store, profilePosts),
       live: true,
     });
   } catch (error) {
@@ -100,10 +134,14 @@ export async function GET(request: NextRequest) {
     // authored base counts, never a crash — the Interaction Row shows
     // the bases with toggling disabled and a visible unavailable
     // indicator, and the explicit reason distinguishes an outage from
-    // a missing configuration.
+    // a missing configuration. The base map is computed here, in the
+    // failure branch, rather than on every healthy request.
     console.error('[likes] count read failed:', error);
     return NextResponse.json({
-      counts: baseLikeCounts(),
+      counts: {
+        ...baseLikeCounts(),
+        ...baseLikeCountsFor(profilePosts),
+      },
       live: false,
       error: 'store_failure',
     });
@@ -158,9 +196,52 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'invalid_request' }, { status: 400 });
   }
 
+  // Implements ADR 03-004: Model Profiles — `parseLikeToggleBody` admits
+  // `pp-` post ids by shape; the id must additionally name a real
+  // VISIBLE post of an ENABLED profile — a folder post file whose
+  // overlay keeps it visible — or arbitrary `pp-` strings (and
+  // unpublished or hidden posts) would mint unmanaged managed-store
+  // keys — the same arbitrary-strings-rejected posture `FEED_POSTS`
+  // membership gives authored posts. The profile read happens here
+  // because the overlays live in the same store the toggle writes to:
+  // an unconfigured store fails closed as `likes_unavailable` (the
+  // toggle could not persist anyway), a read failure degrades
+  // identically.
+  let baseLikes: number | null = null;
+  const feedPost = FEED_POSTS.find((post) => post.id === body.postId);
+  // One store resolution serves both consumers: the `pp-` existence
+  // read below and the toggle write once the id validates.
+  const store = getManagedStore();
+  if (feedPost !== undefined) {
+    baseLikes = feedPost.likes;
+  } else if (isProfilePostId(body.postId)) {
+    if (!store) {
+      return NextResponse.json({ error: 'likes_unavailable' }, { status: 503 });
+    }
+    try {
+      // resolveAvatars + readCaptions: false — the existence/base-count
+      // check renders neither, so the avatar fallback's image readdir
+      // and every post's sidecar `readFile` are skipped.
+      const profiles = await readProfiles(store, {
+        resolveAvatars: false,
+        readCaptions: false,
+      });
+      const profilePost =
+        publishedProfilePosts(profiles).find(
+          (post) => post.id === body.postId
+        ) ?? null;
+      baseLikes = profilePost !== null ? profilePost.likes : null;
+    } catch (error) {
+      console.error('[likes] profiles read failed:', error);
+      return NextResponse.json({ error: 'likes_unavailable' }, { status: 502 });
+    }
+  }
+  if (baseLikes === null) {
+    return NextResponse.json({ error: 'invalid_request' }, { status: 400 });
+  }
+
   // Fail-closed (ADR 00-002): with no store configured the toggle cannot
   // be deduplicated or persisted — refuse rather than pretend to count.
-  const store = getManagedStore();
   if (!store) {
     return NextResponse.json({ error: 'likes_unavailable' }, { status: 503 });
   }
@@ -185,12 +266,10 @@ export async function POST(request: NextRequest) {
     } else {
       await store.srem(key, body.token);
     }
-    // `parseLikeToggleBody` already rejected unknown postIds, so this
-    // lookup always yields the Post Card — destructuring the filter
-    // result narrows away the `undefined` the validator made
-    // unreachable.
-    const [post] = FEED_POSTS.filter((entry) => entry.id === body.postId);
-    const count = post.likes + (await store.scard(key));
+    // `baseLikes` was resolved above for either post-id domain —
+    // `FEED_POSTS` entries and store-backed `pp-` profile posts both
+    // carry their authored base into the returned total.
+    const count = baseLikes + (await store.scard(key));
     return NextResponse.json({ count });
   } catch (error) {
     // The Like Token is deliberately not logged — only the store failure.

@@ -13,6 +13,7 @@ ADR 00-009 (WhatsApp Deep-Link Channels)
 ADR 00-010 (Pre-order and Stock Notification)
 ADR 00-014 (Contact Channel)
 ADR 03-002 (Landing Page Composition)
+ADR 03-004 (Model Profiles)
 
 ## Context
 
@@ -57,7 +58,13 @@ Product Data.
   A third page kind joins the model — the auxiliary in-shell page, of
   which the Contact Page (`/<Locale>/contact`, the Feed Surface
   carrying the Contact Form while the shell's navigation chrome
-  persists, ADR 00-014) is the standing instance.
+  persists, ADR 00-014) is the standing instance. A fourth page kind
+  joins with ADR 03-004 — the **Profile Route** family
+  (`/<Locale>/u/<slug>`, one in-shell page per enabled Model Profile,
+  carrying the profile header and the model's Post Card scroll on the
+  Feed Surface), rendered per request from the profiles folder and
+  the managed store under
+  ADR 00-002's enumerated render-per-request pages.
 - **The Product Page IS the Simplified Purchase Surface.** The
   surface defined by ADR 03-002 does not change semantically —
   Variant selection, quantity, the VAT-inclusive EUR price
@@ -72,10 +79,11 @@ Product Data.
   carried in Product Data: a stable, lowercase, human-readable,
   brand-owned string that is locale-neutral — the same product
   identifier under both Locale prefixes, so each product has one
-  hreflang-paired set of URLs. Product pages are statically generated
-  per product per Locale — catalog content inside the SSG model of
-  ADR 00-002; they add no request-time compute and no entry to the
-  enumerated dynamic surface.
+  hreflang-paired set of URLs. Product pages are catalog content
+  generated per product per Locale, composed under the Locale tree's
+  enumerated request-time rendering of ADR 00-002; they add no Route
+  Handler and no request-time read beyond the enumerated Site Config
+  read, so the enumerated dynamic surface is unchanged.
 - **Former purchase-path reconciliation.** The post-checkout success
   and cancel pages keep their existing paths as PSP-return endpoints
   (ADR 00-004). The bare former surface path redirects to the single

@@ -19,6 +19,21 @@ const nextConfig = {
     // Logo imagery requests quality=95 (premium brand marks); default is 75.
     qualities: [75, 95],
   },
+  /**
+   * Implements ADR 03-004: Model Profiles — deployed serverless
+   * functions only carry traced files and `public/` assets ship to
+   * the CDN instead, so every route that enumerates
+   * `public/images/profiles/` needs the folders traced in. Every
+   * consumer — the Admin Console's pickers included — only reads the
+   * profiles root, so all four entries share the narrow glob: a few
+   * committed image masters, so the trace cost is bounded.
+   */
+  outputFileTracingIncludes: {
+    '/admin': ['./public/images/profiles/**/*'],
+    '/[locale]': ['./public/images/profiles/**/*'],
+    '/[locale]/u/[slug]': ['./public/images/profiles/**/*'],
+    '/api/likes': ['./public/images/profiles/**/*'],
+  },
 };
 
 export default withNextIntl(nextConfig);
