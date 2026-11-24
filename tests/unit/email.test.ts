@@ -75,7 +75,9 @@ describe('getEmailConfig', () => {
       sendUrl: 'https://api.zeptomail.example.test/v1.1/email',
       token: 'zoho-mail-agent-token',
       from: 'store@example.test',
+      fromName: 'HolyFans Store',
       supportInbox: 'support@example.test',
+      supportName: 'HolyFans Support',
       adminInbox: 'admin@example.test',
     });
   });

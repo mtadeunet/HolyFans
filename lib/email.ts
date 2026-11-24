@@ -27,10 +27,17 @@ export interface EmailConfig {
   token: string;
   /** The verified sender identity (`EMAIL_FROM`). */
   from: string;
+  /** The sender display name (`EMAIL_FROM_NAME`) — what customers see
+   *  as the From label instead of the bare address. */
+  fromName: string;
   /** The Support Inbox (`SUPPORT_INBOX`) — the operator-held support
    *  mailbox that receives Contact Form relays; also the `Reply-To`
    *  on every customer-facing send (ADR 00-013, ADR 00-014). */
   supportInbox: string;
+  /** The Support Inbox display name (`SUPPORT_INBOX_NAME`) — shown on
+   *  the Reply-To of customer-facing sends and as the recipient label
+   *  on contact relays. */
+  supportName: string;
   /** The Admin Inbox (`ADMIN_INBOX`) — the operator-held
    *  administration mailbox that receives the Operator Order Alert
    *  (ADR 00-015). */
@@ -43,9 +50,9 @@ export interface EmailConfig {
  * `htmlbody` when the template carries HTML.
  */
 export interface ZeptoMailPayload {
-  from: { address: string };
+  from: { address: string; name?: string };
   to: { email_address: { address: string; name?: string } }[];
-  reply_to?: { address: string }[];
+  reply_to?: { address: string; name?: string }[];
   subject: string;
   textbody: string;
   htmlbody?: string;
@@ -60,6 +67,8 @@ export interface SendEmailInput {
   /** `Reply-To` — the visitor's address on contact relays, the
    *  Support Inbox on outbound notifications. */
   replyTo?: string;
+  /** Optional display name on the `Reply-To` address. */
+  replyToName?: string;
   /** The message subject (template-produced). */
   subject: string;
   /** Plain-text body — always present. */
@@ -83,7 +92,10 @@ export function getEmailConfig(): EmailConfig | null {
     const token = process.env.ZEPTOMAIL_TOKEN?.trim();
     const apiBase = process.env.ZEPTOMAIL_API_BASE?.trim();
     const from = process.env.EMAIL_FROM?.trim();
+    const fromName = process.env.EMAIL_FROM_NAME?.trim() || 'HolyFans Store';
     const supportInbox = process.env.SUPPORT_INBOX?.trim();
+    const supportName =
+      process.env.SUPPORT_INBOX_NAME?.trim() || 'HolyFans Support';
     const adminInbox = process.env.ADMIN_INBOX?.trim();
     config =
       token && apiBase && from && supportInbox && adminInbox
@@ -91,7 +103,9 @@ export function getEmailConfig(): EmailConfig | null {
             sendUrl: `${apiBase.replace(/\/+$/, '')}/v1.1/email`,
             token,
             from,
+            fromName,
             supportInbox,
+            supportName,
             adminInbox,
           }
         : null;
@@ -109,10 +123,11 @@ export function getEmailConfig(): EmailConfig | null {
  */
 export function buildZeptoMailPayload(
   input: SendEmailInput,
-  from: string
+  from: string,
+  fromName?: string
 ): ZeptoMailPayload {
   return {
-    from: { address: from },
+    from: { address: from, ...(fromName ? { name: fromName } : {}) },
     to: [
       {
         email_address: {
@@ -121,7 +136,16 @@ export function buildZeptoMailPayload(
         },
       },
     ],
-    ...(input.replyTo ? { reply_to: [{ address: input.replyTo }] } : {}),
+    ...(input.replyTo
+      ? {
+          reply_to: [
+            {
+              address: input.replyTo,
+              ...(input.replyToName ? { name: input.replyToName } : {}),
+            },
+          ],
+        }
+      : {}),
     subject: input.subject,
     textbody: input.text,
     ...(input.html ? { htmlbody: input.html } : {}),
@@ -151,7 +175,21 @@ export async function sendEmail(input: SendEmailInput): Promise<boolean> {
         'Content-Type': 'application/json',
         Authorization: `Zoho-enczapikey ${resolved.token}`,
       },
-      body: JSON.stringify(buildZeptoMailPayload(input, resolved.from)),
+      body: JSON.stringify(
+        buildZeptoMailPayload(
+          {
+            ...input,
+            // The Support Inbox's own label rides on every send that
+            // replies to it — never stamped on visitor addresses.
+            replyToName:
+              input.replyTo === resolved.supportInbox
+                ? resolved.supportName
+                : input.replyToName,
+          },
+          resolved.from,
+          resolved.fromName
+        )
+      ),
     });
     if (!response.ok) {
       console.error(`[email] provider rejected send: HTTP ${response.status}`);

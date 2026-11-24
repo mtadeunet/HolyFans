@@ -107,6 +107,7 @@ export async function POST(request: NextRequest) {
   // Inbox, Reply-To set to the visitor's address.
   const sent = await sendEmail({
     to: config.supportInbox,
+    toName: config.supportName,
     replyTo: submission.email,
     ...contactRelay({
       name: submission.name ?? '',

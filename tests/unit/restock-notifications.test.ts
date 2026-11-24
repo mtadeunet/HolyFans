@@ -51,6 +51,8 @@ const EMAIL_CONFIG = {
   sendUrl: 'https://api.zeptomail.example.test/v1.1/email',
   token: 'zoho-mail-agent-token',
   from: 'store@example.test',
+  fromName: 'Test Store',
+  supportName: 'Test Support',
   supportInbox: 'support@example.test',
   adminInbox: 'admin@example.test',
 };
