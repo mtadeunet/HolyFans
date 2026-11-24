@@ -18,32 +18,35 @@ export const SITE_CONFIG_KEY = 'siteConfig';
 
 /**
  * Implements ADR 03-002: Landing Page Composition — Three-Column Feed
- * Shell with Simplified Purchase Surface - "each existing section toggle
- * governs the feed unit(s) carrying that content domain. Toggle keys are
+ * Shell with Simplified Purchase Surface - "each section toggle
+ * governs the interstitial carrying its content domain — a saved
+ * "hide FAQ" still hides FAQ content, now expressed as removing the
+ * FAQ island from the insertion cycle — and keeps governing the
+ * non-feed surfaces it already names; a toggle whose content domain
+ * left the landing governs nothing in the feed. Toggle keys are
  * retained so stored Site Config documents keep working without
  * migration."
  *
- * The key set is unchanged; semantics shifted from stacked page sections
- * to landing feed units — a saved "hide FAQ" still hides FAQ content,
- * now expressed as hiding the FAQ Post Card.
+ * The key set is unchanged; semantics shifted from stacked page
+ * sections to the surviving interstitials plus the non-feed surfaces
+ * each key still names.
  */
 export type SectionKey =
   'hero' | 'socialProof' | 'products' | 'craftsmanship' | 'faq' | 'finalCta';
 
-// Implements ADR 00-009: WhatsApp Deep-Link Channels — Client-Resolved
-// Vendor Deep Links for Customer Messaging - the Inbound Contact Surface
-// is "operator-toggleable through Site Config and the Admin Console like
-// other global chrome" via the `whatsappBubble` key below.
-//
 // Implements ADR 03-003: Promotion Bar - the Promotion Bar mount is
 // "operator-toggleable through Site Config like other global chrome" via
 // the `promotionBar` key below.
+// Implements ADR 03-002: Landing Page Composition — two keys left the
+// union this milestone: `premiumFeaturesModal`, removed with the hero
+// unit that opened it ("a stored document carrying it applies no
+// chrome"), and `whatsappBubble`, removed with ADR 00-009's withdrawn
+// Inbound Contact Surface. Both simply leave the union — normalization
+// already ignores unknown keys.
 export type ChromeKey =
   | 'header'
   | 'footer'
   | 'mobileStickyCta'
-  | 'premiumFeaturesModal'
-  | 'whatsappBubble'
   | 'promotionBar';
 
 export type SiteSections = Record<SectionKey, boolean> & {
@@ -119,8 +122,6 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
     header: true,
     footer: true,
     mobileStickyCta: true,
-    premiumFeaturesModal: true,
-    whatsappBubble: true,
     // Implements ADR 03-003: Site Config reads fail open to defaults,
     // and the always-on editorial fallback campaign ships enabled.
     promotionBar: true,
@@ -161,8 +162,6 @@ export const CHROME_KEYS: ChromeKey[] = [
   'header',
   'footer',
   'mobileStickyCta',
-  'premiumFeaturesModal',
-  'whatsappBubble',
   'promotionBar',
 ];
 

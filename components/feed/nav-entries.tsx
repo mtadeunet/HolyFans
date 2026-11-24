@@ -6,8 +6,9 @@ import { Link } from '@/lib/navigation';
  * Shell with Simplified Purchase Surface - the Nav Rail holds "a
  * store-adapted list of icon-and-label navigation entries ... Entries
  * are store-purpose only — landing sections, the purchase surface, and
- * the contact channel. Social-platform concepts (profiles, messages,
- * notifications) are not carried over."
+ * the contact channel through the Contact Page of ADR 00-014.
+ * Social-platform concepts are not carried over, except creator
+ * profiles ... Messages and notifications remain excluded."
  *
  * Shared definition and rendering of the shell's navigation entries so
  * the desktop Nav Rail and the mobile bottom navigation band present the
@@ -43,13 +44,11 @@ export interface FeedNavEntry {
 /**
  * Build the shell's navigation entries.
  *
- * Implements ADR 00-014: Contact Channel — "The shell's `contact`
- * navigation entry becomes an internal Locale-routed link to the
- * Contact Page and is always rendered — it no longer depends on the
- * Store Messaging Number's availability. The shared entry definition
- * keeps the desktop Nav Rail and the mobile bottom band identical."
- * (The WhatsApp deep-link entry is withdrawn per the ADR 00-014
- * amendment of ADR 00-009; the form is the channel.)
+ * Implements ADR 00-014: Contact Channel — the shell's `contact`
+ * navigation entry is an internal Locale-routed link to the Contact
+ * Page and is always rendered — it depends on no external
+ * configuration; the form is the channel. The shared entry definition
+ * keeps the desktop Nav Rail and the mobile bottom band identical.
  *
  * The cart entry is filtered by the fail-closed purchase-surface gate
  * (ADR 00-004 / plan M0): absent entirely while
@@ -137,8 +136,7 @@ export function buildFeedNavEntries(
       ),
     },
     // Contact channel (ADR 00-014): the internal Locale-routed Contact
-    // Page link, always rendered — an envelope glyph in place of the
-    // withdrawn WhatsApp deep-link entry.
+    // Page link, always rendered — an envelope glyph.
     {
       key: 'contact',
       href: '/contact',

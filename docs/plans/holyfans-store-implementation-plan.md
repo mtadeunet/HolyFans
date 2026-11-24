@@ -26,7 +26,14 @@ Governing documents:
   Node runtime). `[ADR 00-002]` (Enumeration updated to the current five:
   this plan's M0–M4 scope predates the like counter and
   stock-notification additions — amendments recorded in ADR 00-002,
-  ADR 03-002, and ADR 00-010.)
+  ADR 03-002, and ADR 00-010. Since then two more joined, taking the
+  canonical count to the seven TERMINOLOGY enumerates: the contact
+  endpoint relaying the Contact Form to the Support Inbox (amendment
+  recorded in ADR 00-014) and the PSP event
+  receiver webhook endpoint — and the Commerce bullet's "PSP-native
+  notifications only — no webhook receiver" below is superseded by that
+  receiver and its Order Ledger — amendments recorded in ADR 00-015 and
+  ADR 00-004.)
 - **QR Redirect Route:** permanent Route Handler at `/qrcoderedirect` reading
   its destination from Site Config, `/` fallback, locale-neutral, `noindex`,
   e2e-tested invariant. `[ADR 00-003]`

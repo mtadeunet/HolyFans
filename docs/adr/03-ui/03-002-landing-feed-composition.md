@@ -13,22 +13,23 @@ ADR 00-005 (Internationalization)
 ADR 00-006 (Media and Asset Pipeline)
 ADR 00-007 (Quality Tooling and CI)
 ADR 00-008 (Analytics and Consent)
-ADR 00-009 (WhatsApp Deep-Link Channels)
+ADR 00-009 (WhatsApp Deep-Link Channels — withdrawn)
 ADR 00-010 (Pre-order and Stock Notification)
 ADR 00-011 (Page Model and Product Routes)
 ADR 00-012 (Platform Posture)
+ADR 00-014 (Contact Channel)
 ADR 03-001 (Design System and Visual Identity)
 ADR 03-004 (Model Profiles — Creator-Attributed Post Cards and Profile Routes)
 
 ## Context
 
-The Storefront's landing is currently a stacked sequence of marketing
-sections (hero, social proof, product block, craftsmanship, FAQ, closing
-call to action) beneath a classic header, above a classic footer. It is a
-competent premium retail page, but it presents the small catalog as a
-conventional marketing funnel rather than as editorial content, and the
-path from product discovery to purchase passes through a separate
-cart-review step.
+The Storefront's landing began as a stacked sequence of marketing
+sections (hero, social proof, product block, craftsmanship, FAQ,
+closing call to action) beneath a classic header, above a classic
+footer — a competent premium retail page that presented the small
+catalog as a conventional marketing funnel rather than as editorial
+content, with the path from product discovery to purchase passing
+through a separate cart-review step.
 
 The owner has approved a restyle that mirrors the three-column
 social-feed composition used by a creator-subscription platform reference:
@@ -41,6 +42,17 @@ branding, copy, and imagery exclusively. Identifier hygiene (ADR 00-007)
 forbids carrying any third-party brand assets, names, copy, or account
 references into tracked files; the reference layout is a composition
 pattern, not a source of content.
+
+The owner has since narrowed the feed's content model: the landing's
+feed body is persona content — the visible posts of enabled Model
+Profiles, shuffled per request (ADR 03-004) — and the authored Post
+Card set is reduced to two surviving units carried as interstitials
+inside that scroll: the limited-edition closing unit — the closing
+call to action, a text-only card carrying the limited-edition
+launch-offer copy — and the FAQ island. The remaining authored
+units — the hero and the premium-features modal chrome it opened,
+the leading product units, and the craftsmanship and social-proof
+units — are retired from the landing.
 
 The architecture constrains the shape the restyle can take. ADR 00-002
 confines request-time compute to an enumerated dynamic surface; within
@@ -58,9 +70,11 @@ Cart, server-side re-validation, PSP Hosted Checkout), which any new
 purchase presentation must preserve. ADR 00-005 requires every
 user-facing string in both Locales. The canonical Brand Palette and
 Design Tokens of ADR 03-001 remain the visual system; the restyle works
-within them. ADR 00-009's Inbound Contact Surface and Outbound Share
-Surface must keep working inside whatever composition replaces the
-current chrome. Site Config's section and chrome toggles — stored in
+within them. The WhatsApp deep-link contact and share surfaces are
+withdrawn in full (ADR 00-009) and impose no constraint on the
+composition; the contact channel is served by the Contact Page of
+ADR 00-014. Site Config's section
+and chrome toggles — stored in
 Edge Config and operated through the Admin Console — must keep working
 for already-saved configurations; the mapping from toggles to visible
 units needs a defined meaning under the new composition. ADR 00-011
@@ -95,8 +109,8 @@ composition obeys.
   list of icon-and-label navigation entries, and language switching.
   Entries are
   store-purpose only — landing sections, the purchase surface, and the
-  contact channel through the Inbound Contact Surface's deep-link
-  mechanism (ADR 00-009). Social-platform concepts are not carried over,
+  contact channel through the Contact Page of ADR 00-014.
+  Social-platform concepts are not carried over,
   except creator profiles: a Model Profile is an authored persona and a
   route of attributed editorial content — creator attribution only, not
   a visitor account (ADR 03-004). Messages and notifications remain
@@ -105,13 +119,24 @@ composition obeys.
   landing feed units return the shopper to that unit on the landing within the
   same Locale.
 - **Feed Surface.** The shell's center column and primary content
-  region. On the landing roots it is a vertical scroll of **Post
-  Cards** — the landing's primary content. Each Post Card is a
-  self-contained unit: a header carrying the brand avatar, name, and a
-  decorative handle string (own brand only, never a third-party
-  account reference and never a link); localized caption copy; a
-  **Media Slot** for posts carrying imagery; and an **Interaction
-  Row**. On a Product Page
+  region. On the landing roots its body is the profile post scroll —
+  the visible posts of every enabled Model Profile, collected and
+  shuffled per request (ADR 03-004) — into which the surviving
+  authored units are inserted as **interstitials**: the authored
+  Post Card registry carries only two units, the limited-edition
+  closing unit and the FAQ island, and the scroll inserts one
+  interstitial per every three profile posts, cycling through the
+  section-enabled set in authored order — the limited-edition
+  closing unit, the FAQ island, and around again; an interstitial
+  whose section toggle is off leaves the cycle. Each Post Card —
+  profile post or authored interstitial — is a self-contained unit:
+  a header carrying the author's avatar, name, and a decorative
+  handle string
+  (own-brand attribution for authored units, the profile's
+  attribution and Profile Route link per the author override of ADR
+  03-004 — never a third-party account reference); localized caption
+  copy; a **Media Slot** for posts carrying imagery; and an
+  **Interaction Row**. On a Product Page
   route the Feed Surface carries a single occupant — the Simplified
   Purchase Surface, presented as a plain centered panel inside the
   column, not as a Post Card: the conversion surface carries no
@@ -152,8 +177,7 @@ composition obeys.
     visitor device's native share capability with the Post Card's
     anchored URL on the Store Domain, falling back to clipboard copy
     where the capability is unsupported. Sharing transmits nothing
-    to the Storefront — the client-resolved outbound posture of
-    ADR 00-009.
+    to the Storefront — it resolves entirely on the visitor's device.
   - **No comments, no attribution, no measurement.** The row feeds
     aggregate counts only and emits no analytics signal; the Like
     Token identifies no person and stays inside the cookieless,
@@ -178,7 +202,7 @@ composition obeys.
   presentation; the Cart remains the shopper-held collection underneath
   (a single line), preserving cancel-preserved and drift-correction
   semantics. The Simplified Purchase Surface is the canonical purchase
-  block: the Outbound Share Surface (ADR 00-009) lives on it. On its
+  block. On its
   Product Page route it renders inside the Feed Shell as the center
   column's single occupant — a single focused decision block, minimal
   by design, not a browsing surface. When the selected Variant is not
@@ -209,25 +233,40 @@ composition obeys.
   viewports only. The Feed Surface is the primary column at every
   width, and the collapse is identical on every route the shell
   composes — the Product Page routes get the same bands.
-  Small-viewport bottom chrome is a single consolidated band: the
-  Inbound Contact Surface floats above it and must never occlude
-  navigation or purchase actions (the ADR 00-009 presentation
-  constraint).
-- **Existing sections.** Landing content is repurposed as feed units:
-  each existing content domain (hero, product, craftsmanship, social
-  proof, FAQ, closing call to action) becomes Post Card content where it
-  still earns its place; the on-landing purchase block is retired, its
-  role absorbed by the Simplified Purchase Surface. Content that maps
-  to no feed unit is retired rather than parked.
-- **Site Config mapping.** Section toggles are preserved and remapped at
-  the semantic level: each existing section toggle governs the feed
-  unit(s) carrying that content domain. Toggle keys are retained so
-  stored Site Config documents keep working without migration — a saved
-  "hide FAQ" still hides FAQ content, now expressed as hiding the FAQ
-  feed unit — and Admin Console labels are updated to feed vocabulary.
-  Chrome toggles keep governing the chrome they name; the header and
-  footer toggles remain meaningful on routes outside the shell and are
-  inert wherever the Feed Shell renders.
+  Small-viewport bottom chrome is a single consolidated band carrying
+  navigation and the purchase affordance — nothing floats above it.
+- **Existing sections.** Most authored feed content is retired
+  outright: the hero unit — and the premium-features modal chrome it
+  opened, whose Site Config key and trigger are deleted with it —
+  the leading product units, the craftsmanship unit, and the
+  social-proof unit leave the landing rather than surviving as feed
+  units. Two authored units earn their place as the interstitials
+  above: the closing unit — restored as a text-only limited-edition
+  call to action carrying no Media Slot, which additionally inherits
+  the `products` navigation anchor alias from the retired leading
+  product unit — and the FAQ island. The
+  on-landing purchase block stays retired, its role absorbed by the
+  Simplified Purchase Surface. Content that maps to no feed unit is
+  retired rather than parked.
+- **Site Config mapping.** Section toggles are preserved and remapped
+  at the semantic level, but their feed reach narrows to the surviving
+  interstitials: each section toggle governs the interstitial
+  carrying its content domain — a saved "hide FAQ" still hides FAQ
+  content, now expressed as removing the FAQ island from the
+  insertion cycle, and the closing unit answers to the closing-CTA
+  (`finalCta`) toggle — and keeps governing the non-feed surfaces it
+  already names; a toggle whose content domain left the landing
+  governs nothing in the feed — the `products` toggle among them,
+  the `products` anchor alias the closing unit carries being a
+  navigation anchor only, never section governance. Toggle keys are
+  retained so stored
+  Site Config documents keep working without migration, and Admin
+  Console labels are updated to feed vocabulary. Chrome toggles keep
+  governing the chrome they name; the header and footer toggles
+  remain meaningful on routes outside the shell and are inert
+  wherever the Feed Shell renders, and the premium-features modal
+  chrome key is removed with the hero unit that opened it — a stored
+  document carrying it applies no chrome.
 - **Visual system.** The restyle works entirely within the canonical
   Design Tokens and Brand Palette (ADR 03-001): the composition
   mirrors the platform's feed visual language — light surfaces, a
@@ -253,9 +292,15 @@ composition obeys.
 ## Consequences
 
 **Positive:**
-- The small catalog is presented as editorial content in a familiar
-  scroll pattern — a distinctive premium-social presence rather than a
-  template retail page.
+- The small catalog is presented as persona-attributed editorial
+  content in a familiar scroll pattern — profile posts are the
+  landing's body and the authored registry shrinks to two functional
+  interstitials, a distinctive premium-social presence rather than a
+  template retail page wearing a feed costume.
+- The authored content surface shrinks to two units — less
+  code-managed copy and imagery to keep localized, art-directed, and
+  current; the landing's editorial weight moves to profile content
+  the operator curates per post.
 - The conversion path shortens and stays inside one composition: media
   impression → Simplified Purchase Surface → Hosted Checkout, removing
   the intermediate cart-review step and any chrome discontinuity at the
@@ -277,8 +322,7 @@ composition obeys.
 - Out-of-stock keeps the conversion surface alive: the Pre-order state
   captures demand as consented, per-Variant emails instead of
   dead-ending the shopper at the highest-intent moment.
-- Mobile posture consolidates bottom chrome into one band while keeping
-  the Inbound Contact Surface reachable without occlusion.
+- Mobile posture consolidates bottom chrome into one band.
 
 **Negative / trade-offs:**
 - The borrowed feed metaphor can read as imitative of the platform genre
@@ -321,14 +365,17 @@ composition obeys.
   appears at wider viewports only; the single-column baseline does not
   carry those surfaces (the feed and purchase path remain full at every
   width).
-- Section-toggle semantics drift: operators must relearn that toggles
-  now hide feed units rather than page sections; the header/footer
-  toggles silently doing nothing on the routes the shell composes can
+- Section-toggle semantics drift further: operators must relearn that
+  section toggles now gate only the surviving interstitials and the
+  non-feed surfaces they name — toggles whose content domains left
+  the landing are inert there — while the header/footer toggles
+  silently doing nothing on the routes the shell composes can
   confuse.
-- A one-product catalog means the feed repeats one product — variety
-  must come from content angles (craft, faith, proof), not catalog
-  breadth; the feed can feel thin if too many posts repeat the same
-  media.
+- The feed's variety now rests entirely on the profiles roster: a
+  one-product catalog still repeats one product across the models'
+  media, and a thin enabled set leaves the scroll sparse — with the
+  managed store down, the landing body is the surviving
+  interstitials alone under ADR 03-004's fail-closed posture.
 
 ## Alternatives Considered
 
@@ -384,3 +431,13 @@ composition obeys.
 - **Composer and search affordances for pattern completeness** —
   Rejected: explicit owner exclusion — no user-generated content exists
   to compose, and the catalog is too small to need search.
+- **Authored Post Card scroll kept as the landing's feed body** —
+  Superseded by owner decision: the landing is persona-content-led.
+  The authored registry is reduced to the two interstitial units —
+  the limited-edition closing unit carrying the `products`
+  navigation anchor and the FAQ island — and the retired units (the
+  hero with its premium-features modal, the leading product posts,
+  craftsmanship, social proof) are recorded here as history: a
+  leading authored block ahead of attributed creator content was a
+  storefront wearing a feed costume, the exact presence profiles
+  replaced.

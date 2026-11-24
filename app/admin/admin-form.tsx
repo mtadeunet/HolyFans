@@ -52,6 +52,7 @@ import {
 } from '@/lib/promotions';
 import { saveSiteConfig, type SaveResult } from './actions';
 import { AdminTabPanel, useAdminTab, type TabId } from './admin-tabs';
+import { fieldLabelClass, inputClass } from './styles';
 
 /**
  * The tabs carrying this form's Site Config panels — the submit row is
@@ -86,14 +87,6 @@ const CHROME_LABELS: Record<ChromeKey, { label: string; hint?: string }> = {
   mobileStickyCta: {
     label: 'Mobile Bottom Nav',
     hint: 'Bottom navigation band on small screens (landing and purchase pages)',
-  },
-  premiumFeaturesModal: {
-    label: 'Premium Features Modal',
-    hint: 'Hides the "Learn more" modal trigger in the hero post',
-  },
-  whatsappBubble: {
-    label: 'WhatsApp Bubble',
-    hint: 'Floating WhatsApp chat button, bottom-right',
   },
   // Implements ADR 03-003: Promotion Bar — "operator-toggleable through
   // Site Config and the Admin Console like other global chrome".
@@ -164,10 +157,6 @@ const EMAIL_SHARED_FIELD_LABELS: Record<EmailSharedTextField, string> = {
   headerText: 'Header',
   footerText: 'Footer',
 };
-
-const inputClass =
-  'w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text-primary outline-none ring-primary/30 transition focus:border-primary focus:ring';
-const fieldLabelClass = 'mb-1 block text-xs font-medium text-text-secondary';
 
 /**
  * Build a blank campaign for the "Add campaign" button — a disabled

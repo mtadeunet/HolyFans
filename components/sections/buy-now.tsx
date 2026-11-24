@@ -1,6 +1,5 @@
 'use client';
 
-import WhatsAppGlyph from '@/components/ui/whatsapp-glyph';
 import { useCart } from '@/context/cart-context';
 import {
   findVariant,
@@ -10,7 +9,6 @@ import {
   PRODUCT,
   purchasableRepresentative,
   representativeVariant,
-  SITE_CONFIG,
   type FitKey,
   type VariantKey,
 } from '@/lib/constants';
@@ -18,7 +16,6 @@ import type {
   CartCorrection,
   CartDriftReason,
 } from '@/lib/checkout-validation';
-import { whatsappShareUrl } from '@/lib/whatsapp';
 import { formatPrice } from '@/lib/utils';
 import { useLocale, useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
@@ -73,8 +70,7 @@ type CheckoutFailure =
  * collection underneath — the purchase submit replaces its contents
  * with the single selected line, preserving cancel-preserved and
  * drift-correction semantics; the Pre-order capture touches it not at
- * all. The Outbound Share Surface (ADR 00-009) lives beneath the
- * action, making this the canonical purchase block.
+ * all. This is the canonical purchase block.
  */
 export default function BuyNow({
   stockFlags,
@@ -92,7 +88,6 @@ export default function BuyNow({
 }) {
   const t = useTranslations('purchase');
   const tProduct = useTranslations('product');
-  const tWhatsApp = useTranslations('whatsapp');
   const locale = useLocale();
   const { items, hydrated, clearCart, addItem, removeItem, updateQuantity } =
     useCart();
@@ -763,23 +758,6 @@ export default function BuyNow({
               </div>
             )}
 
-            {/* Implements ADR 00-009: WhatsApp Deep-Link Channels — "a
-                control on the canonical purchase block lets a visitor
-                compose a message containing the Storefront's canonical
-                URL". Outbound Share Surface: ungated, configuration-free;
-                shares `SITE_CONFIG.url` only — never a preview,
-                deployment, or current-location URL. */}
-            <a
-              href={whatsappShareUrl(
-                `${tWhatsApp('share_text')} ${SITE_CONFIG.url}`
-              )}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-border bg-surface px-8 py-3 font-semibold text-text-secondary transition-colors hover:border-accent/40 hover:bg-background"
-            >
-              <WhatsAppGlyph className="h-5 w-5 text-[#25D366]" />
-              <span>{tWhatsApp('share_label')}</span>
-            </a>
           </form>
         </div>
       </div>

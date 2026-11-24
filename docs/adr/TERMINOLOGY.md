@@ -44,24 +44,30 @@ user-facing documentation.
 - **Admin Console** — the password-gated `/admin` surface used by the operator
   to read and write Site Config, to inspect the like store's
   aggregate state — per-post totals, per-post last-like timestamps,
-  and store health — and to read and purge the Stock Notification
+  and store health — to read and purge the Stock Notification
   List: a per-Variant view of the captured consented emails and their
   consent records plus the per-Variant clear action and the
-  per-Variant Restock Notification send (ADR 00-002, ADR 00-008,
-  ADR 00-010, ADR 00-015).
-- **Store Messaging Number** — the operator-supplied WhatsApp contact number
-  the Inbound Contact Surface opens a chat to; provided via Hosting Platform
-  environment configuration and never committed to tracked files (identifier
-  hygiene, ADR 00-009).
-- **Inbound Contact Surface** — the persistent floating Storefront control
-  that opens a WhatsApp chat addressed to the Store Messaging Number;
-  operator-toggleable through Site Config / the Admin Console, and renders
-  nothing when the Store Messaging Number is unconfigured (fail-closed)
-  (ADR 00-009).
-- **Outbound Share Surface** — the control on the canonical purchase block
-  that lets a visitor compose a WhatsApp message containing the Storefront's
-  canonical URL on the Store Domain for their own contacts; ungated and
-  configuration-free (ADR 00-009).
+  per-Variant Restock Notification send — and to read and edit the
+  Order Ledger through the Orders section: the `orders` index
+  rendered newest-first with per-order detail and the Order Status
+  and `trackingId` writes saved back to each document (ADR 00-002,
+  ADR 00-008, ADR 00-010, ADR 00-015).
+- **Store Messaging Number** — *(withdrawn; retained as history)* the
+  operator-supplied WhatsApp contact number the Inbound Contact Surface
+  opened a chat to; provided via Hosting Platform environment
+  configuration and never committed to tracked files (identifier
+  hygiene). Removed with the channel (ADR 00-009, withdrawn).
+- **Inbound Contact Surface** — *(withdrawn; retained as history)* the
+  persistent floating Storefront control that opened a WhatsApp chat
+  addressed to the Store Messaging Number; operator-toggleable through
+  Site Config / the Admin Console, rendering nothing when the Store
+  Messaging Number was unconfigured (fail-closed). Removed entirely —
+  no floating control ships (ADR 00-009, withdrawn).
+- **Outbound Share Surface** — *(withdrawn; retained as history)* the
+  control on the canonical purchase block that let a visitor compose a
+  WhatsApp message containing the Storefront's canonical URL on the
+  Store Domain for their own contacts. Removed with the channel
+  (ADR 00-009, withdrawn).
 - **Stock Flag** — an operator-controlled Site Config toggle, one per
   Variant in Product Data, that forces that Variant into the
   Pre-order state on the Simplified Purchase Surface, independent of
@@ -104,7 +110,9 @@ user-facing documentation.
 - **PSP Event Receiver** — the enumerated signature-verified
   webhook Route Handler the PSP calls with order lifecycle events;
   the sole inbound channel admitted beyond visitor-facing
-  endpoints (ADR 00-002, ADR 00-015).
+  endpoints; it persists each retrieved Checkout Session to the
+  Order Ledger before the order emails send
+  (ADR 00-002, ADR 00-015).
 - **Thank-You Email** — the branded post-payment email sent to the
   customer in the Checkout Session's Locale once payment settles,
   complementing the PSP's native receipt (ADR 00-015).
@@ -112,6 +120,31 @@ user-facing documentation.
   the Admin Inbox carrying the line items, quantities, shipping
   details, and payment state manual Fulfillment needs
   (ADR 00-015).
+- **Order Ledger** — the Storefront's persisted order record in
+  the managed store: one `order:<sessionId>` JSON document per
+  retrieved Checkout Session in two field namespaces — the
+  PSP-sourced fields each accepted event rewrites (session id and
+  creation time, payment status, currency and total amount,
+  Locale, customer name, email, and optional phone, shipping
+  name, address, and option, and the
+  line items) and the operator fields each rewrite preserves
+  (the Order Status and the `trackingId` free-text carrier
+  tracking reference) — plus an `orders` sorted set maintained
+  newest-first as the index, member uniqueness making
+  enumeration idempotent across redeliveries. Written before the
+  order emails so the record
+  survives a send failure; retention is indefinite and
+  operator-managed; read and edited through the Admin Console's
+  Orders section; the PSP remains the payment system of record
+  and the ledger is the fulfillment/audit copy
+  (ADR 00-002, ADR 00-015).
+- **Order Status** — the operator-managed fulfillment state on
+  each Order Ledger document, distinct from the PSP's payment
+  status: one of `pending` (the default), `processing`,
+  `shipped`, or `complete`; edited through the Admin Console's
+  Orders section, preserved across PSP event rewrites, and
+  operator-visible only — it renders on no customer-facing
+  surface and its change sends no notification (ADR 00-015).
 - **Capture Acknowledgment** — the localized email the
   stock-notification Route Handler sends a visitor after a capture
   is stored, confirming the request landed; best-effort — the
@@ -137,8 +170,7 @@ user-facing documentation.
   Simplified Purchase Surface inside the Feed Shell — Variant
   selection, quantity, the final displayed EUR price (VAT-inclusive
   framing is display-only per ADR 00-004, not a PSP tax concept),
-  the purchase action or the Pre-order state, and the Outbound
-  Share Surface;
+  the purchase action or the Pre-order state;
   served at a Locale-prefixed, product-namespaced path whose final
   segment is the product's canonical slug from Product Data (ADR
   00-011, ADR 03-002).
@@ -201,13 +233,15 @@ user-facing documentation.
   Interaction Row, the stock-notification endpoint serving the
   Pre-order state, the contact endpoint relaying the Contact Form to
   the Support Inbox, and the PSP Event Receiver (the managed Redis
-  store backing the like, stock-notification, and send-dedupe
-  keyspaces) — and the dynamic post-checkout
+  store backing the like, stock-notification, send-dedupe, and
+  Order Ledger keyspaces) — and the dynamic post-checkout
   success page, which performs a read-only retrieval of the Checkout
   Session's payment status at render time (ADR 00-002, ADR 00-014,
   ADR 00-015). The Admin
-  Console page likewise reads the like store's aggregate state at
-  request time — a page-render read, not a Route Handler. The checkout,
+  Console page likewise reads the like store's aggregate state and
+  the Order Ledger's `orders` index and documents at request time —
+  page-render reads, not Route Handlers — and edits operator fields
+  through the Admin Console write path. The checkout,
   Admin Console write, like counter, stock-notification, contact, and
   PSP event receiver paths run
   on the Node runtime; the QR Redirect Route is Edge-capable.

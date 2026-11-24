@@ -10,7 +10,7 @@ ADR 00-002 (Rendering and Hosting Model)
 ADR 00-005 (Internationalization)
 ADR 00-007 (Quality Tooling and CI)
 ADR 00-008 (Analytics and Consent)
-ADR 00-009 (WhatsApp Deep-Link Channels)
+ADR 00-009 (WhatsApp Deep-Link Channels — withdrawn)
 ADR 00-011 (Page Model and Product Routes)
 ADR 00-013 (Email Delivery Channel)
 ADR 03-002 (Landing Page Composition)
@@ -19,14 +19,15 @@ ADR 03-002 (Landing Page Composition)
 
 Customers need a written channel to reach the store: pre-purchase
 questions, order support, and anything ill-suited to a chat message.
-The channel the corpus already sanctioned — the WhatsApp Inbound
-Contact Surface of ADR 00-009 — is withdrawn for now: the operator
-cannot staff a chat channel, and the floating control is left
-unconfigured so it renders nothing (its dormant code and the
-Outbound Share Surface are unaffected; a visitor's own share intent
-carries no operator burden). Email is the contact channel the
-Storefront presents instead, and the delivery channel of ADR 00-013
-provides the pipe.
+The channel the corpus earlier sanctioned — a WhatsApp inbound
+contact surface recorded under ADR 00-009 — was first soft-
+withdrawn (the operator could not staff a chat channel, so the
+floating control was left unconfigured) and has since been removed
+entirely by owner decision: the channel is withdrawn and ADR 00-009
+stands empty; the Storefront ships no vendor deep links, no floating
+control, and no share control. Email is the contact channel the
+Storefront presents, and the delivery channel of ADR 00-013 provides
+the pipe.
 
 The shape is constrained on three sides. Presentation: the Feed
 Shell is the Storefront's composition, and the owner has decided
@@ -60,13 +61,12 @@ persisted or logged; the delivered email is the record.
   request like every page in the Locale tree — performing the
   shared Site Config read for shell chrome — and adds no new
   request-time capability.
-- **Navigation.** The shell's `contact` navigation entry becomes an
+- **Navigation.** The shell's `contact` navigation entry is an
   internal Locale-routed link to the Contact Page and is always
-  rendered — it no longer depends on the Store Messaging Number's
-  availability. The shared entry definition keeps the desktop Nav
-  Rail and the mobile bottom band identical. The withdrawn WhatsApp
-  channel is not offered on the Contact Page; the form is the
-  channel.
+  rendered. The shared entry definition keeps the desktop Nav
+  Rail and the mobile bottom band identical. The removed WhatsApp
+  channel (ADR 00-009, withdrawn) is not offered on the Contact
+  Page; the form is the channel.
 - **Contact Form.** An Island in the Feed Surface: the visitor's
   name, their email address (required — it is the reply path),
   an optional subject, and the message, plus a honeypot field
@@ -178,5 +178,6 @@ persisted or logged; the delivered email is the record.
   makes it valuable.
 - **Keeping WhatsApp as an alternative channel on the page** —
   Rejected: the operator cannot staff chat; presenting an
-  unstaffed channel is a broken promise. The dormant surface can
-  return by configuration when the channel can be answered.
+  unstaffed channel is a broken promise. The surface has since been
+  removed entirely (ADR 00-009 withdrawn); a future chat channel
+  would require a new ADR.

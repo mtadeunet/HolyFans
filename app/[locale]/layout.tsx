@@ -7,7 +7,6 @@ import ChromeFrame from '@/components/layout/chrome-frame';
 import Header from '@/components/layout/header';
 import Footer from '@/components/layout/footer';
 import PromotionBar from '@/components/layout/promotion-bar';
-import WhatsAppBubble from '@/components/layout/whatsapp-bubble';
 import { Analytics } from '@vercel/analytics/next';
 
 /**
@@ -74,13 +73,6 @@ export default async function LocaleLayout({
         >
           <main className="flex-1">{children}</main>
         </ChromeFrame>
-        {/* The Inbound Contact Surface is withdrawn (ADR 00-014
-            amendment of ADR 00-009): the Store Messaging Number is left
-            unconfigured so `WhatsAppBubble` renders nothing —
-            fail-closed. The dormant component and its `whatsappBubble`
-            Site Config toggle stay mounted so the surface can return
-            purely by configuration (ADR 00-009). */}
-        {siteConfig.chrome.whatsappBubble && <WhatsAppBubble />}
       </CartProvider>
       <Analytics />
     </NextIntlClientProvider>

@@ -16,10 +16,12 @@
  * fields stored only where they differ from the filesystem baseline
  * (a caption sidecar `<basename>.txt` supplies the baseline caption):
  * an enabled profile publishes a `/u/<slug>` route (its `id` doubles
- * as the displayed `@handle`) and mixes its posts into the landing
- * Feed Surface after the authored `FEED_POSTS` — the appended tail
- * shuffled per request so posts interleave across profiles rather
- * than grouping in folder order. Post copy is operator data —
+ * as the displayed `@handle`) and its visible posts ARE the landing
+ * Feed Surface's scroll body — collected and shuffled per request so
+ * posts interleave across profiles rather than grouping in folder
+ * order, with the surviving authored `FEED_POSTS` units spliced in as
+ * interstitials every three posts (ADR 03-002). Post copy is operator
+ * data —
  * `LocalizedText` fields resolved by the request Locale at render,
  * never message keys (ADR 00-005's localization applies to the copy
  * pipeline, not to operator data). The display name is not data at
@@ -479,8 +481,9 @@ export function allProfilePosts(
  * is enabled and the post itself is visible" — the PUBLISHED post
  * domain as `{profile, post}` pairs: every enabled profile's visible
  * posts, in profile order then filename order, keeping each post's
- * owning profile attached. The landing feed's shuffled tail renders
- * the pairs directly (the card needs the profile's author identity).
+ * owning profile attached. The landing feed's shuffled scroll body
+ * renders the pairs directly (the card needs the profile's author
+ * identity).
  *
  * @param profiles - Read profiles (enabled or not — the filter is
  *   this function's job).
@@ -516,10 +519,11 @@ export function publishedProfilePosts(
 }
 
 /**
- * Implements ADR 03-004: Model Profiles — the landing feed's appended
- * profile-post tail is shuffled per request: every enabled profile's
- * visible posts interleave across profiles in a fresh random order
- * instead of rendering grouped in alphabetical folder order.
+ * Implements ADR 03-004: Model Profiles — the landing feed's
+ * profile-post scroll body is shuffled per request: every enabled
+ * profile's visible posts interleave across profiles in a fresh
+ * random order instead of rendering grouped in alphabetical folder
+ * order.
  *
  * Fisher–Yates shuffle on a copy: the input array is never mutated
  * (callers keep their derived order — the `/u/<slug>` Profile Route

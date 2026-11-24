@@ -21,16 +21,16 @@ ADR 03-003 (Promotion Bar)
 ## Context
 
 The Feed Shell of ADR 03-002 mirrors the three-column social-feed
-composition but attributes every Post Card to the brand itself — the
-header carries the own-brand avatar, name, and decorative handle, and
-the Nav Rail decision explicitly excludes social-platform concepts:
-"profiles, messages, notifications are not carried over." The owner
-has now approved carrying one bounded piece of that excluded pattern:
-creator-style profiles for the models presenting the products. Each
-model gets a profile page, her posts join the landing feed attributed
-to her, and tapping her attribution navigates to her page — the
-social-authenticity signal of a creator platform, bounded to
-attribution only.
+composition but, as first composed, attributed every Post Card to the
+brand itself — the header carrying the own-brand avatar, name, and
+decorative handle — and excluded social-platform concepts entirely:
+profiles, messages, and notifications were not carried over. The
+owner has approved carrying one bounded piece of that excluded
+pattern: creator-style profiles for the models presenting the
+products. Each model gets a profile page, her posts join the landing
+feed attributed to her, and tapping her attribution navigates to her
+page — the social-authenticity signal of a creator platform, bounded
+to attribution only.
 
 The architecture constrains the shape the feature can take. Profiles
 are operator content, not visitor-generated — the same "feed is
@@ -73,8 +73,9 @@ filesystem-derived post set, and the existing like counter Route
 Handler's accepted post-id domain is extended to cover profile posts
 rather than gaining an endpoint. An unconfigured or failing store
 means no profiles exist at runtime — the fail-closed posture of ADR
-00-002 made explicit, with no silent fallback content: the feed
-renders authored posts only and Profile Routes resolve not-found. ADR
+00-002 made explicit, with no silent fallback content: the landing
+feed renders the authored interstitials only and Profile Routes
+resolve not-found. ADR
 00-006 fixes
 the media posture: no upload pipeline exists and none is added —
 profile folders, avatars, and post media are in-repo `public/` assets
@@ -204,20 +205,23 @@ rules the profile system obeys.
   of the card — Media Slot linking to the featured product's Product
   Page, Interaction Row with the shared like count and the
   client-resolved share — is the same unit ADR 03-002 defines.
-- **Landing placement.** Enabled profiles' visible posts join the
-  landing's Feed Surface
-  after the authored posts as one shuffled tail: the visible posts
-  of every enabled profile are collected together and shuffled per
-  request — Fisher–Yates, via the `shuffled` helper in
-  `lib/profiles.ts` — so posts interleave across profiles rather
-  than rendering profile by profile. The per-request randomness is
-  safe because the surface is server-rendered: no client hydration
-  exists to mismatch. The authored posts keep their positions and
-  their section-toggle semantics unchanged — profile content is
-  appended editorial content, not a reordering of existing units.
+- **Landing placement.** Enabled profiles' visible posts are the
+  landing Feed Surface's body: the visible posts of every enabled
+  profile are collected together and shuffled per request —
+  Fisher–Yates, via the `shuffled` helper in `lib/profiles.ts` — so
+  posts interleave across profiles rather than rendering profile by
+  profile. The per-request randomness is safe because the surface is
+  server-rendered: no client hydration exists to mismatch. The
+  authored `FEED_POSTS` registry no longer renders as a leading
+  block: it is reduced to two interstitial units — the
+  limited-edition closing unit and the FAQ island — which the scroll
+  inserts into the shuffled sequence, one interstitial per every
+  three profile posts, cycling through the section-enabled set in
+  authored order — the limited-edition closing unit, the FAQ island,
+  and around again; a unit whose section toggle is off leaves the cycle.
   The Profile Route is unaffected: `/u/<slug>` keeps each model's
-  posts in their filename order — the shuffle is a landing-tail
-  treatment only.
+  posts in their filename order — the shuffle and the interstitial
+  insertion are landing-feed treatments only.
 - **Like counter extension.** The like counter Route Handler
   enumerated in ADR 00-002 accepts the `pp-` post-id domain in
   addition to the authored-post ids: it validates
@@ -232,7 +236,7 @@ rules the profile system obeys.
   matching the route's
   not-found posture. The Admin Console's Social view lists profile
   posts' aggregates — per-post totals and last-like times — beside
-  the authored posts', read from the same managed store.
+  the authored interstitials', read from the same managed store.
 - **Admin Console Profiles tab.** The Admin Console gains a
   "Profiles" tab that browses the folder-backed profiles: a selector
   over the existing `public/images/profiles/` folders — with no
@@ -354,9 +358,9 @@ rules the profile system obeys.
   precedent (ADR 03-003) — one established deviation, consistently
   applied across the committed sidecars and the overlay fields,
   instead of a second i18n mechanism.
-- The amendment is bounded: profiles arrive as attribution and
-  routes; messages, notifications, and visitor accounts stay outside,
-  so the no-personal-data posture of ADR 00-008 is undisturbed.
+- Profiles are bounded to attribution and routes: messages,
+  notifications, and visitor accounts stay outside, so the
+  no-personal-data posture of ADR 00-008 is undisturbed.
 
 **Negative / trade-offs:**
 - Profiles are now a hard dependency on the managed store: when it is
@@ -393,7 +397,7 @@ rules the profile system obeys.
   not-found behavior must track the shell as it evolves — the same
   maintenance tax the Simplified Purchase Surface occupant already
   pays.
-- Two post-id domains now exist: the authored posts' static
+- Two post-id domains now exist: the authored interstitials' static
   `FEED_POSTS` ids live in code while `pp-` ids are derived from
   filenames — `pp-<slug>-<basename>` binds the like key to the
   image file, so a rename is a delete plus a create that orphans its

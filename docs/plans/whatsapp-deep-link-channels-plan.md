@@ -1,5 +1,12 @@
 # WhatsApp Deep-Link Channels — Implementation Plan
 
+> **RETIRED — SUPERSEDED.** ADR 00-009 (WhatsApp Deep-Link Channels) has
+> been withdrawn by owner decision and now stands `Empty`: the WhatsApp
+> deep-link channel is removed entirely — no vendor click-to-chat or
+> share deep links, no Inbound Contact Surface, no Outbound Share
+> control — and its implementation has been deleted from the tree. This
+> plan is retained for history only and MUST NOT be implemented.
+
 ## Purpose
 
 `[ADR 00-009]`

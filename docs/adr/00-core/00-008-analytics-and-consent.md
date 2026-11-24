@@ -36,8 +36,9 @@ state precisely where personal data is permitted at all.
 Measurement uses **Cookieless Analytics only** — privacy-first mechanisms
 that set no cookies and collect no personal data, so no consent banner is
 required. Beyond measurement, the Storefront persists **no personal data
-without explicit per-feature consent** — the only sanctioned collection
-is the purpose-bound capture below.
+without explicit per-feature consent** — the sanctioned collections are
+the purpose-bound capture below and the transactional Order Ledger of
+ADR 00-015.
 
 - The mechanism: **the Hosting Platform's native privacy-first analytics**
   (the platform's web-analytics integration already wired into the
@@ -68,12 +69,22 @@ is the purpose-bound capture below.
   purpose completes or the operator purges the record, an operator
   export-and-clear path exists as the deletion mechanism, and it joins
   to no feature token, identity, or analytics surface. The Stock
-  Notification List's visitor emails (ADR 00-010) are the sanctioned
-  instance — the first personal data the Storefront persists. A
+  Notification List's visitor emails (ADR 00-010) are that rule's
+  sanctioned instance — the first personal data the Storefront
+  persists. A
   consented record's stored fields may serve their stated purpose
   mechanically — the captured Locale may drive the localized Restock
   Notification the consent was given for (ADR 00-015) — without
   widening the purpose.
+- Transactional order data is the second sanctioned persistence —
+  not a consented capture but a contract-performance record: the
+  Order Ledger of ADR 00-015 retains each completed Checkout
+  Session's customer name, email, phone, and shipping details as the
+  Storefront's fulfillment/audit copy, with retention indefinite
+  and operator-managed. Access, rectification, and erasure requests
+  are handled by the operator against the ledger and the PSP record
+  alike; it joins to no feature token, identity, or analytics
+  surface, and the PSP remains the payment system of record.
 - No consent-management platform, cookie banner, or tag manager is part of
   the architecture. If a future requirement ever demands identified or
   cross-session tracking, it requires a new ADR and a consent mechanism.
@@ -110,7 +121,11 @@ is the purpose-bound capture below.
   consented-capture rule — consent copy at the capture point, single
   stated purpose, bounded retention, an operator deletion path — depend
   on every collecting feature honoring them; the no-personal-data
-  simplicity is traded for a bounded per-feature consent model.
+  simplicity is traded for a bounded per-feature consent model. The
+  Order Ledger adds a durable holding beside the consent-bounded
+  list — its indefinite, operator-managed retention is the recorded
+  exception to the bounded-retention norm and places GDPR retention
+  and erasure handling squarely on the operator (ADR 00-015).
 
 ## Alternatives Considered
 

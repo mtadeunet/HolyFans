@@ -148,7 +148,7 @@ beforeEach(() => {
   mockedStore.mockReturnValue(store as unknown as Redis);
   mockedProfiles.mockResolvedValue([ENABLED_PROFILE, DISABLED_PROFILE]);
   mockedCounts.mockResolvedValue({
-    'post-hero': 55,
+    'post-faq': 55,
     'pp-model-one-1': 11,
   });
 });

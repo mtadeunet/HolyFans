@@ -2,6 +2,7 @@ import type { Redis } from '@upstash/redis';
 import { getSiteConfig } from '@/lib/site-config-server';
 import { basePostAggregates, readPostAggregates } from '@/lib/likes-server';
 import { getManagedStore } from '@/lib/managed-store';
+import { readOrders } from '@/lib/orders-server';
 import { allProfilePosts, type ProfilePost } from '@/lib/profiles';
 import {
   deriveProfilePosts,
@@ -16,6 +17,7 @@ import {
 import AdminForm from './admin-form';
 import { AdminTabPanel, AdminTabs } from './admin-tabs';
 import LikesSection from './likes-section';
+import OrdersSection from './orders-section';
 import ProfilesSection from './profiles-section';
 import StockNotificationsSection from './stock-notifications-section';
 import type { StoreStatus } from './types';
@@ -191,6 +193,14 @@ export default async function AdminPage() {
     'stock-notification'
   );
 
+  // Implements ADR 00-015: Transactional Notifications — the Orders
+  // tab's request-time read of the Order Ledger, newest-first through
+  // the `orders` index — "the fulfillment/audit copy" the manual
+  // Fulfillment ships against. The same surfacing posture as the
+  // Likes view: an unconfigured or failing store reports an explicit
+  // status and renders the section empty rather than silently.
+  const orders = await readStoreSection(store, readOrders, () => [], 'orders');
+
   return (
     <main className="mx-auto max-w-3xl px-6 py-12">
       <header className="mb-8">
@@ -200,15 +210,16 @@ export default async function AdminPage() {
         <p className="mt-2 text-text-secondary">
           Edit the live site&apos;s config — sections, chrome, stock flags,
           shipping, promotion campaigns, and email templates — manage model
-          profiles, and review per-post likes and the stock-notification lists.
-          Config changes are persisted to Vercel Edge Config; profiles to the
-          managed store.
+          profiles, review per-post likes and the stock-notification lists, and
+          work the order ledger&apos;s fulfillment detail. Config changes are
+          persisted to Vercel Edge Config; profiles, notifications, and orders
+          live in the managed store.
         </p>
       </header>
-      {/* The console's six tabs: the form owns the three Site Config
+      {/* The console's seven tabs: the form owns the three Site Config
           write-path panels (Layout, Promotions, Email); Profiles,
-          Social, and Customers are managed-store sections rendered as
-          sibling panels. */}
+          Social, Customers, and Orders are managed-store sections
+          rendered as sibling panels. */}
       <AdminTabs>
         <AdminForm initial={config} />
         <AdminTabPanel id="profiles">
@@ -233,6 +244,13 @@ export default async function AdminPage() {
             status={notifications.status}
             statusDetail={notifications.statusDetail}
             lists={notifications.data}
+          />
+        </AdminTabPanel>
+        <AdminTabPanel id="orders">
+          <OrdersSection
+            status={orders.status}
+            statusDetail={orders.statusDetail}
+            orders={orders.data}
           />
         </AdminTabPanel>
       </AdminTabs>

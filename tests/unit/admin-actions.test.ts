@@ -20,8 +20,15 @@
  * image rejects as `unknown_post`, and the action fails closed when
  * the store is unconfigured.
  *
- * Covers `saveSiteConfig` and `saveProfile` in `app/admin/actions.ts`:
- * the `emails` field's parse-and-normalize path and the profile write
+ * Implements ADR 00-015: Transactional Notifications — the Order
+ * Ledger as "the fulfillment/audit copy" the operator's bookkeeping
+ * lands on: `saveOrder` submits only the order's operator fields to
+ * `updateOrder`, fails closed on an unconfigured store, and surfaces
+ * `updateOrder`'s named rejections to the operator.
+ *
+ * Covers `saveSiteConfig`, `saveProfile`, and `saveOrder` in
+ * `app/admin/actions.ts`: the `emails` field's parse-and-normalize
+ * path, the profile write path, and the order operator-fields write
  * path. The persistence writes, the stored-config read, the managed-
  * store client, the folder enumeration, and cache invalidation are
  * stubbed at their module boundaries; the actions' own validation
@@ -29,7 +36,8 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Redis } from '@upstash/redis';
-import { saveProfile, saveSiteConfig } from '@/app/admin/actions';
+import { saveOrder, saveProfile, saveSiteConfig } from '@/app/admin/actions';
+import type { OrderUpdate } from '@/lib/orders-server';
 import {
   normalizeEmailOverrides,
   type EmailOverrides,
@@ -48,12 +56,14 @@ const {
   getManagedStoreMock,
   writeProfileMock,
   deriveProfilePostsMock,
+  updateOrderMock,
 } = vi.hoisted(() => ({
   writeSiteConfigMock: vi.fn(),
   getSiteConfigMock: vi.fn(),
   getManagedStoreMock: vi.fn(),
   writeProfileMock: vi.fn(),
   deriveProfilePostsMock: vi.fn(),
+  updateOrderMock: vi.fn(),
 }));
 
 vi.mock('@/lib/edge-config-write', () => ({
@@ -68,6 +78,9 @@ vi.mock('@/lib/managed-store', () => ({
 vi.mock('@/lib/profiles-server', () => ({
   writeProfile: writeProfileMock,
   deriveProfilePosts: deriveProfilePostsMock,
+}));
+vi.mock('@/lib/orders-server', () => ({
+  updateOrder: updateOrderMock,
 }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
@@ -418,5 +431,103 @@ describe('saveProfile (ADR 03-004)', () => {
     writeProfileMock.mockRejectedValue(new Error('write exploded'));
     const result = await saveProfile(rawProfile());
     expect(result).toEqual({ ok: false, error: 'write exploded' });
+  });
+});
+
+/**
+ * Implements ADR 00-015: Transactional Notifications — the Admin
+ * Console's per-order Save submits ONLY the operator fields
+ * (`status`, `trackingId`) as `saveOrder`'s serializable argument;
+ * `updateOrder` validates and merges them onto the stored
+ * `order:<sessionId>` document while the purchase detail stays
+ * webhook-owned. Fail-closed (ADR 00-002): an unconfigured store
+ * reports 'Store not configured', an empty session id rejects before
+ * any store touch, a malformed `fields` transport degrades to a
+ * no-field update rather than crashing, and `updateOrder`'s named
+ * rejections (unknown order, invalid status, invalid tracking id)
+ * surface to the operator verbatim.
+ */
+describe('saveOrder (ADR 00-015)', () => {
+  const SESSION_ID = 'cs_test_synthetic_order';
+
+  beforeEach(() => {
+    updateOrderMock.mockReset().mockResolvedValue(undefined);
+    getManagedStoreMock.mockReset().mockReturnValue(FAKE_STORE);
+  });
+
+  it.each([
+    ['an empty string', ''],
+    ['a whitespace string', '   '],
+    ['a non-string', 42],
+    ['null', null],
+  ])('rejects %s as the session id before touching the store', async (_label, sessionId) => {
+    const result = await saveOrder(sessionId as unknown as string, {
+      status: 'processing',
+    });
+    expect(result).toEqual({ ok: false, error: 'Unknown order' });
+    expect(getManagedStoreMock).not.toHaveBeenCalled();
+    expect(updateOrderMock).not.toHaveBeenCalled();
+  });
+
+  it('reports an unconfigured store without writing', async () => {
+    getManagedStoreMock.mockReturnValue(null);
+    const result = await saveOrder(SESSION_ID, { status: 'processing' });
+    expect(result).toEqual({ ok: false, error: 'Store not configured' });
+    expect(updateOrderMock).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['null', null],
+    ['a scalar', 42],
+    ['a string', 'not-fields'],
+  ])(
+    'degrades a malformed fields transport (%s) to a no-field update',
+    async (_label, fields) => {
+      const result = await saveOrder(
+        SESSION_ID,
+        fields as unknown as OrderUpdate
+      );
+      // Nothing to merge — the transport carried no usable fields, so
+      // `updateOrder` sees an empty update rather than a property
+      // access crash.
+      expect(result).toEqual({ ok: true });
+      expect(updateOrderMock).toHaveBeenCalledWith(FAKE_STORE, SESSION_ID, {
+        status: undefined,
+        trackingId: undefined,
+      });
+    }
+  );
+
+  it("surfaces updateOrder's named rejections verbatim", async () => {
+    updateOrderMock.mockRejectedValue(
+      new Error('Invalid order status: teleported')
+    );
+    const result = await saveOrder(SESSION_ID, { status: 'teleported' });
+    expect(result).toEqual({
+      ok: false,
+      error: 'Invalid order status: teleported',
+    });
+  });
+
+  it('surfaces a non-Error write failure as a named fallback', async () => {
+    updateOrderMock.mockRejectedValue('store gone');
+    const result = await saveOrder(SESSION_ID, { status: 'processing' });
+    expect(result).toEqual({ ok: false, error: 'Unknown write error' });
+  });
+
+  it('passes only the operator fields through — the happy-path merge', async () => {
+    // A stray field on the transport never reaches the document —
+    // the action destructures exactly `status` and `trackingId`.
+    const fields = {
+      status: 'shipped',
+      trackingId: 'TRK-SYNTHETIC-001',
+      extra: 'dropped',
+    } as unknown as OrderUpdate;
+    const result = await saveOrder(SESSION_ID, fields);
+    expect(result).toEqual({ ok: true });
+    expect(updateOrderMock).toHaveBeenCalledWith(FAKE_STORE, SESSION_ID, {
+      status: 'shipped',
+      trackingId: 'TRK-SYNTHETIC-001',
+    });
   });
 });

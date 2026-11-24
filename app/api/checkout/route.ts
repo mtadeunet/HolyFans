@@ -289,13 +289,14 @@ export async function POST(request: NextRequest) {
      */
     metadata: { locale: body.locale },
     /**
-     * Implements ADR 00-004: Commerce and Checkout - "all payment
-     * notifications are PSP-native — the PSP confirms the order and
-     * delivers the receipt to the customer, and notifies the operator of
-     * new orders". `customer_creation: 'always'` upgrades every
-     * payment-mode Session from a guest checkout to a persisted Stripe
-     * Customer carrying the email collected on the hosted page, so the
-     * PSP-native receipt has a deterministic recipient — Stripe's
+     * Implements ADR 00-004: Commerce and Checkout - "the PSP confirms
+     * the order and delivers the receipt to the customer — the payment
+     * record stays PSP-native; the Order Ledger the receiver persists
+     * (ADR 00-015) is the Storefront's fulfillment/audit copy, never a
+     * second system of record". `customer_creation: 'always'` upgrades
+     * every payment-mode Session from a guest checkout to a persisted
+     * Stripe Customer carrying the email collected on the hosted page,
+     * so the PSP-native receipt has a deterministic recipient — Stripe's
      * automatic-receipt path falls back to the Customer's email when no
      * `receipt_email` is set — for immediate methods and for
      * delayed-confirmation methods (e.g. Multibanco) whose receipt is

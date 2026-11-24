@@ -1,4 +1,4 @@
-# ADR 00-015: Transactional Notifications — PSP-Event Order Emails and the Restock Send
+# ADR 00-015: Transactional Notifications — PSP-Event Order Emails, the Order Ledger, and the Restock Send
 
 ## Status
 
@@ -39,6 +39,17 @@ small run arriving — so the send should be an operator action,
 not an automatic reaction to a flag that flips for other reasons
 too.
 
+A third need lands on the same receiver: the owner requires a
+persisted order record ("we need to persist that"). Without one,
+the order's only Storefront-side traces are transient — the
+Operator Order Alert email and the send-dedupe record — while the
+durable record lives only in the PSP's dashboard. The receiver
+already retrieves the full Checkout Session to compose its
+emails; persisting that retrieval gives the Storefront its own
+order history — the detail manual Fulfillment ships against — at
+no new integration cost, and makes the record survive
+email-delivery failure.
+
 All sends sit inside established boundaries: the delivery channel
 is outbound-only per ADR 00-013; personal-data handling follows the
 ADR 00-008 consent posture — the Stock Notification List's entries
@@ -46,14 +57,20 @@ are used only for the purpose consented to, and retention ends when
 the notification is sent or the operator purges; the webhook
 receiver is a new enumerated Route Handler, which requires amending
 ADR 00-002's boundary and ADR 00-004's no-webhook ruling — both are
-amended by this decision.
+amended by this decision. The persisted Order Ledger likewise
+widens ADR 00-008's personal-data posture — customer order data
+retained under contract-performance rather than per-feature
+consent — and ADR 00-008 is amended by this decision.
 
 ## Decision
 
 Two transactional notification mechanisms ship on the delivery
-channel of ADR 00-013: a **PSP event receiver** that sends the
-order-lifecycle emails, and an **operator-triggered Restock
-Notification send** in the Admin Console.
+channel of ADR 00-013: a **PSP event receiver** that persists the
+Order Ledger and sends the order-lifecycle emails, and an
+**operator-triggered Restock
+Notification send** in the Admin Console — the console also gaining
+an **Orders section** that reads the ledger and edits its operator
+fields.
 
 - **PSP Event Receiver.** One new enumerated Route Handler joins
   the dynamic surface of ADR 00-002 on the Node runtime: a webhook
@@ -69,6 +86,10 @@ Notification send** in the Admin Console.
     has settled: it sends the customer Thank-You Email and, if the
     settled session was not already alerted, the Operator Order
     Alert.
+  Each accepted event retrieves the Checkout Session from the PSP;
+  the retrieval feeds both the Order Ledger write below —
+  performed before any send, so the record survives a send
+  failure — and the order emails themselves.
   Sends are deduplicated against the managed store — a
   session-keyed record marks each send kind so the PSP's retries
   can never double-send; the record's retention is bounded well
@@ -89,6 +110,46 @@ Notification send** in the Admin Console.
   state — the detail manual Fulfillment needs in one place. It
   supersedes the PSP's native operator alert, which the operator
   disables to avoid duplicate notifications.
+- **Order Ledger.** Every retrieved Checkout Session is persisted
+  to the managed store: one `order:<sessionId>` document carrying
+  the fulfillment-and-audit detail in two field namespaces — the
+  PSP-sourced fields each accepted event rewrites (the session id
+  and creation
+  time, the payment status, the currency and total amount in
+  cents, the session Locale, the customer's name and email, the
+  customer phone when the PSP collected it (carriers require a
+  recipient phone for fulfillment labels), the shipping name,
+  address, and chosen option, and the line items
+  with their names, quantities, and unit amounts) and the
+  operator fields the event write preserves untouched, so a
+  settlement event can never clobber fulfillment state (the
+  Order Status — `pending`, `processing`, `shipped`, or
+  `complete`, defaulting to `pending` — and the `trackingId`, a
+  free-text carrier tracking reference) — plus a
+  companion `orders` sorted set maintained newest-first as the
+  index of recorded orders, session ids scored by session
+  creation time. The documents carry no TTL: retention is
+  indefinite and operator-managed. Index membership is written
+  unconditionally; the sorted set's member uniqueness makes
+  enumeration idempotent across PSP redeliveries and crashes, so
+  a delayed settlement
+  (`checkout.session.async_payment_succeeded`) updates the stored
+  payment status without duplicating the index entry — and a
+  record once settled (`paid`) never regresses on a later-arriving
+  event. The Admin Console's Orders section is the ledger's
+  reader and editor (ADR 00-002): it enumerates the index
+  newest-first, expands each order's detail, and saves Order
+  Status and `trackingId` edits back to the document through a
+  server action; the Order Status is operator-facing only —
+  it renders on no customer-facing surface and its change sends
+  no notification. The
+  customer contact detail — email, phone, and shipping address —
+  is retained intentionally: it is the detail manual Fulfillment
+  ships against — under the
+  transactional-data posture of ADR 00-008 as amended by this
+  decision: the PSP remains the payment system of record and the
+  ledger is the fulfillment/audit copy, never a second system of
+  record.
 - **Capture Acknowledgment.** The stock-notification Route Handler's
   success path sends the visitor a localized acknowledgment — the
   product and Variant identified, the promise that the Restock
@@ -115,9 +176,10 @@ Notification send** in the Admin Console.
   store before reporting success; a repeated event for an already
   recorded kind is acknowledged without re-sending. When the
   managed store is unconfigured the endpoint still verifies
-  signatures and acknowledges events without sending — degrading
-  rather than failing the PSP's delivery (which would otherwise
-  retry forever against a broken endpoint).
+  signatures and acknowledges events without persisting or
+  sending — degrading rather than failing the PSP's delivery
+  (which would otherwise retry forever against a broken
+  endpoint).
 - **Localization.** The Thank-You Email renders in the Checkout
   Session's Locale; the Capture Acknowledgment renders in the
   submission's Locale; the Restock Notification renders per consent
@@ -139,6 +201,20 @@ Notification send** in the Admin Console.
 - The webhook is the architecturally correct signal: one endpoint
   covers every payment method's lifecycle — no polling, no missed
   async settlement, no render-time side effects.
+- The Storefront gains its first durable order history: the
+  record lives in its own managed store — indexed newest-first by
+  the `orders` sorted set, whose member uniqueness makes the
+  index idempotent across redeliveries — instead of only in an
+  inbox and the PSP's
+  dashboard; Fulfillment reads a ledger, not an email thread.
+- The two-namespace document keeps operator state safe: the Order
+  Status and `trackingId` the Admin Console's Orders section edits
+  are preserved across every later event rewrite — fulfillment
+  state and payment state evolve on independent clocks and neither
+  can clobber the other.
+- The ledger write runs before the sends, so the order record
+  survives email-delivery failure — the email is the
+  notification, the store document is the record.
 - Signature verification gives the receiver stronger auth than the
   visitor-facing endpoints' rate limits — only the PSP can trigger
   a send.
@@ -171,6 +247,25 @@ Notification send** in the Admin Console.
 - The order emails carry real customer data (name, address) through
   the provider — acceptable within the transactional posture but a
   wider personal-data surface than the store has had.
+- Customer PII now persists in the managed store indefinitely:
+  names, emails, and shipping addresses under operator-managed
+  retention — a wider and durable personal-data surface than the
+  consent-bounded Stock Notification List. GDPR access,
+  rectification, and erasure handling become an operator duty
+  exercised against the ledger and the PSP record alike; a store
+  compromise now touches real customer data.
+- The ledger is a copy, not a system of record: events missed past
+  the PSP's retry horizon — or received while the store was
+  unconfigured and acknowledged without work — leave gaps the
+  ledger cannot self-heal; reconciliation against the PSP
+  dashboard stays an operator duty.
+- No TTL means the keyspace grows forever; at expected order
+  volume the growth is trivial, but pruning is an operator
+  decision, never automatic.
+- The Order Status is invisible to the customer by design — no
+  email fires on its change and no customer-facing surface renders
+  it; a "where is my order" question stays a manual answer until a
+  future decision adds a status surface or send.
 - The Operator Order Alert duplicates part of the PSP's native
   notification by design; the operator must actually disable the
   native alert or live with two emails per order.
@@ -193,6 +288,16 @@ Notification send** in the Admin Console.
   Rejected: a cron adds latency and a second runtime dependency to
   reconstruct a signal the PSP pushes for free; worse latency AND
   worse architecture.
+- **Email-only order record (no persisted ledger)** — Rejected by
+  owner decision ("we need to persist that"): an inbox is not an
+  order history — emails are transient, unqueryable at volume,
+  and lost to mailbox mishap; the receiver already retrieves the
+  full session, so persistence costs one write against a store
+  already provisioned.
+- **A dedicated order database or third-party order store** —
+  Rejected: a second store adds a platform, credentials, and an
+  operations surface for a ledger the managed store absorbs
+  trivially at expected order volume.
 - **Automatic restock send on Stock Flag or Availability change**
   — Rejected: flags flip for presentation reasons too; an email to
   a captured list is a real-world promise that must be a deliberate

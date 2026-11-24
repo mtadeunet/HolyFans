@@ -9,7 +9,7 @@ Proposed
 ADR 00-001 (Application Framework — Next.js)
 ADR 00-002 (Rendering and Hosting Model)
 ADR 00-006 (Media and Asset Pipeline)
-ADR 00-009 (WhatsApp Deep-Link Channels)
+ADR 00-009 (WhatsApp Deep-Link Channels — withdrawn)
 ADR 00-010 (Pre-order and Stock Notification)
 ADR 00-011 (Page Model and Product Routes)
 ADR 00-015 (Transactional Notifications)
@@ -67,7 +67,7 @@ PSP Hosted Checkout**:
     trusts request-supplied headers and never enters client bundles,
     which emit only the canonical URL on the Store Domain — deliberately
     deployment-unaware so every client-visible and shared link stays
-    canonical (ADR 00-009);
+    canonical;
   - creates Sessions idempotently — retries never produce duplicate
     Checkout Sessions;
   - refuses checkout on any Cart/Product Data divergence, surfacing a
@@ -84,14 +84,16 @@ PSP Hosted Checkout**:
   processing fees.
 - **Order receipt and Fulfillment:** the PSP confirms the order and
   delivers the receipt to the customer — the payment record stays
-  PSP-native. Branded post-payment communication is NOT PSP-native:
+  PSP-native; the Order Ledger the receiver persists (ADR 00-015)
+  is the Storefront's fulfillment/audit copy, never a second system
+  of record. Branded post-payment communication is NOT PSP-native:
   the customer Thank-You Email and the Operator Order Alert are sent
   by the Storefront's PSP event receiver (ADR 00-015), an enumerated
   signature-verified webhook endpoint admitted to the dynamic
   surface of ADR 00-002 and covering delayed-confirmation Multibanco
   settlement. The operator performs Fulfillment manually at the
-  expected volumes, reading the Operator Order Alert and the PSP's
-  own reporting surfaces.
+  expected volumes, reading the Operator Order Alert, the Order
+  Ledger, and the PSP's own reporting surfaces.
 - **Availability:** sold-out state is expressed through Availability Flags in
   Product Data (small handmade runs); no automated stock counters at launch.
   A non-purchasable item is never hidden from the purchase surface: it

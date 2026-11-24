@@ -7,8 +7,15 @@ import {
   thankYouEmail,
   type OrderAlertLine,
 } from '@/lib/email-templates';
-import { defaultLocale, locales, type Locale } from '@/lib/i18n';
 import { getManagedStore } from '@/lib/managed-store';
+import {
+  customerEmailOf,
+  orderItemsOf,
+  persistOrder,
+  sessionLocale,
+  shippingAddressOf,
+  shippingOptionOf,
+} from '@/lib/orders-server';
 import { getSiteConfig } from '@/lib/site-config-server';
 import { getStripeClient } from '@/lib/stripe';
 
@@ -32,11 +39,10 @@ const MAX_BODY_BYTES = 256 * 1024;
 
 /**
  * Implements ADR 00-015: Transactional Notifications — "Sends are
- * deduplicated against the managed store — an event id / session-keyed
- * record marks each send kind so the PSP's retries can never
- * double-send." Each send kind gets a `SET ... NX` marker per Checkout
- * Session; the TTL bounds the keyspace (the PSP's retry window is far
- * shorter).
+ * deduplicated against the managed store — a session-keyed record
+ * marks each send kind so the PSP's retries can never double-send".
+ * Each send kind gets a `SET ... NX` marker per Checkout Session; the
+ * TTL bounds the keyspace (the PSP's retry window is far shorter).
  */
 const DEDUPE_TTL_SECONDS = 7 * 24 * 60 * 60;
 
@@ -120,106 +126,6 @@ async function sendOnce(
   return 'sent';
 }
 
-/** The shipping block on either API shape (see `shippingAddress`). */
-interface ShippingDetailsLike {
-  name?: string | null;
-  address?: Stripe.Address | null;
-}
-
-/**
- * Resolve the session's shipping details across API versions: newer
- * payloads carry them at `collected_information.shipping_details`;
- * legacy payloads at `shipping_details` — read defensively since the
- * pinned SDK type drops the legacy field.
- *
- * @param session - The retrieved Checkout Session.
- * @returns The shipping details block, or `null`.
- */
-function shippingDetailsOf(
-  session: Stripe.Checkout.Session
-): ShippingDetailsLike | null {
-  const collected = session.collected_information?.shipping_details;
-  if (collected) {
-    return collected;
-  }
-  return (
-    (session as { shipping_details?: ShippingDetailsLike | null })
-      .shipping_details ?? null
-  );
-}
-
-/**
- * Render the shipping address as one operator-readable line for the
- * Order Alert (`Envio: <line>` in the template).
- *
- * @param session - The retrieved Checkout Session.
- * @returns The formatted `name, line1, line2, postal city, state,
- *   country` string, or `undefined` when nothing was collected.
- */
-function shippingAddressOf(
-  session: Stripe.Checkout.Session
-): string | undefined {
-  const details = shippingDetailsOf(session);
-  if (!details) {
-    return undefined;
-  }
-  const address = details.address;
-  const locality = [address?.postal_code, address?.city]
-    .filter((part): part is string => Boolean(part))
-    .join(' ');
-  const parts = [
-    details.name,
-    address?.line1,
-    address?.line2,
-    locality || undefined,
-    address?.state,
-    address?.country,
-  ].filter((part): part is string => Boolean(part));
-  return parts.length > 0 ? parts.join(', ') : undefined;
-}
-
-/**
- * Resolve the chosen shipping option's display name for the Order
- * Alert: the expanded `shipping_cost.shipping_rate` object when the
- * expand resolved, else the rate id as a last resort.
- *
- * @param session - The retrieved Checkout Session.
- * @returns The display name or rate id, or `undefined`.
- */
-function shippingOptionOf(
-  session: Stripe.Checkout.Session
-): string | undefined {
-  const rate = session.shipping_cost?.shipping_rate;
-  if (rate && typeof rate === 'object') {
-    return rate.display_name ?? undefined;
-  }
-  return typeof rate === 'string' ? rate : undefined;
-}
-
-/**
- * Implements ADR 00-015: Transactional Notifications — "The Thank-You
- * Email renders in the Checkout Session's Locale."
- *
- * Resolve the customer-facing Locale: the `metadata.locale` recorded
- * at Session creation (the checkout Route Handler sets it, ADR 00-004)
- * when it is a supported Locale; else the hosted-page `session.locale`
- * when supported; else the Primary Locale.
- *
- * @param session - The retrieved Checkout Session.
- * @returns A supported `Locale`.
- */
-function sessionLocale(session: Stripe.Checkout.Session): Locale {
-  const meta = session.metadata?.locale;
-  if (meta && (locales as readonly string[]).includes(meta)) {
-    return meta as Locale;
-  }
-  const hosted = session.locale;
-  if (hosted && (locales as readonly string[]).includes(hosted)) {
-    return hosted as Locale;
-  }
-  return defaultLocale;
-}
-
 /**
  * Implements ADR 00-015: Transactional Notifications — the **PSP
  * Event Receiver**: "It verifies each request's signature against
@@ -234,17 +140,22 @@ function sessionLocale(session: Stripe.Checkout.Session): Locale {
  * when the dedupe marker is unclaimed, the Order Alert. Every other
  * event type is acknowledged without work. A verified signature stands
  * in for the rate limit visitor-facing endpoints carry — "the
- * signature IS the auth".
+ * signature IS the auth". Each accepted event also persists the
+ * session-keyed Order Ledger record (`lib/orders-server.ts`) —
+ * "the Order Ledger write ... performed before any send, so the
+ * record survives a send failure" (ADR 00-015).
  *
  * Degrade posture: "When the managed store is unconfigured the
  * endpoint still verifies signatures and acknowledges events without
- * sending — degrading rather than failing the PSP's delivery." The
- * same holds for an unconfigured delivery channel.
+ * persisting or sending — degrading rather than failing the PSP's
+ * delivery." The same holds for an unconfigured delivery channel — the
+ * Order Ledger write still lands, the sends are skipped.
  *
  * Error contract: `503` — PSP client or webhook secret unconfigured
  * (fail-closed); `400` — missing/invalid signature or oversized body;
- * `502` — session retrieve or a claimed send failed (the PSP retries;
- * dedupe markers keep retries single-send).
+ * `502` — session retrieve, Order Ledger write, or a claimed send
+ * failed (the PSP retries; the Order Ledger write and dedupe markers
+ * keep retries idempotent).
  *
  * @param request - The POST request carrying the signed event.
  * @returns `{ok: true}` on acknowledgment.
@@ -300,15 +211,14 @@ export async function POST(request: NextRequest) {
 
   const eventSession = event.data.object as Stripe.Checkout.Session;
 
-  // Degrade, don't fail (ADR 00-015): with no dedupe store or no
-  // delivery channel, acknowledge the event without sending — a 5xx
-  // would put the PSP into an endless retry loop for a condition that
-  // cannot self-heal.
+  // Degrade, don't fail (ADR 00-015): with no managed store there is
+  // nowhere to persist or dedupe — acknowledge the event without
+  // persisting or sending; a 5xx would put the PSP into an endless
+  // retry loop for a condition that cannot self-heal.
   const store = getManagedStore();
-  const emailConfig = getEmailConfig();
-  if (!store || !emailConfig) {
+  if (!store) {
     console.warn(
-      '[webhooks/stripe] managed store or email channel unconfigured — event acknowledged without sends'
+      '[webhooks/stripe] managed store unconfigured — event acknowledged without persisting or sends'
     );
     return NextResponse.json({ ok: true });
   }
@@ -333,6 +243,34 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Implements ADR 00-015 (the Order Ledger): the write is
+  // "performed before any send, so the record survives a send
+  // failure". A failed write answers 502 — the write is idempotent,
+  // so the PSP's retry rewrites it safely.
+  try {
+    await persistOrder(store, session, event.type);
+  } catch (error) {
+    console.error(
+      '[webhooks/stripe] order ledger persist failed:',
+      error
+    );
+    return NextResponse.json(
+      { error: 'webhook_unavailable' },
+      { status: 502 }
+    );
+  }
+
+  // The order is on the Order Ledger now; without a delivery channel
+  // the sends are skipped but the record stands (same degrade
+  // posture).
+  const emailConfig = getEmailConfig();
+  if (!emailConfig) {
+    console.warn(
+      '[webhooks/stripe] email channel unconfigured — order persisted, event acknowledged without sends'
+    );
+    return NextResponse.json({ ok: true });
+  }
+
   const paid = session.payment_status === 'paid';
   // Thank-You only on settled payment: a paid `completed`, or the
   // delayed-confirmation settlement event (ADR 00-015). A pending
@@ -345,8 +283,7 @@ export async function POST(request: NextRequest) {
 
   try {
     if (wantThankYou) {
-      const recipient =
-        session.customer_details?.email ?? session.customer_email ?? null;
+      const recipient = customerEmailOf(session) ?? null;
       if (recipient) {
         const locale = sessionLocale(session);
         const customerName = session.customer_details?.name ?? undefined;
@@ -382,17 +319,10 @@ export async function POST(request: NextRequest) {
       // cannot exist, so retries would fail forever).
     }
 
-    const lines: OrderAlertLine[] = (session.line_items?.data ?? []).map(
-      (item) => ({
-        name: item.description ?? '—',
-        quantity: item.quantity ?? 0,
-        unitAmountCents:
-          item.price?.unit_amount ??
-          (item.quantity
-            ? Math.round(item.amount_total / item.quantity)
-            : item.amount_total),
-      })
-    );
+    // The alert's lines and the Order Ledger's items share one
+    // resolution
+    // (`orderItemsOf` in lib/orders-server.ts).
+    const lines: OrderAlertLine[] = orderItemsOf(session);
 
     outcomes.push(
       await sendOnce(store, session.id, 'order-alert', () =>
@@ -402,10 +332,7 @@ export async function POST(request: NextRequest) {
             sessionId: session.id,
             lines,
             totalCents: session.amount_total ?? 0,
-            customerEmail:
-              session.customer_details?.email ??
-              session.customer_email ??
-              undefined,
+            customerEmail: customerEmailOf(session),
             customerName: session.customer_details?.name ?? undefined,
             shippingAddress: shippingAddressOf(session),
             shippingOption: shippingOptionOf(session),

@@ -221,7 +221,7 @@ describe('normalizeProfiles — the sparse overlay documents', () => {
   });
 
   it.each([
-    ['a FEED_POSTS-style id without the pp- prefix', 'post-hero'],
+    ['a FEED_POSTS-style id without the pp- prefix', 'post-faq'],
     ['a well-formed pp- id of another profile', 'pp-model-two-1'],
     ['the bare pp- prefix', 'pp-'],
     ['a pp- id missing its basename', 'pp-model-one'],
@@ -502,7 +502,7 @@ describe('isProfilePostId', () => {
 
   it.each([
     ['empty string', ''],
-    ['a FEED_POSTS-style id', 'post-hero'],
+    ['a FEED_POSTS-style id', 'post-faq'],
     ['a non-pp- slug', 'model-one'],
     ['the prefix without the hyphen', 'ppmodel-one'],
     ['a pp- lookalike without the prefix at position 0', 'app-model-one'],
@@ -748,7 +748,7 @@ describe('findProfilePost', () => {
     );
   });
 
-  it.each([['pp-model-nine-9'], [''], ['post-hero'], ['pp-']])(
+  it.each([['pp-model-nine-9'], [''], ['post-faq'], ['pp-']])(
     'returns null for unknown or malformed id %s',
     (postId) => {
       expect(findProfilePost(profiles, postId)).toBeNull();
@@ -768,12 +768,12 @@ describe('baseLikeCountsFor', () => {
     const posts = [
       { id: 'pp-model-one-1', likes: 3 },
       { id: 'pp-model-two-1', likes: 7 },
-      { id: 'post-hero', likes: 10 },
+      { id: 'post-faq', likes: 10 },
     ];
     expect(baseLikeCountsFor(posts)).toEqual({
       'pp-model-one-1': 3,
       'pp-model-two-1': 7,
-      'post-hero': 10,
+      'post-faq': 10,
     });
   });
 
@@ -808,7 +808,7 @@ describe('parseLikeToggleBody — pp- post ids (ADR 03-004)', () => {
   });
 
   it.each([
-    ['post-hero-nine'],
+    ['post-faq-nine'],
     ['pp-'],
     ['pp-Model'],
     ['pp--one'],

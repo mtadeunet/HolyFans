@@ -1,7 +1,6 @@
 {
   "common": {
     "brand": "HolyFans",
-    "close": "Close",
     "toggle_language": "Toggle language"
   },
   "navigation": {
@@ -11,9 +10,6 @@
     "cart": "Purchase",
     "logo_aria": "HolyFans home",
     "toggle_menu": "Toggle menu"
-  },
-  "hero": {
-    "learn_more": "Learn More"
   },
   "product": {
     "name": "Nossa Senhora da Rosa",
@@ -161,32 +157,6 @@
       "tracking": "Order Tracking"
     }
   },
-  "modal": {
-    "title": "Premium Features",
-    "premium_materials": {
-      "title": "Premium Materials",
-      "description": "We use only the finest cotton blends and premium fabrics that ensure comfort, durability, and a luxurious feel against your skin."
-    },
-    "artistic_design": {
-      "title": "Artistic Design",
-      "description": "Our 'Nossa Senhora da Rosa' design is created by talented artists who blend traditional symbolism with contemporary aesthetics."
-    },
-    "embroidery": {
-      "title": "Hand Embroidery",
-      "description": "Selected elements are hand-embroidered with precision and care, adding texture and depth to the artistic design."
-    },
-    "metal_details": {
-      "title": "Metal Details",
-      "description": "Premium metal accents and embellishments are carefully integrated to enhance the piece's elegance and durability."
-    }
-  },
-  "whatsapp": {
-    "aria_label": "Chat with us on WhatsApp",
-    "tooltip": "Questions? Chat with us",
-    "prefilled_message": "Hi! I have a question about HolyFans.",
-    "share_label": "Share via WhatsApp",
-    "share_text": "Check out HolyFans — premium Christian clothing:"
-  },
   "feed": {
     "nav": {
       "home": "Home",
@@ -207,33 +177,11 @@
       "like_unavailable": "Likes unavailable"
     },
     "posts": {
-      "post-hero": {
-        "caption": "Exceptional quality, profound meaning. Wear your faith with elegance — our premium t-shirt featuring the Nossa Senhora da Rosa design.",
-        "alt": "Nossa Senhora da Rosa"
-      },
-      "post-product-1": {
-        "caption": "Premium cotton, high-quality printing, and hand-finished details — a piece made to last.",
-        "alt": "Nossa Senhora da Rosa — detail view"
-      },
-      "post-product-2": {
-        "caption": "Embroidered accents and metal details bring the design to life.",
-        "alt": "Nossa Senhora da Rosa — embroidery detail"
-      },
-      "post-product-3": {
-        "caption": "A limited edition production run — when it's gone, it's gone.",
-        "alt": "Nossa Senhora da Rosa — worn look"
-      },
-      "post-craft": {
-        "caption": "Every piece is meticulously crafted — from the finest materials to the final quality check."
-      },
-      "post-social-proof": {
-        "caption": "Join thousands of customers who have discovered the perfect blend of tradition and innovation."
+      "post-closing": {
+        "caption": "Limited edition — launch offer €90 instead of €120. Don't miss the opportunity to own this exclusive piece."
       },
       "post-faq": {
         "caption": "Questions about sizing, shipping, or care? Find quick answers below."
-      },
-      "post-closing": {
-        "caption": "Limited edition — launch offer €90 instead of €120. Don't miss the opportunity to own this exclusive piece."
       }
     },
     "faq": {

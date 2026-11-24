@@ -49,17 +49,17 @@ describe('baseLikeCounts', () => {
 
 describe('likeKey', () => {
   it('builds the per-post dedup-set key', () => {
-    expect(likeKey('post-hero')).toBe('likes:post-hero');
+    expect(likeKey('post-faq')).toBe('likes:post-faq');
   });
 });
 
 describe('likeLastKey', () => {
   it('builds the per-post last-like record key', () => {
-    expect(likeLastKey('post-hero')).toBe('likes:last:post-hero');
+    expect(likeLastKey('post-faq')).toBe('likes:last:post-faq');
   });
 
   it('names a keyspace distinct from the dedup-set key for the same post', () => {
-    expect(likeLastKey('post-hero')).not.toBe(likeKey('post-hero'));
+    expect(likeLastKey('post-faq')).not.toBe(likeKey('post-faq'));
   });
 });
 
@@ -83,7 +83,7 @@ describe('basePostAggregates', () => {
 
 describe('parseLikeToggleBody', () => {
   const valid = {
-    postId: 'post-hero',
+    postId: 'post-faq',
     token: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
     liked: true,
   };
@@ -98,12 +98,12 @@ describe('parseLikeToggleBody', () => {
 
   it('rejects non-object input', () => {
     expect(parseLikeToggleBody(null)).toBeNull();
-    expect(parseLikeToggleBody('post-hero')).toBeNull();
+    expect(parseLikeToggleBody('post-faq')).toBeNull();
     expect(parseLikeToggleBody(42)).toBeNull();
     expect(parseLikeToggleBody(undefined)).toBeNull();
   });
 
-  it.each([['not-a-post'], [''], ['POST-HERO'], ['post-hero; DROP']])(
+  it.each([['not-a-post'], [''], ['POST-FAQ'], ['post-faq; DROP']])(
     'rejects postId %s — only real FEED_POSTS ids may name store keys',
     (postId) => {
       expect(parseLikeToggleBody({ ...valid, postId })).toBeNull();

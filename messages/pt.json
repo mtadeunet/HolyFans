@@ -1,7 +1,6 @@
 {
   "common": {
     "brand": "HolyFans",
-    "close": "Fechar",
     "toggle_language": "Mudar de idioma"
   },
   "navigation": {
@@ -11,9 +10,6 @@
     "cart": "Compra",
     "logo_aria": "Página inicial da HolyFans",
     "toggle_menu": "Alternar menu"
-  },
-  "hero": {
-    "learn_more": "Saiba mais"
   },
   "product": {
     "name": "Nossa Senhora da Rosa",
@@ -161,32 +157,6 @@
       "tracking": "Rastreio de Encomendas"
     }
   },
-  "modal": {
-    "title": "Características Premium",
-    "premium_materials": {
-      "title": "Materiais Premium",
-      "description": "Usamos apenas as melhores misturas de algodão e tecidos premium que garantem conforto, durabilidade e uma sensação luxuosa contra a sua pele."
-    },
-    "artistic_design": {
-      "title": "Design Artístico",
-      "description": "O nosso design 'Nossa Senhora da Rosa' é criado por artistas talentosos que combinam simbolismo tradicional com estética contemporânea."
-    },
-    "embroidery": {
-      "title": "Bordado à Mão",
-      "description": "Elementos selecionados são bordados à mão com precisão e cuidado, adicionando textura e profundidade ao design artístico."
-    },
-    "metal_details": {
-      "title": "Detalhes em Metal",
-      "description": "Acentos e emblemas em metal premium são cuidadosamente integrados para realçar a elegância e durabilidade da peça."
-    }
-  },
-  "whatsapp": {
-    "aria_label": "Fale connosco no WhatsApp",
-    "tooltip": "Dúvidas? Fale connosco",
-    "prefilled_message": "Olá! Tenho uma questão sobre a HolyFans.",
-    "share_label": "Partilhar via WhatsApp",
-    "share_text": "Descubra a HolyFans — roupa cristã premium:"
-  },
   "feed": {
     "nav": {
       "home": "Início",
@@ -207,33 +177,11 @@
       "like_unavailable": "Gostos indisponíveis"
     },
     "posts": {
-      "post-hero": {
-        "caption": "Qualidade excecional, significado profundo. Use a sua fé com elegância — a nossa t-shirt premium com o design da Nossa Senhora da Rosa.",
-        "alt": "Nossa Senhora da Rosa"
-      },
-      "post-product-1": {
-        "caption": "Algodão premium, impressão de alta qualidade e detalhes acabados à mão — uma peça feita para durar.",
-        "alt": "Nossa Senhora da Rosa — vista de detalhe"
-      },
-      "post-product-2": {
-        "caption": "Detalhes bordados e elementos em metal dão vida ao design.",
-        "alt": "Nossa Senhora da Rosa — detalhe do bordado"
-      },
-      "post-product-3": {
-        "caption": "Uma produção em edição limitada — quando esgotar, esgotou.",
-        "alt": "Nossa Senhora da Rosa — peça vestida"
-      },
-      "post-craft": {
-        "caption": "Cada peça é meticulosamente confecionada — dos melhores materiais à verificação final de qualidade."
-      },
-      "post-social-proof": {
-        "caption": "Junte-se a milhares de clientes que descobriram a combinação perfeita entre tradição e inovação."
+      "post-closing": {
+        "caption": "Edição limitada — oferta de lançamento de 90 € em vez de 120 €. Não perca a oportunidade de ter esta peça exclusiva."
       },
       "post-faq": {
         "caption": "Dúvidas sobre tamanhos, envio ou cuidados? Encontre respostas rápidas abaixo."
-      },
-      "post-closing": {
-        "caption": "Edição limitada — oferta de lançamento de 90 € em vez de 120 €. Não perca a oportunidade de ter esta peça exclusiva."
       }
     },
     "faq": {

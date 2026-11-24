@@ -7,7 +7,8 @@ import { Redis } from '@upstash/redis';
  * holding the per-post like records (ADR 03-002) and — in a
  * dedicated per-Variant keyspace never joined to the like records —
  * the Stock Notification List (ADR 00-010); the PSP event receiver's
- * per-session send-dedupe records (ADR 00-015); and, in a dedicated
+ * per-session send-dedupe records and Order Ledger documents plus
+ * their `orders` index (ADR 00-015); and, in a dedicated
  * profiles keyspace — one `profile:<slug>` JSON document per profile,
  * carrying only the sparse `{enabled, avatar, posts: Record}`
  * overlay — the Model Profile overlays (ADR 03-004), whose
@@ -21,7 +22,8 @@ import { Redis } from '@upstash/redis';
  * Console's likes, notifications, and Profiles views. Feature-
  * specific reads and writes live beside their domains
  * (`lib/likes-server.ts`, `lib/stock-notification-server.ts`,
- * `lib/profiles-server.ts`); only the client is shared.
+ * `lib/profiles-server.ts`, `lib/orders-server.ts`); only the client
+ * is shared.
  */
 
 /**

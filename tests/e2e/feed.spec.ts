@@ -46,15 +46,14 @@
  * `.site-config.local.json` may disable the `mobileStickyCta` chrome key
  * (the bottom band) or content sections. Assertions that depend on a
  * toggle report an explicit skip rather than assuming the unit renders.
- * The Inbound Contact Surface likewise fails closed when
- * `NEXT_PUBLIC_WHATSAPP_NUMBER` is unconfigured (ADR 00-009).
  */
 import { expect, test, type Page } from '@playwright/test';
 
 const ENABLED_PROJECT = 'purchase-enabled';
 
-/** Every Post Card carries the stable anchor `id="post-<id>"`. */
-const postCards = (page: Page) => page.locator('article[id^="post-"]');
+/** Every Post Card lives inside the feed column — authored
+ *  interstitials anchor `id="post-<id>"`, profile posts `id="pp-<id>"`. */
+const feedCards = (page: Page) => page.locator('#feed article');
 /** The left rail is the only `aside` holding a `#feed` brand anchor. */
 const navRail = (page: Page) =>
   page.locator('aside').filter({ has: page.locator('a[href="#feed"]') });
@@ -65,27 +64,44 @@ const suggestionsRail = (page: Page) =>
 const mobileTopBar = (page: Page) => page.locator('header.sticky');
 /** The consolidated bottom navigation band (fixed, viewport-bottom). */
 const bottomNavBand = (page: Page) => page.locator('nav.fixed.bottom-0');
-/** The floating Inbound Contact Surface (ADR 00-009), when configured. */
-const whatsAppBubble = (page: Page) => page.locator('a.fixed[href*="wa.me"]');
 
 test.describe('Feed Shell — Post Cards', () => {
   for (const locale of ['pt', 'en']) {
     // Implements ADR 03-002 - "a vertical scroll of Post Cards — the
-    // landing's primary content" in both Locales (ADR 00-005).
+    // landing's primary content" in both Locales (ADR 00-005): the body
+    // is the enabled profiles' visible posts (ADR 03-004), so the
+    // scroll only exists while profile posts publish — an unconfigured
+    // store renders none and the test reports a skip per convention.
     test(`/${locale} renders the Feed Surface with at least three Post Cards`, async ({
       page,
     }) => {
       await page.goto(`/${locale}`);
-      await expect(postCards(page).first()).toBeVisible();
-      expect(await postCards(page).count()).toBeGreaterThanOrEqual(3);
+      const count = await feedCards(page).count();
+      test.skip(
+        count === 0,
+        'no published profile posts — the feed body needs the managed store (ADR 03-004)'
+      );
+      await expect(feedCards(page).first()).toBeVisible();
+      expect(count).toBeGreaterThanOrEqual(3);
     });
   }
 
-  test('a Post Card with imagery carries the brand header, a non-link decorative handle, a Media Slot, and the Interaction Row', async ({
+  // The surviving limited-edition interstitial is `post-closing` — a
+  // text-only final-CTA card whose launch-offer caption carries the
+  // product decision, so it renders no Media Slot. It mounts only
+  // while its `finalCta` section toggle is on AND at least three
+  // published profile posts precede its slot in the insertion cycle.
+  // It repeats down a long scroll, so the first instance is the
+  // assertion target.
+  test('the limited-edition interstitial renders text-only with the brand header, a non-link decorative handle, and the Interaction Row', async ({
     page,
   }) => {
     await page.goto('/en');
-    const card = postCards(page).first();
+    const card = page.locator('article#post-closing').first();
+    test.skip(
+      (await card.count()) === 0,
+      'finalCta section toggle off or fewer than three published profile posts — the limited-edition interstitial is not rendered'
+    );
     await expect(card).toBeVisible();
 
     // Card header: brand name and the own-brand decorative handle as
@@ -95,9 +111,12 @@ test.describe('Feed Shell — Post Cards', () => {
     await expect(card.locator('header p').nth(1)).toHaveText(/^@/);
     expect(await card.locator('header a').count()).toBe(0);
 
-    // Media Slot (linked to checkout only when the purchase surface is
-    // enabled — the link itself is asserted in the enabled project).
-    await expect(card.locator('div.aspect-square').first()).toBeVisible();
+    // The launch-offer caption IS the unit's content — the card is
+    // text-only and renders no Media Slot at all (ADR 03-002's
+    // Imagery rule: no stand-in media for a content domain without
+    // an in-repo master).
+    await expect(card).toContainText('Limited edition');
+    expect(await card.locator('div.aspect-square').count()).toBe(0);
 
     // Interaction Row (ADR 03-002): a like toggle carrying
     // `aria-pressed` and a share control — the decorative comment and
@@ -112,17 +131,18 @@ test.describe('Feed Shell — Post Cards', () => {
   // domain has no in-repo master renders no Media Slot rather than
   // substituting stand-in imagery": the media region is absent from
   // the markup entirely, not collapsed or placeholder-filled.
-  // `post-craft` is image-less in the authored list; the card may be
-  // section-toggled off in Site Config, so an absent card is reported
-  // as a skip per this spec's convention.
+  // `post-faq` is the image-less surviving interstitial; it renders
+  // only while its section toggle is on and enough published profile
+  // posts reach its slot in the insertion cycle, so an absent card is
+  // reported as a skip per this spec's convention.
   test('an image-less Post Card renders no Media Slot markup', async ({
     page,
   }) => {
     await page.goto('/en');
-    const card = page.locator('article#post-craft');
+    const card = page.locator('article#post-faq').first();
     test.skip(
       (await card.count()) === 0,
-      'craftsmanship section toggle is off in Site Config — the image-less Post Card is intentionally not rendered'
+      'faq section toggle is off in Site Config or too few published profile posts — the FAQ interstitial is not rendered'
     );
     await expect(card).toBeVisible();
     expect(await card.locator('div.aspect-square').count()).toBe(0);
@@ -139,7 +159,9 @@ test.describe('Feed Shell — Post Cards', () => {
   // the toggle inert, keeps the authored base count on screen, and
   // surfaces the localized unavailable indicator. This is the path
   // unconfigured CI exercises; each test skips itself when a store is
-  // provisioned.
+  // provisioned. An unconfigured store also means no profile posts —
+  // and therefore no feed cards and no `/api/likes` GET at all — so
+  // an empty scroll is reported as a skip, not a timeout.
   for (const [locale, unavailableText] of [
     ['en', 'Likes unavailable'],
     ['pt', 'Gostos indisponíveis'],
@@ -147,9 +169,15 @@ test.describe('Feed Shell — Post Cards', () => {
     test(`/${locale} the Interaction Row degrades to the authored base count, a disabled like toggle, and a visible unavailable indicator when the like store is unconfigured`, async ({
       page,
     }) => {
-      const countsResponse = page.waitForResponse('**/api/likes');
+      const countsResponse = page
+        .waitForResponse('**/api/likes')
+        .catch(() => null);
       await page.goto(`/${locale}`);
-      const body = (await (await countsResponse).json()) as {
+      test.skip(
+        (await feedCards(page).count()) === 0,
+        'no published profile posts — no Post Cards mount, so no Interaction Row exists to degrade'
+      );
+      const body = ((await (await countsResponse)?.json()) ?? {}) as {
         live?: boolean;
       };
       test.skip(
@@ -157,7 +185,7 @@ test.describe('Feed Shell — Post Cards', () => {
         'like store configured — the degraded path does not apply'
       );
 
-      const card = postCards(page).first();
+      const card = feedCards(page).first();
       const likeButton = card.locator('button[aria-pressed]');
       const likeCount = card.locator('button[aria-pressed] + span');
       await expect(likeButton).toHaveAttribute('aria-pressed', 'false');
@@ -208,8 +236,15 @@ test.describe('Feed Shell — Post Cards', () => {
       });
     });
     await page.goto('/en');
+    // The counts GET is mocked live above, but the scroll still needs
+    // published profile posts for any card — and its Interaction Row —
+    // to exist.
+    test.skip(
+      (await feedCards(page).count()) === 0,
+      'no published profile posts — no Post Cards mount, so no Interaction Row exists to exercise'
+    );
 
-    const card = postCards(page).first();
+    const card = feedCards(page).first();
     const likeButton = card.locator('button[aria-pressed]');
     const likeCount = card.locator('button[aria-pressed] + span');
     await expect(likeButton).toBeEnabled();
@@ -246,9 +281,17 @@ test.describe('Feed Shell — Post Cards', () => {
   test('the Interaction Row like toggle persists the shared count when the like store is live', async ({
     page,
   }) => {
-    const countsResponse = page.waitForResponse('**/api/likes');
+    const countsResponse = page
+      .waitForResponse('**/api/likes')
+      .catch(() => null);
     await page.goto('/en');
-    const body = (await (await countsResponse).json()) as {
+    // No published profile posts → no cards → no counts GET at all;
+    // report the empty scroll as a skip instead of timing out.
+    test.skip(
+      (await feedCards(page).count()) === 0,
+      'no published profile posts — no Post Cards mount, so no Interaction Row exists to exercise'
+    );
+    const body = ((await (await countsResponse)?.json()) ?? {}) as {
       live?: boolean;
     };
     test.skip(
@@ -256,7 +299,7 @@ test.describe('Feed Shell — Post Cards', () => {
       'like store unconfigured — the live toggle path requires a provisioned store'
     );
 
-    const card = postCards(page).first();
+    const card = feedCards(page).first();
     const likeButton = card.locator('button[aria-pressed]');
     const likeCount = card.locator('button[aria-pressed] + span');
 
@@ -288,9 +331,14 @@ test.describe('Feed Shell — Post Cards', () => {
 
     // The liked state persists client-side and the shared count
     // server-side: a reload keeps the toggle pressed and the raised
-    // count.
+    // count. The feed body re-shuffles per request, so the toggled
+    // card is re-found by its stable post id — a repeating
+    // interstitial would still resolve to the same like-store key, so
+    // the first instance answers for it.
+    const cardId = await card.getAttribute('id');
+    expect(cardId).not.toBeNull();
     await page.reload();
-    const remountedCard = postCards(page).first();
+    const remountedCard = page.locator(`article[id="${cardId}"]`).first();
     await expect(remountedCard.locator('button[aria-pressed]')).toHaveAttribute(
       'aria-pressed',
       'true'
@@ -332,7 +380,10 @@ test.describe('Feed Shell — responsive collapse', () => {
     await page.goto('/en');
     await expect(navRail(page)).toBeVisible();
     await expect(suggestionsRail(page)).toBeVisible();
-    await expect(postCards(page).first()).toBeVisible();
+    // The Feed Surface column renders at every width — its card
+    // content depends on published profile posts, the column does
+    // not.
+    await expect(page.locator('#feed')).toBeVisible();
   });
 
   // Implements ADR 03-002 - "Wider viewports add the Nav Rail, first
@@ -349,7 +400,7 @@ test.describe('Feed Shell — responsive collapse', () => {
     // Mobile chrome is confined below `md` regardless of toggles.
     await expect(mobileTopBar(page)).toBeHidden();
     await expect(bottomNavBand(page)).toBeHidden();
-    await expect(postCards(page).first()).toBeVisible();
+    await expect(page.locator('#feed')).toBeVisible();
   });
 
   // Implements ADR 03-002 - on small viewports "a minimal top band
@@ -363,7 +414,7 @@ test.describe('Feed Shell — responsive collapse', () => {
     await expect(mobileTopBar(page)).toBeVisible();
     await expect(navRail(page)).toBeHidden();
     await expect(suggestionsRail(page)).toBeHidden();
-    await expect(postCards(page).first()).toBeVisible();
+    await expect(page.locator('#feed')).toBeVisible();
   });
 
   // Implements ADR 03-002 - on small viewports "a compact bottom
@@ -389,37 +440,6 @@ test.describe('Feed Shell — responsive collapse', () => {
     // Pinned to the viewport bottom edge.
     expect(box!.y + box!.height).toBeGreaterThanOrEqual(840);
   });
-
-  // Implements ADR 03-002 - "the Inbound Contact Surface floats above
-  // [the bottom band] and must never occlude navigation or purchase
-  // actions" (the ADR 00-009 presentation constraint). Both surfaces are
-  // configuration-dependent: the band follows `mobileStickyCta`, and the
-  // bubble fails closed without `NEXT_PUBLIC_WHATSAPP_NUMBER` — either
-  // absence is reported as an explicit skip.
-  test('the WhatsApp bubble never occludes the bottom navigation band', async ({
-    page,
-  }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/en');
-    const band = bottomNavBand(page);
-    const bubble = whatsAppBubble(page);
-    test.skip(
-      (await band.count()) === 0,
-      'mobileStickyCta chrome toggle is off in Site Config — no bottom band to occlude'
-    );
-    test.skip(
-      (await bubble.count()) === 0,
-      'NEXT_PUBLIC_WHATSAPP_NUMBER unconfigured — the Inbound Contact Surface fails closed (ADR 00-009)'
-    );
-    const bandBox = await band.boundingBox();
-    const bubbleBox = await bubble.boundingBox();
-    expect(bandBox).not.toBeNull();
-    expect(bubbleBox).not.toBeNull();
-    // The bubble's bottom edge must sit at or above the band's top edge.
-    expect(bubbleBox!.y + bubbleBox!.height).toBeLessThanOrEqual(
-      bandBox!.y + 1
-    );
-  });
 });
 
 test.describe('Feed Shell — purchase path (flag enabled)', () => {
@@ -437,14 +457,20 @@ test.describe('Feed Shell — purchase path (flag enabled)', () => {
       page,
     }) => {
       await page.goto(`/${locale}`);
+      // Every Media Slot converts — only profile posts carry imagery
+      // now that both surviving interstitials are text-only — so any
+      // card's media link serves. An empty scroll (no published
+      // profile posts) reports a skip.
+      test.skip(
+        (await feedCards(page).count()) === 0,
+        'no published profile posts — no Post Cards mount, so no Media Slot exists to navigate'
+      );
       // The Media Slot's own link — the one wrapping the aspect-square
       // slot — not the Post Card's stretched-link overlay (the first
       // `a[href$="/checkout"]` in DOM order), which sits under the
       // raised Media Slot and never receives the click.
       await page
-        .locator(
-          'article[id^="post-"] a[href$="/checkout"]:has(div.aspect-square)'
-        )
+        .locator('#feed article a[href$="/checkout"]:has(div.aspect-square)')
         .first()
         .click();
       await page.waitForURL(`**/${locale}/checkout`);
@@ -545,35 +571,5 @@ test.describe('Feed Shell — purchase path (flag enabled)', () => {
     expect(box).not.toBeNull();
     // Pinned to the viewport bottom edge.
     expect(box!.y + box!.height).toBeGreaterThanOrEqual(840);
-  });
-
-  // Implements ADR 03-002 - the Inbound Contact Surface "floats above
-  // [the bottom band] and must never occlude navigation or purchase
-  // actions" on the purchase route too (the ADR 00-009 presentation
-  // constraint). Same configuration-dependent skips as the landing
-  // variant of this check.
-  test('the WhatsApp bubble never occludes the bottom navigation band on the purchase route', async ({
-    page,
-  }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/en/checkout');
-    const band = bottomNavBand(page);
-    const bubble = whatsAppBubble(page);
-    test.skip(
-      (await band.count()) === 0,
-      'mobileStickyCta chrome toggle is off in Site Config — no bottom band to occlude'
-    );
-    test.skip(
-      (await bubble.count()) === 0,
-      'NEXT_PUBLIC_WHATSAPP_NUMBER unconfigured — the Inbound Contact Surface fails closed (ADR 00-009)'
-    );
-    const bandBox = await band.boundingBox();
-    const bubbleBox = await bubble.boundingBox();
-    expect(bandBox).not.toBeNull();
-    expect(bubbleBox).not.toBeNull();
-    // The bubble's bottom edge must sit at or above the band's top edge.
-    expect(bubbleBox!.y + bubbleBox!.height).toBeLessThanOrEqual(
-      bandBox!.y + 1
-    );
   });
 });

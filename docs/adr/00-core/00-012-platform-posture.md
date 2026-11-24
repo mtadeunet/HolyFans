@@ -9,7 +9,7 @@ Proposed
 ADR 00-003 (Permanent QR Redirect Route)
 ADR 00-006 (Media and Asset Pipeline)
 ADR 00-007 (Quality Tooling and CI)
-ADR 00-009 (WhatsApp Deep-Link Channels)
+ADR 00-009 (WhatsApp Deep-Link Channels — withdrawn)
 ADR 00-011 (Page Model and Product Routes)
 ADR 03-001 (Design System and Visual Identity)
 ADR 03-002 (Landing Page Composition)
@@ -26,11 +26,13 @@ predominantly on phones. The QR Redirect Route (ADR 00-003) is the entry point
 for all physical marketing traffic, and a printed QR code is scanned by a phone
 camera — so the Storefront's first impression on that channel lands on a small
 touchscreen. ADR 00-006 already optimizes media "especially on mobile
-connections in the primary market," and ADR 00-009's contact channels are
-mobile-native in the market they serve. At the same time, ADR 00-009 rejected
-a mechanism that silently drops desktop support — the corpus already treats
-desktop as a platform that must keep working, without ever saying so as a
-posture.
+connections in the primary market," and the WhatsApp contact channel
+the corpus once sanctioned (ADR 00-009, since withdrawn) was
+mobile-native in the market it served. At the same time, a channel
+mechanism that silently dropped desktop support — the platform-native
+share sheet, unsupported on desktop browsers — was already judged
+unacceptable: the corpus treated desktop as a platform that must keep
+working, without ever saying so as a posture.
 
 ADR 03-002's Feed Shell states the direction for its own contract: the
 composition "scales up from a single-column baseline" — a baseline it
@@ -61,10 +63,10 @@ carries.
 - **Desktop is fully supported.** Every route and the complete purchase
   and conversion path work entirely on desktop: the Landing Page feed, the
   Product Page with its Simplified Purchase Surface and Pre-order capture,
-  the Hosted Checkout handoff, the post-checkout pages, the Inbound
-  Contact Surface and Outbound Share Surface, and the auxiliary and legal
-  pages — aligned with ADR 00-009's decision that the share affordance
-  work uniformly on desktop and mobile. "Primary" governs baseline
+  the Hosted Checkout handoff, the post-checkout pages, the Contact Page,
+  the share affordances, and the auxiliary and legal pages — every
+  affordance working uniformly on desktop and mobile. "Primary" governs
+  baseline
   direction and where attention concentrates first; it never licenses a
   broken, partial, or second-class desktop experience.
 - **The Feed Shell reads as scaling up.** ADR 03-002's responsive-collapse
@@ -100,7 +102,7 @@ carries.
 - The declared posture aligns the architecture with the entry routes and
   usage reality already recorded — phone-scanned QR entry (ADR 00-003),
   mobile connections in the primary market (ADR 00-006), and the
-  mobile-dominant contact channels (ADR 00-009).
+  primary market's mobile-dominant messaging habit.
 - ADR 03-002's collapse gains a declared direction — a primary composition
   plus expansions rather than a full form minus pieces — which simplifies
   reasoning about what must exist at every width.
@@ -136,10 +138,11 @@ carries.
   first, and leaves each change to decide the question differently — the
   precise ambiguity this decision removes. The corpus already leans
   mobile; declaring it costs nothing and settles the default.
-- **Mobile-only — drop desktop support** — Rejected: ADR 00-009 rejected
-  the platform-native share sheet precisely because it would silently
-  remove the desktop affordance; a mobile-only posture commits that same
-  fault at store scale. It also forfeits desktop conversion and abandons
+- **Mobile-only — drop desktop support** — Rejected: the
+  platform-native share sheet was already judged unacceptable for a
+  contact channel precisely because it would silently remove the
+  desktop affordance; a mobile-only posture commits that same fault at
+  store scale. It also forfeits desktop conversion and abandons
   desktop-bearing surfaces that already exist (the Suggestions Rail);
   premium presentation on a full-size screen is part of the brand's
   value proposition.

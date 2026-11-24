@@ -35,9 +35,10 @@ Session's payment status on the post-checkout success page (ADR 00-004),
 shared like counters for the feed's Interaction Row (ADR 03-002),
 consented email capture for the purchase surface's Pre-order state
 (ADR 00-010), the Contact Form's relay to the Support Inbox
-(ADR 00-014), the PSP event receiver feeding the order-lifecycle
-emails (ADR 00-015), and the Admin Console's Restock Notification
-send (ADR 00-015).
+(ADR 00-014), the PSP event receiver feeding the Order Ledger and
+the order-lifecycle emails (ADR 00-015), and the Admin Console's
+Restock Notification send and its Orders section's Order Ledger
+reads and edits (ADR 00-015).
 Hosting must be inexpensive, low-
 operations, able to serve the QR Redirect Route indefinitely, and present in
 Europe for the primary market.
@@ -103,7 +104,15 @@ The Storefront runs a **hybrid model on the Vercel Hosting Platform**:
     the send-and-clear half of ADR 00-015; and the Profiles tab's
     read-and-write of the Model Profile records — the `saveProfile`
     action persisting one `profile:<slug>` document for an existing
-    profiles folder (ADR 03-004);
+    profiles folder (ADR 03-004); and the Orders section's
+    request-time read of the Order Ledger — the `orders` index and
+    each `order:<sessionId>` document rendered newest-first with
+    per-order expandable detail — plus the server action saving an
+    order's Order Status and `trackingId` back to its document, the
+    operator fields the PSP event receiver's rewrites preserve —
+    an unconfigured managed store rendering an explicit banner,
+    consistent with the console's other managed-store surfaces
+    (ADR 00-015);
   - the single checkout Route Handler on the **Node runtime** (required by
     the PSP SDK), which creates Checkout Sessions (ADR 00-004) and reads
     Site Config at request time for the free-shipping threshold it
@@ -151,8 +160,10 @@ The Storefront runs a **hybrid model on the Vercel Hosting Platform**:
   - the **PSP event receiver** on the Node runtime — the sole inbound
     channel the boundary admits beyond visitor-facing endpoints: a
     signature-verified webhook endpoint the PSP calls with order
-    lifecycle events, which sends the order emails of ADR 00-015
-    through the delivery channel and deduplicates sends against the
+    lifecycle events, which persists each retrieved Checkout
+    Session to the managed store's Order Ledger, sends the order
+    emails of ADR 00-015 through the delivery channel, and
+    deduplicates sends against the
     managed store. The verified signature is its hardening; it
     answers promptly and acknowledges undeliverable work rather than
     failing the PSP's retries.
@@ -165,14 +176,26 @@ The Storefront runs a **hybrid model on the Vercel Hosting Platform**:
   00-008) and — in a dedicated per-Variant keyspace never joined to
   the like records — the Stock Notification List of consented visitor
   emails (ADR 00-010); the PSP event receiver's per-session
-  send-dedupe records (ADR 00-015); and, in a dedicated profiles
+  send-dedupe records and its Order Ledger — one
+  `order:<sessionId>` JSON document per retrieved Checkout Session,
+  its PSP-sourced fields rewritten per event beside the
+  operator-managed Order Status and `trackingId` each rewrite
+  preserves, plus an `orders` sorted set — session ids scored by
+  session
+  creation time, member uniqueness making the index idempotent
+  across redeliveries — maintained newest-first as the order
+  index — no TTL, retention indefinite and operator-managed
+  (ADR 00-015); and, in a dedicated profiles
   keyspace — one
   `profile:<slug>` JSON document per existing profiles folder — the
   Model Profile operator overlays: sparse `{enabled, avatar, posts:
   Record<postId, override>}` documents, the post set itself being
-  filesystem-derived (ADR 03-004) —
-  the Storefront's first persisted personal data, held under the
-  per-feature consent posture of ADR 00-008. Profile enumeration
+  filesystem-derived (ADR 03-004) — the Stock Notification List
+  being the Storefront's first persisted personal data, held under
+  the per-feature consent posture of ADR 00-008, and the Order
+  Ledger's customer names, emails, and shipping addresses the
+  second, held as the transactional fulfillment/audit record under
+  ADR 00-008's amended posture (ADR 00-015). Profile enumeration
   itself is filesystem-based — request-time
   `readdir`s of `public/images/profiles/` and of each profile's own
   folder, with the caption-sidecar `.txt` reads, performed by the
@@ -183,8 +206,11 @@ The Storefront runs a **hybrid model on the Vercel Hosting Platform**:
   unavailable indicator — and the Admin Console surfaces the store's
   health — while the Pre-order
   capture answers a graceful unavailable state rather than failing,
-  and no Model Profiles exist: the landing feed renders authored
-  posts only and Profile Routes resolve not-found (ADR 03-004).
+  and no Model Profiles exist: the landing feed renders the authored
+  interstitials only and Profile Routes resolve not-found (ADR
+  03-004); the PSP event receiver acknowledges events without
+  persisting or sending rather than failing the PSP's retries
+  (ADR 00-015).
 - No other inbound request-time capability exists or may be added without a
   new ADR — beyond the single enumerated PSP event receiver, this
   boundary forecloses further webhook receivers, additional
@@ -247,8 +273,8 @@ The Storefront runs a **hybrid model on the Vercel Hosting Platform**:
   minimal operational surface.
 - One marketplace-provisioned store serves every small shared-state
   need — like dedup records, the Stock Notification List, the
-  send-dedupe records, and the Model Profile records — under a
-  single lazy, fail-closed posture.
+  send-dedupe records, the Order Ledger, and the Model Profile
+  records — under a single lazy, fail-closed posture.
 
 **Negative / trade-offs:**
 - Vendor coupling: Edge Config, the marketplace Redis store, Route Handler
@@ -262,9 +288,12 @@ The Storefront runs a **hybrid model on the Vercel Hosting Platform**:
   the degradation is surfaced — an inline indicator on the row and the
   store health in the Admin Console — rather than silent.
 - The managed store now holds personal data — the Stock Notification
-  List's consented emails — so its compromise or misconfiguration
-  touches real data, and the purpose-limitation, retention, and
-  deletion obligations of ADR 00-008 and ADR 00-010 apply to it.
+  List's consented emails and the Order Ledger's customer names,
+  emails, and shipping addresses — so its compromise or
+  misconfiguration touches real data; the purpose-limitation,
+  retention, and deletion obligations of ADR 00-008 and ADR 00-010
+  apply to the list, while the ledger's indefinite retention is
+  operator-managed under ADR 00-015.
 - The post-checkout session-status read is a live PSP dependency at page
   render time; mitigated by a degrade-to-generic fallback, it extends the
   dynamic surface beyond the Request-Time Middleware and Route Handlers

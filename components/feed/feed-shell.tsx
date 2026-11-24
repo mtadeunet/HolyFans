@@ -8,10 +8,9 @@ import SuggestionsRail from './suggestions-rail';
 
 interface FeedShellProps {
   /**
-   * Site Config chrome toggles: the retained `mobileStickyCta` key
-   * governs the mobile bottom navigation band and its page-bottom
-   * clearance. (`premiumFeaturesModal` is consumed inside `FeedPosts`,
-   * not by the shell.)
+   * Site Config chrome toggles: the `mobileStickyCta` key governs the
+   * mobile bottom navigation band and its page-bottom clearance — the
+   * only chrome key the shell itself consumes.
    */
   chrome: SiteConfig['chrome'];
   /**

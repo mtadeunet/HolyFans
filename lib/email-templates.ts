@@ -1,4 +1,5 @@
 import type { Locale } from '@/lib/i18n';
+import type { OrderItem } from '@/lib/orders-server';
 import { SITE_CONFIG } from '@/lib/constants';
 
 /**
@@ -852,11 +853,14 @@ export function thankYouEmail(
 /* ── Operator Order Alert (ADR 00-015) — operator-facing, Primary
    Locale. Carries the fulfillment picture. ── */
 
-export interface OrderAlertLine {
-  name: string;
-  quantity: number;
-  unitAmountCents: number;
-}
+/**
+ * One line of the Operator Order Alert — an alias of the Order
+ * Ledger's `OrderItem` (`lib/orders-server.ts`): the two are
+ * structurally identical, so the ledger stays the single source of
+ * truth for the purchased-line shape. Type-only import — erased at
+ * compile time, keeping this module client-importable.
+ */
+export type OrderAlertLine = OrderItem;
 
 export interface OrderAlertInput {
   sessionId: string;

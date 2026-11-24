@@ -9,6 +9,7 @@ import {
   type ProfilePost,
 } from '@/lib/profiles';
 import { saveProfile, type SaveResult } from './actions';
+import { fieldLabelClass, inputClass } from './styles';
 import type { StoreStatus } from './types';
 
 /**
@@ -26,10 +27,6 @@ import type { StoreStatus } from './types';
  * form. The store's health is surfaced in a banner with the same
  * posture as the Likes and Stock Notifications sections.
  */
-
-const inputClass =
-  'w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text-primary outline-none ring-primary/30 transition focus:border-primary focus:ring';
-const fieldLabelClass = 'mb-1 block text-xs font-medium text-text-secondary';
 
 /**
  * The editor's starting drafts: one per folder, seeded from the

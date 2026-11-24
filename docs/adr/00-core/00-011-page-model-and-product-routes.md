@@ -9,7 +9,7 @@ Proposed
 ADR 00-002 (Rendering and Hosting Model)
 ADR 00-004 (Commerce and Checkout)
 ADR 00-005 (Internationalization)
-ADR 00-009 (WhatsApp Deep-Link Channels)
+ADR 00-009 (WhatsApp Deep-Link Channels — withdrawn)
 ADR 00-010 (Pre-order and Stock Notification)
 ADR 00-014 (Contact Channel)
 ADR 03-002 (Landing Page Composition)
@@ -26,8 +26,7 @@ a one-product catalog the "product page" is the existing Simplified
 Purchase Surface itself — the owner names that surface the product
 page: it carries Variant selection, quantity, the VAT-inclusive
 price (a display-only pricing decision per ADR 00-004, not tax
-semantics), the purchase or Pre-order action (ADR 00-010), and the
-Outbound Share Surface (ADR 00-009).
+semantics), and the purchase or Pre-order action (ADR 00-010).
 
 "A product page for each product" also settles the multi-product
 future the small catalog will grow into: the conversion surface's
@@ -69,8 +68,8 @@ Product Data.
   surface defined by ADR 03-002 does not change semantically —
   Variant selection, quantity, the VAT-inclusive EUR price
   (display-only per ADR 00-004), the
-  purchase action or the Pre-order state, and the Outbound Share
-  Surface. The composition's conversion route is the Product Page
+  purchase action or the Pre-order state. The composition's conversion
+  route is the Product Page
   route: the surface's canonical host is per-product, and its
   contents are scoped to the product the page names.
 - **Product route convention.** Each Product Page is served at a
@@ -129,8 +128,7 @@ Product Data.
   construction instead of needing a route migration.
 - The model changes routing, not semantics: every existing surface
   rule — Availability Flags, Purchase Caps, the Pre-order state,
-  server-side re-validation, the Outbound Share Surface — carries
-  over verbatim.
+  server-side re-validation — carries over verbatim.
 - The enumerated dynamic surface is untouched: Product Pages are
   static output and the compatibility redirect is routing
   configuration — no new Route Handler and no new request-time

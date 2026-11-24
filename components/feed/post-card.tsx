@@ -56,24 +56,42 @@ interface PostCardProps {
    * `PURCHASE_SURFACE_ENABLED` is `'true'`.
    */
   purchaseSurfaceEnabled: boolean;
-  /** Optional caption-level extras (hero post's Learn More trigger, the
-   *  FAQ post's condensed FAQ Island). */
+  /**
+   * Whether this instance carries the post's anchor ids. A DOM `id` is
+   * unique per document, and an interstitial repeats down the scroll:
+   * the feed composer passes `false` for every instance after the first
+   * (`occurrence === 0`), and a non-anchorable card renders neither the
+   * article's `id={post.id}` nor the `anchorAlias` span — an id-less
+   * clone that leaves the nav anchor and share fragment resolving to
+   * the first instance. Defaults to `true` — single-instance posts are
+   * always anchorable.
+   */
+  anchorable?: boolean;
+  /** Optional caption-level extras (the FAQ interstitial's condensed
+   *  FAQ Island). */
   children?: ReactNode;
 }
 
 /**
  * Implements ADR 03-002: Landing Page Composition — Three-Column Feed
- * Shell with Simplified Purchase Surface - "Each Post Card is a
- * self-contained unit: a header carrying the brand avatar, name, and a
- * decorative handle string (own brand only, never a third-party account
- * reference and never a link); localized caption copy; a Media Slot for
- * posts carrying imagery; and an Interaction Row."
+ * Shell with Simplified Purchase Surface - "Each Post Card — profile
+ * post or authored interstitial — is a self-contained unit: a header
+ * carrying the author's avatar, name, and a decorative handle string
+ * (own-brand attribution for authored units, the profile's attribution
+ * and Profile Route link per the author override of ADR 03-004 — never
+ * a third-party account reference); localized caption copy; a Media
+ * Slot for posts carrying imagery; and an Interaction Row."
  *
  * The Feed Surface's repeating unit. The article carries the stable
- * anchor `id={post.id}` (`post-hero`, `post-faq`, …) so Nav Rail entries
- * can scroll to it; posts with an `anchorAlias` additionally expose the
- * legacy section anchor (the first product post keeps `id="products"`
- * working).
+ * anchor `id={post.id}` (`post-closing`, `post-faq`, `pp-<…>`, …) so
+ * Nav Rail entries can scroll to it; posts with an `anchorAlias`
+ * additionally expose the legacy section anchor (the limited-edition
+ * interstitial keeps `id="products"` working). Because an interstitial
+ * repeats down the scroll and a DOM id must stay unique, only the
+ * first instance is addressable: `anchorable` gates both ids, and
+ * later instances render as id-less clones — their post id still keys
+ * the like store and names the share fragment, which resolves to the
+ * first instance.
  *
  * While the Purchase-Surface Gate is open the whole card resolves
  * purchase intent: a stretched link overlays the card so a tap anywhere
@@ -87,6 +105,7 @@ export default function PostCard({
   author,
   captionOverride,
   purchaseSurfaceEnabled,
+  anchorable = true,
   children,
 }: PostCardProps) {
   const t = useTranslations('feed');
@@ -98,10 +117,13 @@ export default function PostCard({
 
   return (
     <article
-      id={post.id}
+      id={anchorable ? post.id : undefined}
       className="relative border-b border-border bg-surface"
     >
-      {post.anchorAlias && (
+      {/* The legacy section anchor lives only on the addressable
+          instance like the article's own id — a non-anchorable clone
+          renders no alias span at all (it would be dead markup). */}
+      {anchorable && post.anchorAlias && (
         <span
           id={post.anchorAlias}
           aria-hidden="true"
@@ -196,8 +218,8 @@ export default function PostCard({
         <p className="text-sm leading-relaxed text-text-primary">{caption}</p>
       </div>
 
-      {/* Interactive caption-level extras (Learn More trigger, FAQ
-          Island): `relative` positions them above the card's stretched
+      {/* Interactive caption-level extras (the FAQ Island): `relative`
+          positions them above the card's stretched
           product link so their controls keep their own clicks — the
           buttons are siblings of the link, so no propagation handling
           is needed. */}

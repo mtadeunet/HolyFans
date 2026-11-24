@@ -22,7 +22,13 @@ import {
 
 /** The Admin Console's tab identifiers — one per console area. */
 export type TabId =
-  'layout' | 'profiles' | 'promotions' | 'email' | 'social' | 'customers';
+  | 'layout'
+  | 'profiles'
+  | 'promotions'
+  | 'email'
+  | 'social'
+  | 'customers'
+  | 'orders';
 
 interface AdminTab {
   /** The tab's stable id, shared by the tab button and its panel. */
@@ -36,7 +42,7 @@ interface AdminTab {
  * Layout, Promotions, Email, which together carry the Site Config
  * form — with the Profiles managed-store editor between them, then
  * the read/operate tabs (Social: post likes; Customers: the
- * stock-notification lists).
+ * stock-notification lists; Orders: the Order Ledger).
  */
 export const ADMIN_TABS: readonly AdminTab[] = [
   { id: 'layout', label: 'Layout' },
@@ -48,6 +54,10 @@ export const ADMIN_TABS: readonly AdminTab[] = [
   { id: 'email', label: 'Email' },
   { id: 'social', label: 'Social' },
   { id: 'customers', label: 'Customers' },
+  // Implements ADR 00-015: Transactional Notifications — the Orders
+  // tab reads and edits the managed store's Order Ledger records
+  // through its own section, outside the Site Config form.
+  { id: 'orders', label: 'Orders' },
 ];
 
 /** The console's default tab — it opens on the form's Layout panel. */

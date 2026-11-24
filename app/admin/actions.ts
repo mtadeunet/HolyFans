@@ -11,6 +11,7 @@ import {
 } from '@/lib/email-templates';
 import { defaultLocale, locales, type Locale } from '@/lib/i18n';
 import { getManagedStore } from '@/lib/managed-store';
+import { updateOrder, type OrderUpdate } from '@/lib/orders-server';
 import { getSiteConfig } from '@/lib/site-config-server';
 import {
   CHROME_KEYS,
@@ -529,4 +530,61 @@ export async function sendRestockNotifications(
 
   revalidatePath('/admin');
   return { ok: true, sent, failed };
+}
+
+/**
+ * Implements ADR 00-015: Transactional Notifications — the operator's
+ * fulfillment bookkeeping on the Order Ledger, "the fulfillment/audit
+ * copy ... the detail manual Fulfillment ships against": the Orders
+ * section's per-order Save submits ONLY that order's operator fields
+ * (`status`, `trackingId`) as the action's serializable argument, and
+ * `updateOrder` validates and merges them onto the stored
+ * `order:<sessionId>` document — the purchase detail itself stays
+ * webhook-owned and is never touched by this action.
+ *
+ * Fail-closed like every store consumer (ADR 00-002): an unconfigured
+ * store reports an error rather than a success it did not perform,
+ * and `updateOrder`'s missing/corrupt-document and invalid-status
+ * rejections surface to the operator as named errors.
+ *
+ * @param sessionId - The Checkout Session id — the order's identity.
+ * @param fields - The operator fields to write (`status` ∈
+ *   `ORDER_STATUSES`; `trackingId` trimmed, empty clearing it).
+ * @returns `{ok: true}` once the document is rewritten; `{ok: false,
+ *   error}` when the store is unconfigured, the order is unknown or
+ *   corrupt, the status invalid, or the write fails.
+ */
+export async function saveOrder(
+  sessionId: string,
+  fields: OrderUpdate
+): Promise<SaveResult> {
+  if (typeof sessionId !== 'string' || sessionId.trim() === '') {
+    return { ok: false, error: 'Unknown order' };
+  }
+
+  const store = getManagedStore();
+  if (!store) {
+    return { ok: false, error: 'Store not configured' };
+  }
+
+  // `updateOrder` validates the untrusted submit — a malformed
+  // `fields` transport degrades to a no-field update rather than a
+  // property access crash.
+  const source: OrderUpdate =
+    fields !== null && typeof fields === 'object' ? fields : {};
+  try {
+    await updateOrder(store, sessionId, {
+      status: source.status,
+      trackingId: source.trackingId,
+    });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : 'Unknown write error';
+    return { ok: false, error: message };
+  }
+
+  // Order reads are request-time store reads; invalidate the RSC
+  // cache so the next request re-renders with the new record.
+  revalidatePath('/admin');
+  return { ok: true };
 }

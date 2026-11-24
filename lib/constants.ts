@@ -243,8 +243,8 @@ export function purchasableRepresentative(
  * placeholder, never a real-world identifier — keeps the constant
  * usable in local development. Deployment-specific URLs are
  * deliberately NOT consulted here: `NEXT_PUBLIC_*` variables are
- * inlined into client bundles, so share surfaces (WhatsApp share,
- * clipboard copy) must never emit preview deployment origins — they
+ * inlined into client bundles, so share/copy surfaces must never emit
+ * preview deployment origins — they
  * carry the canonical URL only. `||` is used rather than `??` so a
  * set-but-empty `NEXT_PUBLIC_BASE_URL` (the `.env.example` default)
  * falls through to the localhost placeholder instead of producing

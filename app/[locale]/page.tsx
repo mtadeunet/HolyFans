@@ -52,7 +52,6 @@ export default async function HomePage() {
     >
       <FeedPosts
         sections={sections}
-        chrome={chrome}
         purchaseSurfaceEnabled={purchaseSurfaceEnabled}
         profiles={profiles}
       />

@@ -130,6 +130,14 @@ interface InteractionRowProps {
  * native share capability with the Post Card's anchored URL on the
  * Store Domain, falling back to clipboard copy" — it transmits nothing
  * to the Storefront and emits no analytics signal (ADR 00-008).
+ *
+ * Repeated-interstitial note (accepted residue): an authored
+ * interstitial renders several times down the scroll, and each
+ * instance mounts its own Interaction Row keyed on the same `postId`.
+ * The instances share the persisted count but hold independent
+ * like-toggle state — liking one clone leaves its siblings' pressed
+ * state divergent until reload. Documented cosmetic constraint, not
+ * a bug.
  */
 export default function InteractionRow({
   postId,
