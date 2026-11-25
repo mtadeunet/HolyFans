@@ -10,6 +10,7 @@ import {
 import { getManagedStore } from '@/lib/managed-store';
 import {
   customerEmailOf,
+  customerNameOf,
   orderItemsOf,
   persistOrder,
   sessionLocale,
@@ -286,7 +287,7 @@ export async function POST(request: NextRequest) {
       const recipient = customerEmailOf(session) ?? null;
       if (recipient) {
         const locale = sessionLocale(session);
-        const customerName = session.customer_details?.name ?? undefined;
+        const customerName = customerNameOf(session);
         outcomes.push(
           await sendOnce(store, session.id, 'thank-you', async () => {
             // Implements ADR 00-013: Email Delivery Channel — the
@@ -333,7 +334,7 @@ export async function POST(request: NextRequest) {
             lines,
             totalCents: session.amount_total ?? 0,
             customerEmail: customerEmailOf(session),
-            customerName: session.customer_details?.name ?? undefined,
+            customerName: customerNameOf(session),
             shippingAddress: shippingAddressOf(session),
             shippingOption: shippingOptionOf(session),
             paymentState: paid ? 'paid' : 'awaiting',

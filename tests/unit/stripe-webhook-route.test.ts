@@ -365,6 +365,45 @@ describe('POST /api/webhooks/stripe — event routing (ADR 00-015)', () => {
     expect(mockedSend).toHaveBeenCalledTimes(1);
     expect(mockedSend.mock.calls[0][0].to).toBe('admin@example.test');
   });
+
+  it('falls back to the shipping name when customer_details.name is absent', async () => {
+    stubEvent('checkout.session.completed');
+    stripeClient.checkout.sessions.retrieve.mockResolvedValue(
+      makeSession({
+        customer_details: {
+          email: 'buyer@example.test',
+          name: null,
+          phone: '+351900000000',
+        },
+        collected_information: {
+          shipping_details: {
+            name: 'Example Shipper',
+            address: {
+              line1: 'Rua Exemplo 1',
+              postal_code: '1000-001',
+              city: 'Lisboa',
+              country: 'PT',
+            },
+          },
+        },
+      })
+    );
+    const store = makeStore();
+    mockedStore.mockReturnValue(store as unknown as Redis);
+
+    const response = await POST(makeRequest());
+    expect(response.status).toBe(200);
+    expect(mockedSend).toHaveBeenCalledTimes(2);
+
+    // The Thank-You greets the shipping-collected name; the Order
+    // Alert's customer line carries it too — and the Order Ledger
+    // records the same resolution.
+    const [thankYou, orderAlert] = mockedSend.mock.calls.map((call) => call[0]);
+    expect(thankYou.toName).toBe('Example Shipper');
+    expect(orderAlert.text).toContain('Cliente: Example Shipper');
+    const doc = JSON.parse(store.docs.get(`order:${SESSION_ID}`) as string);
+    expect(doc.customer.name).toBe('Example Shipper');
+  });
 });
 
 describe('POST /api/webhooks/stripe — dedupe and failure posture', () => {

@@ -216,6 +216,33 @@ export function customerEmailOf(
 }
 
 /**
+ * Resolve the customer name across payload shapes: the collected
+ * `customer_details.name`, else the shipping block's `name`. Checkout
+ * collects the name through the shipping form (shipping address
+ * collection is enabled; billing collection is not), so
+ * `customer_details.name` is often absent while the shipping details
+ * carry the real name — `collected_information.shipping_details` on
+ * newer payloads, `shipping_details` on legacy (see
+ * `shippingDetailsOf`). Blank or whitespace-only values resolve to
+ * `undefined`, so a whitespace `customer_details.name` still falls
+ * back to the shipping name. Shared by the Order Ledger's
+ * `customer.name`, the Thank-You recipient and greeting, and the
+ * Order Alert's customer line — one resolution, three readers.
+ *
+ * @param session - The retrieved Checkout Session.
+ * @returns The customer name, or `undefined` when none was collected.
+ */
+export function customerNameOf(
+  session: Stripe.Checkout.Session
+): string | undefined {
+  const collected = session.customer_details?.name?.trim();
+  if (collected) {
+    return collected;
+  }
+  return shippingDetailsOf(session)?.name?.trim() || undefined;
+}
+
+/**
  * Implements ADR 00-015: Transactional Notifications — "The Thank-You
  * Email renders in the Checkout Session's Locale"; the Order Ledger
  * records
@@ -454,7 +481,7 @@ export async function persistOrder(
     amountTotalCents: session.amount_total,
     locale: sessionLocale(session),
     customer: {
-      name: session.customer_details?.name ?? undefined,
+      name: customerNameOf(session),
       email: customerEmailOf(session),
       phone: session.customer_details?.phone ?? undefined,
     },

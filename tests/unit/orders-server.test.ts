@@ -27,6 +27,7 @@ import type { Redis } from '@upstash/redis';
 import type Stripe from 'stripe';
 import {
   ORDER_STATUSES,
+  customerNameOf,
   orderStatusOf,
   persistOrder,
   readOrders,
@@ -484,6 +485,96 @@ describe('updateOrder (ADR 00-015)', () => {
     expect('trackingId' in doc).toBe(false);
     // Untouched fields survive a partial update.
     expect(doc.status).toBe('shipped');
+  });
+});
+
+describe('customerNameOf — shipping-name fallback (ADR 00-015)', () => {
+  it('resolves the name from collected_information.shipping_details when customer_details.name is absent', () => {
+    // Checkout collects the name through the shipping form — the
+    // collected customer name is null while the shipping block holds
+    // the real name (the live Checkout posture).
+    const session = makeSession({
+      customer_details: {
+        email: 'buyer@example.test',
+        name: null,
+        phone: '+351900000000',
+      },
+      collected_information: {
+        shipping_details: { name: 'Example Shipper' },
+      },
+    });
+    expect(customerNameOf(session)).toBe('Example Shipper');
+  });
+
+  it('resolves the name from the legacy top-level shipping_details field', () => {
+    const session = makeSession({
+      customer_details: {
+        email: 'buyer@example.test',
+        name: null,
+        phone: '+351900000000',
+      },
+      collected_information: null,
+      shipping_details: { name: 'Legacy Shipper' },
+    });
+    expect(customerNameOf(session)).toBe('Legacy Shipper');
+  });
+
+  it('prefers customer_details.name over the shipping name when both exist', () => {
+    const session = makeSession({
+      collected_information: {
+        shipping_details: { name: 'Example Shipper' },
+      },
+    });
+    expect(customerNameOf(session)).toBe('Example Buyer');
+  });
+
+  it('falls back to the shipping name on a blank customer_details.name', () => {
+    const session = makeSession({
+      customer_details: {
+        email: 'buyer@example.test',
+        name: '   ',
+        phone: '+351900000000',
+      },
+      collected_information: {
+        shipping_details: { name: '  Example Shipper  ' },
+      },
+    });
+    expect(customerNameOf(session)).toBe('Example Shipper');
+  });
+
+  it('returns undefined when neither block carries a name', () => {
+    const session = makeSession({
+      customer_details: {
+        email: 'buyer@example.test',
+        name: null,
+        phone: '+351900000000',
+      },
+      collected_information: null,
+    });
+    expect(customerNameOf(session)).toBeUndefined();
+  });
+
+  it('persists the shipping name as customer.name in the Order Ledger document', async () => {
+    const store = makeStore();
+    await persistOrder(
+      store as unknown as Redis,
+      makeSession({
+        customer_details: {
+          email: 'buyer@example.test',
+          name: null,
+          phone: '+351900000000',
+        },
+        collected_information: {
+          shipping_details: { name: 'Example Shipper' },
+        },
+      }),
+      'checkout.session.completed'
+    );
+
+    const doc = JSON.parse(
+      store.docs.get(`order:${SESSION_ID}`) as string
+    ) as OrderRecord;
+    expect(doc.customer.name).toBe('Example Shipper');
   });
 });
 
